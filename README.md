@@ -50,7 +50,7 @@ SourceConfig.json该文件配置了该服务需要使用的资源配置,不热�
 
 ## DB
 ### Mongo(Shard Mode)(Version >= 6.0)
-### Account
+#### Account
 ```
 database: account
 
