@@ -120,5 +120,5 @@ use account;
 db.createCollection("money_log");
 db.money_log.createIndex({user_id:1,action:1,unique_id:1},{unique:true});
 db.money_log.createIndex({action:1,src_dst:1});
-sh.shardCollection("account.money_log",{_id:"hashed"});
+sh.shardCollection("account.money_log",{user_id:"hashed"});
 ```
