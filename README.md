@@ -67,6 +67,7 @@ collection: user
         "usd":100,
     },
 }
+//手动创建数据库
 use account;
 db.createCollection("user");
 sh.shardCollection("account.user",{_id:"hashed"});
@@ -76,6 +77,7 @@ collection: user_email_index
     email:"",
     user_id:ObjectId("xxx"),//collection user's _id field
 }
+//手动创建数据库
 use account;
 db.createCollection("user_email_index");
 db.user_email_index.createIndex({email:1},{unique:true});
@@ -86,6 +88,7 @@ collection: user_tel_index
     tel:"",
     user_id:ObjectId("xxx"),//collection user's _id field
 }
+//手动创建数据库
 use account;
 db.createCollection("user_tel_index");
 db.user_tel_index.createIndex({tel:1},{unique:true});
@@ -96,6 +99,7 @@ collection: user_idcard_index
     idcard:"",//实名认证
     user_id:ObjectId("xxx"),//collection user's _id field
 }
+//手动创建数据库
 use account;
 db.createCollection("user_idcard_index");
 db.user_tel_index.createIndex({idcard:1},{unique:true});
@@ -111,6 +115,7 @@ collection money_log
     monet_amount:10,
     ctime:123,//unixtimestamp,unit second
 }
+//手动创建数据库
 use account;
 db.createCollection("money_log");
 db.money_log.createIndex({user_id:1,action:1,unique_id:1},{unique:true});
