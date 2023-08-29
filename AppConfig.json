@@ -1,0 +1,33 @@
+{
+	"handler_timeout":{
+		"/account.status/ping":{
+			"GET":"200ms",
+			"CRPC":"200ms",
+			"GRPC":"200ms"
+		}
+	},
+	"web_path_rewrite":{
+		"GET":{
+			"/origin/url":"/account.exampleservice/examplemethod"
+		}
+	},
+	"handler_rate":{
+		"/account.exampleservice/examplemethod":[{
+			"method":["GET","GRPC","CRPC"],
+			"max_per_sec":10
+		}]
+	},
+	"accesses":{
+		"/account.exampleservice/examplemethod":[{
+			"method":["GET","GRPC","CRPC"],
+			"accesses":{
+				"accessid":"accesskey"
+			}
+		}]
+	},
+	"token_secret":"test",
+	"session_token_expire":"24h",
+	"service":{
+
+	}
+}
