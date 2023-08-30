@@ -2,9 +2,11 @@ package user
 
 import (
 	"context"
+	"crypto/rand"
 
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
+	"github.com/chenjie199234/account/util"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -84,7 +86,7 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 		}
 	}()
 	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOne(sctx, bson.M{"_id": userid}).Decode(user); e != nil {
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"tel": newTel}}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
@@ -99,10 +101,7 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 		}
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid}); e != nil {
-		return
-	}
-	_, e = d.mongo.Database("account").Collection("user").UpdateOne(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"tel": newTel}})
+	_, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid})
 	return
 }
 func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (e error) {
@@ -124,7 +123,7 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 		}
 	}()
 	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOne(sctx, bson.M{"_id": userid}).Decode(user); e != nil {
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"email": newEmail}}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
@@ -139,10 +138,7 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 		}
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid}); e != nil {
-		return
-	}
-	_, e = d.mongo.Database("account").Collection("user").UpdateOne(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"email": newEmail}})
+	_, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid})
 	return
 }
 func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (e error) {
@@ -164,7 +160,7 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 		}
 	}()
 	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOne(sctx, bson.M{"_id": userid}).Decode(user); e != nil {
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"idcard": newIDCard}}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
@@ -184,7 +180,6 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 		}
 		return
 	}
-	_, e = d.mongo.Database("account").Collection("user").UpdateOne(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"idcard": newIDCard}})
 	return
 }
 func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (e error) {
@@ -206,7 +201,7 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 		}
 	}()
 	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOne(sctx, bson.M{"_id": userid}).Decode(user); e != nil {
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"nick_name": newNickName}}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
@@ -221,12 +216,41 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 		}
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid}); e != nil {
-		return
-	}
-	_, e = d.mongo.Database("account").Collection("user").UpdateOne(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"nick_name": newNickName}})
+	_, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid})
 	return
 }
 func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.ObjectID, oldpassword, newpassword string) (e error) {
+	var s mongo.Session
+	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	if e != nil {
+		return
+	}
+	defer s.EndSession(ctx)
+	sctx := mongo.NewSessionContext(ctx, s)
+	if e = s.StartTransaction(); e != nil {
+		return
+	}
+	defer func() {
+		if e != nil {
+			s.AbortTransaction(sctx)
+		} else if e = sctx.CommitTransaction(sctx); e != nil {
+			s.AbortTransaction(sctx)
+		}
+	}()
 
+	nonce := make([]byte, 16)
+	rand.Read(nonce)
+	user := &model.User{}
+	filter := bson.M{"_id": userid}
+	updater := bson.M{"password": util.SignMake(newpassword, nonce)}
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, filter, bson.M{"$set": updater}).Decode(user); e != nil {
+		if e == mongo.ErrNoDocuments {
+			e = ecode.ErrUserNotExist
+		}
+		return
+	}
+	if e = util.SignCheck(oldpassword, user.Password); e != nil && e == ecode.ErrSignCheckFailed {
+		e = ecode.ErrPasswordWrong
+	}
+	return
 }

@@ -57,6 +57,7 @@ database: account
 collection: user
 {
     _id:ObjectId("xxx"),//user id
+    password:"",
     idcard:"",//实名认证
     nick_name:"",
     tel:"",

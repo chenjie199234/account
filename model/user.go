@@ -6,6 +6,7 @@ import (
 
 type User struct {
 	UserID   primitive.ObjectID `bson:"_id,omitempty"`
+	Password string             `bson:"password"`
 	IDCard   string             `bson:"idcard"`
 	NickName string             `bson:"nick_name"`
 	Tel      string             `bson:"tel"`
