@@ -13,17 +13,26 @@ export interface Error{
 }
 
 export interface GetUserInfoReq{
-	user_id: string;//Mongodb's ObjectId.Hex()
+	src_type: string;
+	src: string;
 }
 function GetUserInfoReqToJson(msg: GetUserInfoReq): string{
 	let s: string="{"
-	//user_id
-	if(msg.user_id==null||msg.user_id==undefined){
-		throw 'GetUserInfoReq.user_id must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'GetUserInfoReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.user_id)
-		s+='"user_id":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
+	}
+	//src
+	if(msg.src==null||msg.src==undefined){
+		throw 'GetUserInfoReq.src must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.src)
+		s+='"src":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"

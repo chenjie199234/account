@@ -8,8 +8,11 @@ package api
 
 // return empty means pass
 func (m *GetUserInfoReq) Validate() (errstr string) {
-	if len(m.GetUserId()) != 24 {
-		return "field: user_id in object: get_user_info_req check value str len eq failed"
+	if m.GetSrcType() != "user_id" && m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" {
+		return "field: src_type in object: get_user_info_req check value str in failed"
+	}
+	if len(m.GetSrc()) <= 0 {
+		return "field: src in object: get_user_info_req check value str len gt failed"
 	}
 	return ""
 }

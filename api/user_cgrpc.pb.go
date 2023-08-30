@@ -22,18 +22,6 @@ var _CGrpcPathUserUpdateEmail = "/account.user/update_email"
 var _CGrpcPathUserUpdateTel = "/account.user/update_tel"
 
 type UserCGrpcClient interface {
-	//	rpc example(examplereq)returns(exampleresp){
-	//		option (pbex.method)="get";//can be set to get,delete,post,put,patch
-	//		option (pbex.web_midwares)="b";
-	//		option (pbex.web_midwares)="c";
-	//		option (pbex.web_midwares)="a";//this function on web protocol has 3 midwares,it's order is b,c,a
-	//		option (pbex.crpc_midwares)="b";
-	//		option (pbex.crpc_midwares)="c";
-	//		option (pbex.crpc_midwares)="a";//this function on crpc protocol has 3 midwares,it's order is b,c,a
-	//		option (pbex.cgrpc_midwares)="b";
-	//		option (pbex.cgrpc_midwares)="c";
-	//		option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
-	//	}
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
@@ -112,18 +100,6 @@ func (c *userCGrpcClient) UpdateTel(ctx context.Context, req *UpdateTelReq) (*Up
 }
 
 type UserCGrpcServer interface {
-	//	rpc example(examplereq)returns(exampleresp){
-	//		option (pbex.method)="get";//can be set to get,delete,post,put,patch
-	//		option (pbex.web_midwares)="b";
-	//		option (pbex.web_midwares)="c";
-	//		option (pbex.web_midwares)="a";//this function on web protocol has 3 midwares,it's order is b,c,a
-	//		option (pbex.crpc_midwares)="b";
-	//		option (pbex.crpc_midwares)="c";
-	//		option (pbex.crpc_midwares)="a";//this function on crpc protocol has 3 midwares,it's order is b,c,a
-	//		option (pbex.cgrpc_midwares)="b";
-	//		option (pbex.cgrpc_midwares)="c";
-	//		option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
-	//	}
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)

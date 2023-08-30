@@ -21,6 +21,7 @@ service user{
 	//	option (pbex.cgrpc_midwares)="c";
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
+
 	rpc get_user_info(get_user_info_req)returns(get_user_info_resp);
 
 	rpc login(login_req)returns(login_resp){
@@ -42,7 +43,6 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
-
 }
 //req can be set with pbex extentions
 //message examplereq{
@@ -63,7 +63,8 @@ message user_info{
 	map<string,int64> money=7;
 }
 message get_user_info_req{
-	string user_id=1[(pbex.string_bytes_len_eq)=24];//Mongodb's ObjectId.Hex()
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
+	string src=2[(pbex.string_bytes_len_gt)=0];
 }
 message get_user_info_resp{
 	user_info info=1;
