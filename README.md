@@ -57,7 +57,6 @@ database: account
 collection: user
 {
     _id:ObjectId("xxx"),//user id
-    ctime:123,//unixtimestamp,unit second
     idcard:"",//实名认证
     nick_name:"",
     tel:"",
@@ -118,13 +117,13 @@ sh.shardCollection("account.user_nick_name_index",{nick_name:"hashed"});
 
 collection money_log
 {
+    _id:ObjectId("xxx"),//log id
     user_id:ObjectId("xxx"),//collection user's _id field
     action:"",//spend,recharge,refund
     unique_id:"",
     src_dst:"",
     money_type:"",
     money_amount:10,
-    ctime:123,//unixtimestamp,unit second
 }
 //手动创建数据库
 use account;
