@@ -21,7 +21,12 @@ var (
 	ErrBusy       = cerror.ErrBusy       //10011 // http code 503
 	ErrNotExist   = cerror.ErrNotExist   //10012 // http code 404
 
-	ErrBusiness1 = cerror.MakeError(20001, http.StatusBadRequest, "business error 1")
+	ErrUserNotExist        = cerror.MakeError(20001, http.StatusBadRequest, "user not exist")
+	ErrTelAlreadyUsed      = cerror.MakeError(20002, http.StatusBadRequest, "tel already used")
+	ErrEmailAlreadyUsed    = cerror.MakeError(20003, http.StatusBadRequest, "email already used")
+	ErrIDCardAlreadySetted = cerror.MakeError(20004, http.StatusBadRequest, "idcard already setted on this account")
+	ErrIDCardAlreadyUsed   = cerror.MakeError(20005, http.StatusBadRequest, "idcard already used")
+	ErrNickNameAlreadyUsed = cerror.MakeError(20006, http.StatusBadRequest, "nickname already used")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {
