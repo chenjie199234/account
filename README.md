@@ -105,14 +105,25 @@ db.createCollection("user_idcard_index");
 db.user_tel_index.createIndex({idcard:1},{unique:true});
 sh.shardCollection("account.user_idcard_index",{idcard:"hashed"});
 
+collection: user_nick_name_index
+{
+    nick_name:"",
+    user_id:ObjectId("xxx"),//collection user's _id field
+}
+//手动创建数据库
+use account;
+db.createCollection("user_nick_name_index");
+db.user_nick_name_index.createIndex({nick_name:1},{unique:true});
+sh.shardCollection("account.user_nick_name_index",{nick_name:"hashed"});
+
 collection money_log
 {
     user_id:ObjectId("xxx"),//collection user's _id field
-    action:"",//0-spend,1-recharge,2-refund
+    action:"",//spend,recharge,refund
     unique_id:"",
     src_dst:"",
     money_type:"",
-    monet_amount:10,
+    money_amount:10,
     ctime:123,//unixtimestamp,unit second
 }
 //手动创建数据库

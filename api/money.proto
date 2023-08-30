@@ -21,6 +21,15 @@ service money{
 	//	option (pbex.cgrpc_midwares)="c";
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
+
+	rpc get_money_logs(get_money_logs_req)returns(get_money_logs_resp){
+		option (pbex.method)="get";
+		option (pbex.web_midwares)="token";
+	}
+
+	rpc recharge_money(recharge_money_req)returns(recharge_money_resp);
+	rpc spend_money(spend_money_req)returns(spend_money_resp);
+	rpc refund_money(refund_money_req)returns(refund_money_resp);
 }
 //req can be set with pbex extentions
 //message examplereq{
@@ -30,3 +39,37 @@ service money{
 //message exampleresp{
 	//int64 example_resp=1;
 //}
+
+message money_log{
+	string user_id=1;
+	string action=2;//spend,recharge,refund
+	string unique_id=3;
+	string src_dst=4;
+	string money_type=5;
+	uint64 money_amount=6;
+	int64 ctime=7;
+}
+message get_money_logs_req{
+	string user_id=1[(pbex.string_bytes_len_eq)=24];//Mongodb's ObjectId.Hex()
+}
+message get_money_logs_resp{
+	repeated money_log logs=1;
+}
+message recharge_money_req{
+
+}
+message recharge_money_resp{
+
+}
+message spend_money_req{
+
+}
+message spend_money_resp{
+
+}
+message refund_money_req{
+
+}
+message refund_money_resp{
+
+}

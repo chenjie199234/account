@@ -21,6 +21,28 @@ service user{
 	//	option (pbex.cgrpc_midwares)="c";
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
+	rpc get_user_info(get_user_info_req)returns(get_user_info_resp);
+
+	rpc login(login_req)returns(login_resp){
+		option (pbex.method)="post";
+	}
+	rpc update_static_password(update_static_password_req)returns(update_static_password_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc update_nick_name(update_nick_name_req)returns(update_nick_name_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc update_email(update_email_req)returns(update_email_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc update_tel(update_tel_req)returns(update_tel_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+
 }
 //req can be set with pbex extentions
 //message examplereq{
@@ -30,3 +52,68 @@ service user{
 //message exampleresp{
 	//int64 example_resp=1;
 //}
+
+message user_info{
+	string user_id=1;
+	string idcard=2;
+	string tel=3;
+	string email=4;
+	string nick_name=5;
+	int64 ctime=6;
+	map<string,int64> money=7;
+}
+message get_user_info_req{
+	string user_id=1[(pbex.string_bytes_len_eq)=24];//Mongodb's ObjectId.Hex()
+}
+message get_user_info_resp{
+	user_info info=1;
+}
+message login_req{
+	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
+	string src=2[(pbex.string_bytes_len_gt)=0];
+	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];//when src_type is idcard or nickname,this can't be dynamic
+	//when password_type is static this length must >=10
+	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
+	//when password_type is dynamic and this is not empty,means verify dynamic password.
+	string password=4;
+}
+message login_resp{
+	string token=1;
+	user_info info=2;
+}
+message update_static_password_req{
+	//if this is empty,means this is the first time to set the static password
+	string old_static_password=1;
+	string new_static_password=2[(pbex.string_bytes_len_gte)=10];
+}
+message update_static_password_resp{
+}
+message update_nick_name_req{
+	string new_nick_name=1[(pbex.string_bytes_len_gt)=0];
+}
+message update_nick_name_resp{
+}
+message update_email_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+	string new_email=3[(pbex.string_bytes_len_gt)=0];
+	//if this is empty,means send dynamic password.
+	//if this is not empty,means verify dynamic password.
+	string new_email_dynamic_password=4;
+}
+message update_email_resp{
+}
+message update_tel_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+	string new_tel=3[(pbex.string_bytes_len_gt)=0];
+	//if this is empty,means send dynamic password.
+	//if this is not empty,means verify dynamic password.
+	string new_email_dynamic_password=4;
+}
+message update_tel_resp{
+}
