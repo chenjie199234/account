@@ -117,6 +117,10 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	}
 	return &api.UpdateNickNameResp{}, nil
 }
+
+// UpdateTel Step 1:send dynamic password to old email or tail
+// UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new email
+// UpdateTel Step 3:verify new email's dynamic and update
 func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*api.UpdateEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
@@ -124,14 +128,20 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		log.Error(ctx, "[UpdateEmail] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	code := util.MakeRandCode()
 }
+
+// UpdateTel Step 1:send dynamic password to old email or tail
+// UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new tel
+// UpdateTel Step 3:verify new tel's dynamic and update
 func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.UpdateTelResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
 	if e != nil {
 		log.Error(ctx, "[UpdateTel] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ErrToken
+	}
+	if req.NewEmailDynamicPassword != "" {
+
 	}
 }
 

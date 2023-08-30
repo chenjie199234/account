@@ -21,15 +21,17 @@ var (
 	ErrBusy       = cerror.ErrBusy       //10011 // http code 503
 	ErrNotExist   = cerror.ErrNotExist   //10012 // http code 404
 
-	ErrUserNotExist        = cerror.MakeError(20001, http.StatusBadRequest, "user not exist")
-	ErrTelAlreadyUsed      = cerror.MakeError(20002, http.StatusBadRequest, "tel already used")
-	ErrEmailAlreadyUsed    = cerror.MakeError(20003, http.StatusBadRequest, "email already used")
-	ErrIDCardAlreadySetted = cerror.MakeError(20004, http.StatusBadRequest, "idcard already setted on this account")
-	ErrIDCardAlreadyUsed   = cerror.MakeError(20005, http.StatusBadRequest, "idcard already used")
-	ErrNickNameAlreadyUsed = cerror.MakeError(20006, http.StatusBadRequest, "nickname already used")
-	ErrPasswordWrong       = cerror.MakeError(20007, http.StatusBadRequest, "password wrong")
-	ErrDataBroken          = cerror.MakeError(20008, http.StatusBadRequest, "data broken")
-	ErrSignCheckFailed     = cerror.MakeError(20009, http.StatusBadRequest, "sign check failed")
+	ErrCodeAlreadySend     = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password already send,check your email or tel")
+	ErrCodeAlreadyExpire   = cerror.MakeError(20002, http.StatusBadRequest, "dynamic password already expire,please get it again")
+	ErrUserNotExist        = cerror.MakeError(20003, http.StatusBadRequest, "user not exist")
+	ErrTelAlreadyUsed      = cerror.MakeError(20004, http.StatusBadRequest, "tel already used")
+	ErrEmailAlreadyUsed    = cerror.MakeError(20005, http.StatusBadRequest, "email already used")
+	ErrIDCardAlreadySetted = cerror.MakeError(20006, http.StatusBadRequest, "idcard already setted on this account")
+	ErrIDCardAlreadyUsed   = cerror.MakeError(20007, http.StatusBadRequest, "idcard already used")
+	ErrNickNameAlreadyUsed = cerror.MakeError(20008, http.StatusBadRequest, "nickname already used")
+	ErrPasswordWrong       = cerror.MakeError(20009, http.StatusBadRequest, "password wrong")
+	ErrDataBroken          = cerror.MakeError(20010, http.StatusBadRequest, "data broken")
+	ErrSignCheckFailed     = cerror.MakeError(20011, http.StatusBadRequest, "sign check failed")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {
