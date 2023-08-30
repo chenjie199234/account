@@ -48,6 +48,13 @@ AppConfig.json该文件配置了该服务需要使用的业务配置,可热更�
 SourceConfig.json该文件配置了该服务需要使用的资源配置,不热更新
 ```
 
+## Cache
+### Redis(Version >= 6.2.0)
+```
+key: {$user_id}_$action_code
+value: string
+```
+
 ## DB
 ### Mongo(Shard Mode)(Version >= 6.0)
 #### Account

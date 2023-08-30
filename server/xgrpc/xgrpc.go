@@ -40,6 +40,8 @@ func StartCGrpcServer() {
 	api.RegisterStatusCGrpcServer(s, service.SvcStatus, mids.AllMids())
 	//example
 	//api.RegisterExampleCGrpcServer(s, service.SvcExample, mids.AllMids())
+	api.RegisterUserCGrpcServer(s, service.SvcUser, mids.AllMids())
+	api.RegisterMoneyCGrpcServer(s, service.SvcMoney, mids.AllMids())
 
 	if e = s.StartCGrpcServer(":10000"); e != nil && e != cgrpc.ErrServerClosed {
 		log.Error(nil, "[xgrpc] start server failed", map[string]interface{}{"error": e})
@@ -72,3 +74,4 @@ func StopCGrpcServer(force bool) {
 		s.StopCGrpcServer(force)
 	}
 }
+

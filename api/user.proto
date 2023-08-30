@@ -63,7 +63,7 @@ message user_info{
 	map<string,int64> money=7;
 }
 message get_user_info_req{
-	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
 }
 message get_user_info_resp{
@@ -72,7 +72,8 @@ message get_user_info_resp{
 message login_req{
 	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
-	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];//when src_type is idcard or nickname,this can't be dynamic
+	//when src_type is idcard or nickname,this can't be dynamic
+	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];
 	//when password_type is static this length must >=10
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
 	//when password_type is dynamic and this is not empty,means verify dynamic password.

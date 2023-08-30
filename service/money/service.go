@@ -30,6 +30,18 @@ func Start() *Service {
 		moneyDao: moneydao.NewDao(config.GetSql("money_sql"), config.GetRedis("money_redis"), config.GetMongo("money_mongo")),
 	}
 }
+func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*api.GetMoneyLogsResp, error) {
+
+}
+func (s *Service) RechargeMoney(ctx context.Context, req *api.RechargeMoneyReq) (*api.RechargeMoneyResp, error) {
+
+}
+func (s *Service) SpendMoney(ctx context.Context, req *api.SpendMoneyReq) (*api.SpendMoneyResp, error) {
+
+}
+func (s *Service) RefundMoney(ctx context.Context, req *api.RefundMoneyReq) (*api.RefundMoneyResp, error) {
+
+}
 
 // Stop -
 func (s *Service) Stop() {

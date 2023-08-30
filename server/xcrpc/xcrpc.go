@@ -40,6 +40,8 @@ func StartCrpcServer() {
 	api.RegisterStatusCrpcServer(s, service.SvcStatus, mids.AllMids())
 	//example
 	//api.RegisterExampleCrpcServer(s, service.SvcExample,mids.AllMids())
+	api.RegisterUserCrpcServer(s, service.SvcUser, mids.AllMids())
+	api.RegisterMoneyCrpcServer(s, service.SvcMoney, mids.AllMids())
 
 	if e = s.StartCrpcServer(":9000"); e != nil && e != crpc.ErrServerClosed {
 		log.Error(nil, "[xcrpc] start server failed", map[string]interface{}{"error": e})

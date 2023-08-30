@@ -55,6 +55,8 @@ func StartWebServer() {
 	api.RegisterStatusWebServer(s, service.SvcStatus, mids.AllMids())
 	//example
 	//api.RegisterExampleWebServer(s, service.SvcExample, mids.AllMids())
+	api.RegisterUserWebServer(s, service.SvcUser, mids.AllMids())
+	api.RegisterMoneyWebServer(s, service.SvcMoney, mids.AllMids())
 
 	if e = s.StartWebServer(":8000"); e != nil && e != web.ErrServerClosed {
 		log.Error(nil, "[xweb] start server failed", map[string]interface{}{"error": e})
@@ -86,7 +88,7 @@ func UpdateHandlerTimeout(hts map[string]map[string]ctime.Duration) {
 }
 
 // UpdateWebPathRewrite -
-//key origin url,value rewrite url
+// key origin url,value rewrite url
 func UpdateWebPathRewrite(rewrite map[string]map[string]string) {
 	if s != nil {
 		s.UpdateHandlerRewrite(rewrite)
