@@ -16,6 +16,7 @@ import (
 	// "github.com/chenjie199234/Corelib/web"
 	"github.com/chenjie199234/Corelib/log"
 	"github.com/chenjie199234/Corelib/metadata"
+	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/util/graceful"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -50,7 +51,6 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"user_id": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-
 	case "tel":
 		user, e = s.userDao.MongoGetUserByTel(ctx, req.Src)
 		if e != nil {
@@ -89,7 +89,71 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 	}, nil
 }
 func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp, error) {
-
+	var user *model.User
+	var e error
+	switch req.SrcType {
+	case "idcard":
+		if req.PasswordType == "dynamic" {
+			log.Error(ctx, "[Login] idcard can't use dynamic password", nil)
+			return nil, ecode.ErrReq
+		}
+		if user, e = s.userDao.MongoGetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+	case "nickname":
+		if req.PasswordType == "dynamic" {
+			log.Error(ctx, "[Login] nickname can't use dynamic password", nil)
+			return nil, ecode.ErrReq
+		}
+		if user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"nickname": req.Src, "error": e})
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+	case "tel":
+		if req.PasswordType == "static" {
+			if user, e = s.userDao.MongoGetUserByTel(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+		} else if req.Password == "" {
+			//TODO send code
+		} else {
+			//TODO verify code
+		}
+	case "email":
+		if req.PasswordType == "static" {
+			if user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"email": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+		} else if req.Password == "" {
+			//TODO send code
+		} else {
+			//TODO verify code
+		}
+	}
+	if e := util.SignCheck(req.Password, user.Password); e != nil {
+		if e == ecode.ErrSignCheckFailed {
+			e = ecode.ErrPasswordWrong
+		}
+		log.Error(ctx, "[Login] sign check failed", map[string]interface{}{"src_type": req.SrcType, "src": req.Src, "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	//TODO set the puber
+	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex())
+	return &api.LoginResp{
+		Token: token,
+		Info: &api.UserInfo{
+			UserId:   user.UserID.Hex(),
+			Idcard:   util.MaskIDCard(user.IDCard),
+			Tel:      util.MaskTel(user.Tel),
+			Email:    util.MaskEmail(user.Email),
+			NickName: user.NickName,
+			Ctime:    user.UserID.Timestamp().Unix(),
+			Money:    user.Money,
+		},
+	}, nil
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
