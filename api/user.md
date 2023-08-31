@@ -39,7 +39,11 @@ Success: httpcode:200
 {
 	"token":"str",
 	//object user_info
-	"info":{}
+	"info":{},
+	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
+	//password:login success,but this account must finish the static password set
+	//success:nothing need to do
+	"step":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 user_info: {

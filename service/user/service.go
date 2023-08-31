@@ -14,6 +14,7 @@ import (
 	// "github.com/chenjie199234/Corelib/crpc"
 	// "github.com/chenjie199234/Corelib/log"
 	// "github.com/chenjie199234/Corelib/web"
+	"github.com/chenjie199234/Corelib/cerror"
 	"github.com/chenjie199234/Corelib/log"
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
@@ -89,6 +90,10 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 	}, nil
 }
 func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp, error) {
+	if req.PasswordType == "static" && req.Password == "" {
+		log.Error(ctx, "[Login] empty static password", map[string]interface{}{"src_type": req.SrcType, "src": req.Src})
+		return nil, ecode.ErrReq
+	}
 	var user *model.User
 	var e error
 	switch req.SrcType {
@@ -97,6 +102,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			log.Error(ctx, "[Login] idcard can't use dynamic password", nil)
 			return nil, ecode.ErrReq
 		}
+		//static
 		if user, e = s.userDao.MongoGetUserByIDCard(ctx, req.Src); e != nil {
 			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -106,34 +112,138 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			log.Error(ctx, "[Login] nickname can't use dynamic password", nil)
 			return nil, ecode.ErrReq
 		}
+		//static
 		if user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src); e != nil {
 			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"nickname": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
-		if req.PasswordType == "static" {
-			if user, e = s.userDao.MongoGetUserByTel(ctx, req.Src); e != nil {
+		if req.PasswordType == "dynamic" && req.Password == "" {
+			//send code
+			//set redis and send tel is async
+			//if set redis success and send tel failed
+			//we need to clean the redis
+			if !s.stop.AddOne() {
+				return nil, cerror.ErrServerClosing
+			}
+			code := util.MakeRandCode()
+			if e := s.userDao.RedisSetCode(ctx, req.Src, userdao.LoginTel, code); e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				s.stop.DoneOne()
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			if e := util.SendTelCode(ctx, code); e != nil {
+				log.Error(ctx, "[Login] send tel failed", map[string]interface{}{"tel": req.Src, "error": e})
+				//clean redis code
+				if e := s.userDao.RedisDelCode(ctx, req.Src, userdao.LoginTel); e != nil {
+					log.Error(ctx, "[Login] del redis code failed", map[string]interface{}{"tel": req.Src, "error": e})
+					go func() {
+						if e := s.userDao.RedisDelCode(context.Background(), req.Src, userdao.LoginTel); e != nil {
+							log.Error(ctx, "[Login] del redis code failed in goroutine", map[string]interface{}{"tel": req.Src, "error": e})
+						}
+						s.stop.DoneOne()
+					}()
+				} else {
+					s.stop.DoneOne()
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			s.stop.DoneOne()
+			return &api.LoginResp{Step: "verify"}, nil
+		} else if req.PasswordType == "dynamic" {
+			//verify code
+			rest, e := s.userDao.RedisCheckCode(ctx, req.Src, userdao.LoginTel, req.Password)
+			if e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"tel": req.Src, "code": req.Password, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			if rest > 0 {
+				log.Error(ctx, "[Login] check failed", map[string]interface{}{"tel": req.Src, "code": req.Password, "rest": rest})
+				return nil, ecode.ErrPasswordWrong
+			} else if rest == 0 {
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				return nil, ecode.ErrBan
+			}
+			//verify success
+		}
+		//static or dynamic's verify success
+		user, e = s.userDao.MongoGetUserByTel(ctx, req.Src)
+		if e != nil {
+			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
 				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-		} else if req.Password == "" {
-			//TODO send code
-		} else {
-			//TODO verify code
+			if user, e = s.userDao.MongoCreateUserByTel(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 		}
 	case "email":
-		if req.PasswordType == "static" {
-			if user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src); e != nil {
+		if req.PasswordType == "dynamic" && req.Password == "" {
+			//send code
+			//set redis and send email is async
+			//if set redis success and send email failed
+			//we need to clean the redis
+			if !s.stop.AddOne() {
+				return nil, cerror.ErrServerClosing
+			}
+			code := util.MakeRandCode()
+			if e := s.userDao.RedisSetCode(ctx, req.Src, userdao.LoginEmail, code); e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"email": req.Src, "error": e})
+				s.stop.DoneOne()
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			if e := util.SendEmailCode(ctx, code); e != nil {
+				log.Error(ctx, "[Login] send email failed", map[string]interface{}{"email": req.Src, "error": e})
+				//clean redis code
+				if e := s.userDao.RedisDelCode(ctx, req.Src, userdao.LoginEmail); e != nil {
+					log.Error(ctx, "[Login] del redis code failed", map[string]interface{}{"email": req.Src, "error": e})
+					go func() {
+						if e := s.userDao.RedisDelCode(context.Background(), req.Src, userdao.LoginEmail); e != nil {
+							log.Error(ctx, "[Login] del redis code failed in goroutine", map[string]interface{}{"email": req.Src, "error": e})
+						}
+						s.stop.DoneOne()
+					}()
+				} else {
+					s.stop.DoneOne()
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			s.stop.DoneOne()
+			return &api.LoginResp{Step: "verify"}, nil
+		} else if req.PasswordType == "dynamic" {
+			//verify code
+			rest, e := s.userDao.RedisCheckCode(ctx, req.Src, userdao.LoginEmail, req.Password)
+			if e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"email": req.Src, "code": req.Password, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			if rest > 0 {
+				log.Error(ctx, "[Login] check failed", map[string]interface{}{"email": req.Src, "code": req.Password, "rest": rest})
+				return nil, ecode.ErrPasswordWrong
+			} else if rest == 0 {
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				return nil, ecode.ErrBan
+			}
+			//verify success
+		}
+		//static or dynamic's verify success
+		user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src)
+		if e != nil {
+			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
 				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"email": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-		} else if req.Password == "" {
-			//TODO send code
-		} else {
-			//TODO verify code
+			if user, e = s.userDao.MongoCreateUserByEmail(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"email": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 		}
 	}
-	if e := util.SignCheck(req.Password, user.Password); e != nil {
+	needSetPassword := false
+	if req.PasswordType == "dynamic" {
+		needSetPassword = util.SignCheck("", user.Password) == nil
+	} else if e := util.SignCheck(req.Password, user.Password); e != nil {
 		if e == ecode.ErrSignCheckFailed {
 			e = ecode.ErrPasswordWrong
 		}
@@ -142,7 +252,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	}
 	//TODO set the puber
 	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex())
-	return &api.LoginResp{
+	resp := &api.LoginResp{
 		Token: token,
 		Info: &api.UserInfo{
 			UserId:   user.UserID.Hex(),
@@ -153,7 +263,12 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			Ctime:    user.UserID.Timestamp().Unix(),
 			Money:    user.Money,
 		},
-	}, nil
+		Step: "success",
+	}
+	if needSetPassword {
+		resp.Step = "password"
+	}
+	return resp, nil
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)

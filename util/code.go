@@ -19,11 +19,11 @@ func MakeRandCode() string {
 }
 
 // TODO
-func SendEmailCode(ctx context.Context) error {
+func SendEmailCode(ctx context.Context, code string) error {
 	return nil
 }
 
 // TODO
-func SendTelCode(ctx context.Context) error {
+func SendTelCode(ctx context.Context, code string) error {
 	return nil
 }

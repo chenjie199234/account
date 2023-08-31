@@ -16,6 +16,90 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model.User, e error) {
+	var s mongo.Session
+	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	if e != nil {
+		return
+	}
+	defer s.EndSession(ctx)
+	sctx := mongo.NewSessionContext(ctx, s)
+	if e = s.StartTransaction(); e != nil {
+		return
+	}
+	defer func() {
+		if e != nil {
+			s.AbortTransaction(sctx)
+			if mongo.IsDuplicateKeyError(e) {
+				user, e = d.MongoGetUserByTel(ctx, tel)
+			}
+		} else if e = sctx.CommitTransaction(sctx); e != nil {
+			s.AbortTransaction(sctx)
+		}
+	}()
+	nonce := make([]byte, 16)
+	rand.Read(nonce)
+	user = &model.User{
+		Password: util.SignMake("", nonce),
+		IDCard:   "",
+		NickName: "",
+		Tel:      tel,
+		Email:    "",
+		Money:    map[string]int64{},
+	}
+	var r *mongo.InsertOneResult
+	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
+		return
+	}
+	user.UserID = r.InsertedID.(primitive.ObjectID)
+	_, e = d.mongo.Database("account").Collection("user_tel_index").InsertOne(sctx, &model.UserTelIndex{
+		Tel:    tel,
+		UserID: user.UserID,
+	})
+	return
+}
+func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *model.User, e error) {
+	var s mongo.Session
+	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	if e != nil {
+		return
+	}
+	defer s.EndSession(ctx)
+	sctx := mongo.NewSessionContext(ctx, s)
+	if e = s.StartTransaction(); e != nil {
+		return
+	}
+	defer func() {
+		if e != nil {
+			s.AbortTransaction(sctx)
+			if mongo.IsDuplicateKeyError(e) {
+				user, e = d.MongoGetUserByEmail(ctx, email)
+			}
+		} else if e = sctx.CommitTransaction(sctx); e != nil {
+			s.AbortTransaction(sctx)
+		}
+	}()
+	nonce := make([]byte, 16)
+	rand.Read(nonce)
+	user = &model.User{
+		Password: util.SignMake("", nonce),
+		IDCard:   "",
+		NickName: "",
+		Tel:      "",
+		Email:    email,
+		Money:    map[string]int64{},
+	}
+	var r *mongo.InsertOneResult
+	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
+		return
+	}
+	user.UserID = r.InsertedID.(primitive.ObjectID)
+	_, e = d.mongo.Database("account").Collection("user_email_index").InsertOne(sctx, &model.UserEmailIndex{
+		Email:  email,
+		UserID: user.UserID,
+	})
+	return
+}
 func (d *Dao) MongoGetUserByUserID(ctx context.Context, userid primitive.ObjectID) (*model.User, error) {
 	user := &model.User{}
 	if e := d.mongo.Database("account").Collection("user").FindOne(ctx, bson.M{"_id": userid}).Decode(user); e != nil {

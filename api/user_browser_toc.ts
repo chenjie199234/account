@@ -15,7 +15,8 @@ export interface Error{
 export interface LoginReq{
 	src_type: string;
 	src: string;
-	password_type: string;//when src_type is idcard or nickname,this can't be dynamic
+	//when src_type is idcard or nickname,this can't be dynamic
+	password_type: string;
 	//when password_type is static this length must >=10
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
 	//when password_type is dynamic and this is not empty,means verify dynamic password.
@@ -65,11 +66,16 @@ function LoginReqToJson(msg: LoginReq): string{
 export interface LoginResp{
 	token: string;
 	info: UserInfo|null|undefined;
+	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
+	//password:login success,but this account must finish the static password set
+	//success:nothing need to do
+	step: string;
 }
 function JsonToLoginResp(jsonobj: { [k:string]:any }): LoginResp{
 	let obj: LoginResp={
 		token:'',
 		info:null,
+		step:'',
 	}
 	//token
 	if(jsonobj['token']!=null&&jsonobj['token']!=undefined){
@@ -84,6 +90,13 @@ function JsonToLoginResp(jsonobj: { [k:string]:any }): LoginResp{
 			throw 'LoginResp.info must be UserInfo'
 		}
 		obj['info']=JsonToUserInfo(jsonobj['info'])
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'LoginResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
 	}
 	return obj
 }
