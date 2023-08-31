@@ -136,7 +136,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				if rest != 0 {
 					return &api.LoginResp{Step: "verify"}, nil
 				}
-				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
 			if e := util.SendTelCode(ctx, req.Src, code); e != nil {
@@ -168,7 +168,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				log.Error(ctx, "[Login] check failed", map[string]interface{}{"tel": req.Src, "code": req.Password, "rest": rest})
 				return nil, ecode.ErrPasswordWrong
 			} else if rest == 0 {
-				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
 			//verify success
@@ -204,7 +204,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				if rest != 0 {
 					return &api.LoginResp{Step: "verify"}, nil
 				}
-				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
 			if e := util.SendEmailCode(ctx, req.Src, code); e != nil {
@@ -236,7 +236,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				log.Error(ctx, "[Login] check failed", map[string]interface{}{"email": req.Src, "code": req.Password, "rest": rest})
 				return nil, ecode.ErrPasswordWrong
 			} else if rest == 0 {
-				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
 			//verify success
@@ -335,7 +335,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			log.Error(ctx, "[UpdateEmail] check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.NewEmailDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
@@ -364,7 +364,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			log.Error(ctx, "[UpdateEmail] check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.OldDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
@@ -386,7 +386,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			if rest != 0 {
 				return &api.UpdateEmailResp{Step: "newverify"}, nil
 			}
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendEmailCode(ctx, req.NewEmail, code); e != nil {
@@ -447,7 +447,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			if rest != 0 {
 				return &api.UpdateEmailResp{Step: "oldverify"}, nil
 			}
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendTelCode(ctx, user.Tel, code); e != nil {
@@ -491,7 +491,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			if rest != 0 {
 				return &api.UpdateEmailResp{Step: "oldverify"}, nil
 			}
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendEmailCode(ctx, user.Email, code); e != nil {
@@ -571,7 +571,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			if rest != 0 {
 				return &api.UpdateTelResp{Step: "oldverify"}, nil
 			}
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendTelCode(ctx, user.Tel, code); e != nil {
