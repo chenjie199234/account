@@ -20,16 +20,6 @@ func init() {
 	hcheckcode = hex.EncodeToString(h[:])
 }
 
-// actions
-const (
-	LoginEmail = "loginemail"
-	LoginTel   = "logintel"
-	OldEmail   = "oldemail"
-	OldTel     = "oldtel"
-	NewEmail   = "newemail"
-	NewTel     = "newtel"
-)
-
 func rediskey(target, action string) string {
 	return target + "_" + action + "_code"
 }
