@@ -4,8 +4,12 @@ package util
 const (
 	LoginEmail = "loginemail"
 	LoginTel   = "logintel"
-	OldEmail   = "oldemail"
-	OldTel     = "oldtel"
-	NewEmail   = "newemail"
-	NewTel     = "newtel"
+
+	UpdateEmailOldEmail = "updateemail_oldemail"
+	UpdateEmailOldTel   = "updateemail_oldtel"
+	NewEmail            = "newemail"
+
+	UpdateTelOldEmail = "updatetel_oldemail"
+	UpdateTelOldTel   = "updatetel_oldtel"
+	NewTel            = "newtel"
 )
