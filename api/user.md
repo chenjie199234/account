@@ -144,6 +144,10 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's old_receiver_type) and is waiting for verify
+	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
+	//success:nothing need to do
+	"step":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -165,7 +169,7 @@ Content-Type: application/json
 	"new_tel":"str",
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
-	"new_email_dynamic_password":"str"
+	"new_tel_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -178,6 +182,10 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's old_receiver_type) and is waiting for verify
+	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
+	//success:nothing need to do
+	"step":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

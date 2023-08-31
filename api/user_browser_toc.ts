@@ -152,9 +152,21 @@ function UpdateEmailReqToJson(msg: UpdateEmailReq): string{
 	return s
 }
 export interface UpdateEmailResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's old_receiver_type) and is waiting for verify
+	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
+	//success:nothing need to do
+	step: string;
 }
-function JsonToUpdateEmailResp(_jsonobj: { [k:string]:any }): UpdateEmailResp{
+function JsonToUpdateEmailResp(jsonobj: { [k:string]:any }): UpdateEmailResp{
 	let obj: UpdateEmailResp={
+		step:'',
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'UpdateEmailResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
 	}
 	return obj
 }
@@ -230,7 +242,7 @@ export interface UpdateTelReq{
 	new_tel: string;
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
-	new_email_dynamic_password: string;
+	new_tel_dynamic_password: string;
 }
 function UpdateTelReqToJson(msg: UpdateTelReq): string{
 	let s: string="{"
@@ -258,13 +270,13 @@ function UpdateTelReqToJson(msg: UpdateTelReq): string{
 		let vv=JSON.stringify(msg.new_tel)
 		s+='"new_tel":'+vv+','
 	}
-	//new_email_dynamic_password
-	if(msg.new_email_dynamic_password==null||msg.new_email_dynamic_password==undefined){
-		throw 'UpdateTelReq.new_email_dynamic_password must be string'
+	//new_tel_dynamic_password
+	if(msg.new_tel_dynamic_password==null||msg.new_tel_dynamic_password==undefined){
+		throw 'UpdateTelReq.new_tel_dynamic_password must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.new_email_dynamic_password)
-		s+='"new_email_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.new_tel_dynamic_password)
+		s+='"new_tel_dynamic_password":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"
@@ -274,9 +286,21 @@ function UpdateTelReqToJson(msg: UpdateTelReq): string{
 	return s
 }
 export interface UpdateTelResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's old_receiver_type) and is waiting for verify
+	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
+	//success:nothing need to do
+	step: string;
 }
-function JsonToUpdateTelResp(_jsonobj: { [k:string]:any }): UpdateTelResp{
+function JsonToUpdateTelResp(jsonobj: { [k:string]:any }): UpdateTelResp{
 	let obj: UpdateTelResp={
+		step:'',
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'UpdateTelResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
 	}
 	return obj
 }
