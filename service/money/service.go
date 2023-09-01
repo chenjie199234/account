@@ -78,9 +78,17 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 		log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{req.SrcType: req.Src, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	apilogs := make([]*api.MoneyLog, 0, len(logs))
+	resp := &api.GetUserMoneyLogsResp{
+		Page:      uint32(page),
+		Pagesize:  20,
+		Totalsize: uint32(totalsize),
+		Logs:      make([]*api.MoneyLog, 0, len(logs)),
+	}
+	if resp.Page == 0 {
+		resp.Pagesize = resp.Totalsize
+	}
 	for _, v := range logs {
-		apilogs = append(apilogs, &api.MoneyLog{
+		resp.Logs = append(resp.Logs, &api.MoneyLog{
 			UserId:      v.UserID.Hex(),
 			Action:      v.Action,
 			UniqueId:    v.UniqueID,
@@ -89,15 +97,6 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 			MoneyAmount: v.MoneyAmount,
 			Ctime:       uint32(v.LogID.Timestamp().Unix()),
 		})
-	}
-	resp := &api.GetUserMoneyLogsResp{
-		Page:      uint32(page),
-		Pagesize:  20,
-		Totalsize: uint32(totalsize),
-		Logs:      apilogs,
-	}
-	if resp.Page == 0 {
-		resp.Pagesize = resp.Totalsize
 	}
 	return resp, nil
 }
@@ -113,9 +112,17 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		log.Error(ctx, "[SelfMoneyLogs] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	apilogs := make([]*api.MoneyLog, 0, len(logs))
+	resp := &api.SelfMoneyLogsResp{
+		Page:      uint32(page),
+		Pagesize:  20,
+		Totalsize: uint32(totalsize),
+		Logs:      make([]*api.MoneyLog, 0, len(logs)),
+	}
+	if resp.Page == 0 {
+		resp.Pagesize = resp.Totalsize
+	}
 	for _, v := range logs {
-		apilogs = append(apilogs, &api.MoneyLog{
+		resp.Logs = append(resp.Logs, &api.MoneyLog{
 			UserId:      v.UserID.Hex(),
 			Action:      v.Action,
 			UniqueId:    v.UniqueID,
@@ -124,15 +131,6 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 			MoneyAmount: v.MoneyAmount,
 			Ctime:       uint32(v.LogID.Timestamp().Unix()),
 		})
-	}
-	resp := &api.SelfMoneyLogsResp{
-		Page:      uint32(page),
-		Pagesize:  20,
-		Totalsize: uint32(totalsize),
-		Logs:      apilogs,
-	}
-	if resp.Page == 0 {
-		resp.Pagesize = resp.Totalsize
 	}
 	return resp, nil
 }
