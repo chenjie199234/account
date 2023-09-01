@@ -11,7 +11,7 @@ type User struct {
 	NickName string             `bson:"nick_name"`
 	Tel      string             `bson:"tel"`
 	Email    string             `bson:"email"`
-	Money    map[string]int64   `bson:"money"`
+	Money    map[string]int32   `bson:"money"`
 }
 type UserTelIndex struct {
 	Tel    string             `bson:"tel"`

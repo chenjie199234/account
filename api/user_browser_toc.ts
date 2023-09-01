@@ -5,7 +5,6 @@
 // source: api/user.proto<br />
 
 import Axios from "axios";
-import Long from "long";
 
 export interface Error{
 	code: number;
@@ -97,6 +96,33 @@ function JsonToLoginResp(jsonobj: { [k:string]:any }): LoginResp{
 			throw 'LoginResp.step must be string'
 		}
 		obj['step']=jsonobj['step']
+	}
+	return obj
+}
+export interface SelfUserInfoReq{
+}
+function SelfUserInfoReqToJson(_msg: SelfUserInfoReq): string{
+	let s: string="{"
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface SelfUserInfoResp{
+	info: UserInfo|null|undefined;
+}
+function JsonToSelfUserInfoResp(jsonobj: { [k:string]:any }): SelfUserInfoResp{
+	let obj: SelfUserInfoResp={
+		info:null,
+	}
+	//info
+	if(jsonobj['info']!=null&&jsonobj['info']!=undefined){
+		if(typeof jsonobj['info']!='object'){
+			throw 'SelfUserInfoResp.info must be UserInfo'
+		}
+		obj['info']=JsonToUserInfo(jsonobj['info'])
 	}
 	return obj
 }
@@ -310,10 +336,10 @@ export interface UserInfo{
 	tel: string;
 	email: string;
 	nick_name: string;
-	//Warning!!!Type is int64,be careful of sign(+,-)
-	ctime: Long;
-	//Warning!!!map's value's type is int64,be careful of sign(+,-)
-	money: Map<string,Long>|null|undefined;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	ctime: number;
+	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
+	money: Map<string,number>|null|undefined;
 }
 function JsonToUserInfo(jsonobj: { [k:string]:any }): UserInfo{
 	let obj: UserInfo={
@@ -322,7 +348,7 @@ function JsonToUserInfo(jsonobj: { [k:string]:any }): UserInfo{
 		tel:'',
 		email:'',
 		nick_name:'',
-		ctime:Long.ZERO,
+		ctime:0,
 		money:null,
 	}
 	//user_id
@@ -362,66 +388,29 @@ function JsonToUserInfo(jsonobj: { [k:string]:any }): UserInfo{
 	}
 	//ctime
 	if(jsonobj['ctime']!=null&&jsonobj['ctime']!=undefined){
-		if(typeof jsonobj['ctime']=='number'){
-			if(!Number.isInteger(jsonobj['ctime'])){
-				throw 'UserInfo.ctime must be integer'
-			}
-			let tmp: Long=Long.ZERO
-			try{
-				tmp=Long.fromNumber(jsonobj['ctime'],false)
-			}catch(e){
-				throw 'UserInfo.ctime must be integer'
-			}
-			obj['ctime']=tmp
-		}else if(typeof jsonobj['ctime']=='string'){
-			let tmp:Long=Long.ZERO
-			try{
-				tmp=Long.fromString(jsonobj['ctime'],false)
-			}catch(e){
-				throw 'UserInfo.ctime must be integer'
-			}
-			if(tmp.toString()!=jsonobj['ctime']){
-				throw 'UserInfo.ctime overflow'
-			}
-			obj['ctime']=tmp
-		}else{
+		if(typeof jsonobj['ctime']!='number'||!Number.isInteger(jsonobj['ctime'])){
 			throw 'UserInfo.ctime must be integer'
+		}else if(jsonobj['ctime']>4294967295||jsonobj['ctime']<0){
+			throw 'UserInfo.ctime overflow'
 		}
+		obj['ctime']=jsonobj['ctime']
 	}
 	//money
 	if(jsonobj['money']!=null&&jsonobj['money']!=undefined){
 		if(typeof jsonobj['money']!='object'){
-			throw 'UserInfo.money must be Map<string,Long>|null|undefined'
+			throw 'UserInfo.money must be Map<string,number>|null|undefined'
 		}
 		for(let key of Object.keys(jsonobj['money'])){
 			let value=jsonobj['money'][key]
 			let k: string=key
-			if(typeof value=='number'){
-				if(!Number.isInteger(value)){
-					throw 'value in UserInfo.money must be integer'
-				}
-			}else if(typeof value!='string'){
-				throw 'value in UserInfo46money must be integer'
+			if(typeof value!='number'||!Number.isInteger(value)){
+				throw 'value in UserInfo.money must be integer'
+			}else if(value>2147483647&&value<-2147483648){
+				throw 'value in UserInfo.money overflow'
 			}
-			let v: Long=Long.ZERO
-			if(typeof value=='number'){
-				try{
-					v=Long.fromNumber(value,false)
-				}catch(e){
-					throw 'value in UserInfo46money must be integer'
-				}
-			}else{
-				try{
-					v=Long.fromString(value,false)
-				}catch(e){
-					throw 'value in UserInfo.money must be integer'
-				}
-				if(v.toString()!=value){
-					throw 'value in UserInfo.money overflow'
-				}
-			}
+			let v: number=value
 			if(obj['money']==undefined){
-				obj['money']=new Map<string,Long>
+				obj['money']=new Map<string,number>
 			}
 			obj['money'].set(k,v)
 		}
@@ -429,6 +418,7 @@ function JsonToUserInfo(jsonobj: { [k:string]:any }): UserInfo{
 	return obj
 }
 const _WebPathUserLogin: string ="/account.user/login";
+const _WebPathUserSelfUserInfo: string ="/account.user/self_user_info";
 const _WebPathUserUpdateStaticPassword: string ="/account.user/update_static_password";
 const _WebPathUserUpdateNickName: string ="/account.user/update_nick_name";
 const _WebPathUserUpdateEmail: string ="/account.user/update_email";
@@ -471,6 +461,58 @@ export class UserBrowserClientToC {
 		.then(function(response){
 			try{
 				let obj:LoginResp=JsonToLoginResp(response.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	self_user_info(header: { [k: string]: string },req: SelfUserInfoReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: SelfUserInfoResp)=>void){
+		if(!Number.isInteger(timeout)){
+			errorf({code:-2,msg:'timeout must be integer'})
+			return
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let body: string=''
+		try{
+			body=SelfUserInfoReqToJson(req)
+		}catch(e){
+			errorf({code:-2,msg:''+e})
+			return
+		}
+		let config={
+			url:_WebPathUserSelfUserInfo,
+			method: "post",
+			baseURL: this.host,
+			headers: header,
+			data: body,
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:SelfUserInfoResp=JsonToSelfUserInfoResp(response.data)
 				successf(obj)
 			}catch(e){
 				let err:Error={code:-1,msg:'response error'}

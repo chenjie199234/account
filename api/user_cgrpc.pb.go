@@ -16,6 +16,7 @@ import (
 
 var _CGrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CGrpcPathUserLogin = "/account.user/login"
+var _CGrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CGrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
 var _CGrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CGrpcPathUserUpdateEmail = "/account.user/update_email"
@@ -24,6 +25,7 @@ var _CGrpcPathUserUpdateTel = "/account.user/update_tel"
 type UserCGrpcClient interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
+	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
@@ -54,6 +56,16 @@ func (c *userCGrpcClient) Login(ctx context.Context, req *LoginReq) (*LoginResp,
 	}
 	resp := new(LoginResp)
 	if e := c.cc.Call(ctx, _CGrpcPathUserLogin, req, resp, metadata.GetMetadata(ctx)); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *userCGrpcClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq) (*SelfUserInfoResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(SelfUserInfoResp)
+	if e := c.cc.Call(ctx, _CGrpcPathUserSelfUserInfo, req, resp, metadata.GetMetadata(ctx)); e != nil {
 		return nil, e
 	}
 	return resp, nil
@@ -102,6 +114,7 @@ func (c *userCGrpcClient) UpdateTel(ctx context.Context, req *UpdateTelReq) (*Up
 type UserCGrpcServer interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
+	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
@@ -152,6 +165,25 @@ func _User_Login_CGrpcHandler(handler func(context.Context, *LoginReq) (*LoginRe
 		}
 		if resp == nil {
 			resp = new(LoginResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _User_SelfUserInfo_CGrpcHandler(handler func(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(SelfUserInfoReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/self_user_info]", map[string]interface{}{"error": e})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(SelfUserInfoResp)
 		}
 		ctx.Write(resp)
 	}
@@ -257,6 +289,7 @@ func RegisterUserCGrpcServer(engine *cgrpc.CGrpcServer, svc UserCGrpcServer, all
 	_ = allmids
 	engine.RegisterHandler("account.user", "get_user_info", _User_GetUserInfo_CGrpcHandler(svc.GetUserInfo))
 	engine.RegisterHandler("account.user", "login", _User_Login_CGrpcHandler(svc.Login))
+	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CGrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CGrpcHandler(svc.UpdateStaticPassword))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CGrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CGrpcHandler(svc.UpdateEmail))

@@ -5,63 +5,22 @@
 // source: api/money.proto<br />
 
 import Axios from "axios";
-import Long from "long";
 
 export interface Error{
 	code: number;
 	msg: string;
 }
 
-export interface GetMoneyLogsReq{
-	user_id: string;//Mongodb's ObjectId.Hex()
-}
-function GetMoneyLogsReqToForm(msg: GetMoneyLogsReq): string{
-	let s: string=""
-	//user_id
-	if(msg.user_id==null||msg.user_id==undefined){
-		throw 'GetMoneyLogsReq.user_id must be string'
-	}else{
-		s+='user_id='+encodeURIComponent(msg.user_id)+'&'
-	}
-	if(s.length!=0){
-		s=s.substr(0,s.length-1)
-	}
-	return s
-}
-export interface GetMoneyLogsResp{
-	logs: Array<MoneyLog|null|undefined>|null|undefined;
-}
-function JsonToGetMoneyLogsResp(jsonobj: { [k:string]:any }): GetMoneyLogsResp{
-	let obj: GetMoneyLogsResp={
-		logs:null,
-	}
-	//logs
-	if(jsonobj['logs']!=null&&jsonobj['logs']!=undefined){
-		if(!(jsonobj['logs'] instanceof Array)){
-			throw 'GetMoneyLogsResp.logs must be Array<MoneyLog>|null|undefined'
-		}
-		for(let element of jsonobj['logs']){
-			if(typeof element!='object'){
-				throw 'element in GetMoneyLogsResp.logs must be MoneyLog'
-			}
-			if(obj['logs']==null){
-				obj['logs']=new Array<MoneyLog>
-			}
-			obj['logs'].push(JsonToMoneyLog(element))
-		}
-	}
-	return obj
-}
 export interface MoneyLog{
 	user_id: string;
 	action: string;//spend,recharge,refund
 	unique_id: string;
 	src_dst: string;
 	money_type: string;
-	//Warning!!!Type is uint64,be careful of sign(+)
-	money_amount: Long;
-	//Warning!!!Type is int64,be careful of sign(+,-)
-	ctime: Long;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	money_amount: number;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	ctime: number;
 }
 function JsonToMoneyLog(jsonobj: { [k:string]:any }): MoneyLog{
 	let obj: MoneyLog={
@@ -70,8 +29,8 @@ function JsonToMoneyLog(jsonobj: { [k:string]:any }): MoneyLog{
 		unique_id:'',
 		src_dst:'',
 		money_type:'',
-		money_amount:Long.ZERO,
-		ctime:Long.ZERO,
+		money_amount:0,
+		ctime:0,
 	}
 	//user_id
 	if(jsonobj['user_id']!=null&&jsonobj['user_id']!=undefined){
@@ -110,66 +69,117 @@ function JsonToMoneyLog(jsonobj: { [k:string]:any }): MoneyLog{
 	}
 	//money_amount
 	if(jsonobj['money_amount']!=null&&jsonobj['money_amount']!=undefined){
-		if(typeof jsonobj['money_amount']=='number'){
-			if(!Number.isInteger(jsonobj['money_amount'])){
-				throw 'MoneyLog.money_amount must be integer'
-			}
-			if(jsonobj['money_amount']<0){
-				throw 'MoneyLog.money_amount overflow'
-			}
-			let tmp: Long=Long.ZERO
-			try{
-				tmp=Long.fromNumber(jsonobj['money_amount'],true)
-			}catch(e){
-				throw 'MoneyLog.money_amount must be integer'
-			}
-			obj['money_amount']=tmp
-		}else if(typeof jsonobj['money_amount']=='string'){
-			let tmp:Long=Long.ZERO
-			try{
-				tmp=Long.fromString(jsonobj['money_amount'],true)
-			}catch(e){
-				throw 'MoneyLog.money_amount must be integer'
-			}
-			if(tmp.toString()!=jsonobj['money_amount']){
-				throw 'MoneyLog.money_amount overflow'
-			}
-			obj['money_amount']=tmp
-		}else{
-			throw 'format wrong!MoneyLog.money_amount must be integer'
+		if(typeof jsonobj['money_amount']!='number'||!Number.isInteger(jsonobj['money_amount'])){
+			throw 'MoneyLog.money_amount must be integer'
+		}else if(jsonobj['money_amount']>4294967295||jsonobj['money_amount']<0){
+			throw 'MoneyLog.money_amount overflow'
 		}
+		obj['money_amount']=jsonobj['money_amount']
 	}
 	//ctime
 	if(jsonobj['ctime']!=null&&jsonobj['ctime']!=undefined){
-		if(typeof jsonobj['ctime']=='number'){
-			if(!Number.isInteger(jsonobj['ctime'])){
-				throw 'MoneyLog.ctime must be integer'
-			}
-			let tmp: Long=Long.ZERO
-			try{
-				tmp=Long.fromNumber(jsonobj['ctime'],false)
-			}catch(e){
-				throw 'MoneyLog.ctime must be integer'
-			}
-			obj['ctime']=tmp
-		}else if(typeof jsonobj['ctime']=='string'){
-			let tmp:Long=Long.ZERO
-			try{
-				tmp=Long.fromString(jsonobj['ctime'],false)
-			}catch(e){
-				throw 'MoneyLog.ctime must be integer'
-			}
-			if(tmp.toString()!=jsonobj['ctime']){
-				throw 'MoneyLog.ctime overflow'
-			}
-			obj['ctime']=tmp
-		}else{
+		if(typeof jsonobj['ctime']!='number'||!Number.isInteger(jsonobj['ctime'])){
 			throw 'MoneyLog.ctime must be integer'
+		}else if(jsonobj['ctime']>4294967295||jsonobj['ctime']<0){
+			throw 'MoneyLog.ctime overflow'
+		}
+		obj['ctime']=jsonobj['ctime']
+	}
+	return obj
+}
+export interface SelfMoneyLogsReq{
+	//0:return all logs
+	//>0:return the required page's data
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	page: number;
+	action: string;
+}
+function SelfMoneyLogsReqToJson(msg: SelfMoneyLogsReq): string{
+	let s: string="{"
+	//page
+	if(msg.page==null||msg.page==undefined||!Number.isInteger(msg.page)){
+		throw 'SelfMoneyLogsReq.page must be integer'
+	}else if(msg.page>4294967295||msg.page<0){
+		throw 'SelfMoneyLogsReq.page overflow'
+	}else{
+		s+='"page":'+msg.page+','
+	}
+	//action
+	if(msg.action==null||msg.action==undefined){
+		throw 'SelfMoneyLogsReq.action must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.action)
+		s+='"action":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface SelfMoneyLogsResp{
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	page: number;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	pagesize: number;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	totalsize: number;
+	logs: Array<MoneyLog|null|undefined>|null|undefined;
+}
+function JsonToSelfMoneyLogsResp(jsonobj: { [k:string]:any }): SelfMoneyLogsResp{
+	let obj: SelfMoneyLogsResp={
+		page:0,
+		pagesize:0,
+		totalsize:0,
+		logs:null,
+	}
+	//page
+	if(jsonobj['page']!=null&&jsonobj['page']!=undefined){
+		if(typeof jsonobj['page']!='number'||!Number.isInteger(jsonobj['page'])){
+			throw 'SelfMoneyLogsResp.page must be integer'
+		}else if(jsonobj['page']>4294967295||jsonobj['page']<0){
+			throw 'SelfMoneyLogsResp.page overflow'
+		}
+		obj['page']=jsonobj['page']
+	}
+	//pagesize
+	if(jsonobj['pagesize']!=null&&jsonobj['pagesize']!=undefined){
+		if(typeof jsonobj['pagesize']!='number'||!Number.isInteger(jsonobj['pagesize'])){
+			throw 'SelfMoneyLogsResp.pagesize must be integer'
+		}else if(jsonobj['pagesize']>4294967295||jsonobj['pagesize']<0){
+			throw 'SelfMoneyLogsResp.pagesize overflow'
+		}
+		obj['pagesize']=jsonobj['pagesize']
+	}
+	//totalsize
+	if(jsonobj['totalsize']!=null&&jsonobj['totalsize']!=undefined){
+		if(typeof jsonobj['totalsize']!='number'||!Number.isInteger(jsonobj['totalsize'])){
+			throw 'SelfMoneyLogsResp.totalsize must be integer'
+		}else if(jsonobj['totalsize']>4294967295||jsonobj['totalsize']<0){
+			throw 'SelfMoneyLogsResp.totalsize overflow'
+		}
+		obj['totalsize']=jsonobj['totalsize']
+	}
+	//logs
+	if(jsonobj['logs']!=null&&jsonobj['logs']!=undefined){
+		if(!(jsonobj['logs'] instanceof Array)){
+			throw 'SelfMoneyLogsResp.logs must be Array<MoneyLog>|null|undefined'
+		}
+		for(let element of jsonobj['logs']){
+			if(typeof element!='object'){
+				throw 'element in SelfMoneyLogsResp.logs must be MoneyLog'
+			}
+			if(obj['logs']==null){
+				obj['logs']=new Array<MoneyLog>
+			}
+			obj['logs'].push(JsonToMoneyLog(element))
 		}
 	}
 	return obj
 }
-const _WebPathMoneyGetMoneyLogs: string ="/account.money/get_money_logs";
+const _WebPathMoneySelfMoneyLogs: string ="/account.money/self_money_logs";
 //ToC means this is used for users
 export class MoneyBrowserClientToC {
 	constructor(host: string){
@@ -180,7 +190,7 @@ export class MoneyBrowserClientToC {
 	}
 	//timeout must be integer,timeout's unit is millisecond
 	//don't set Content-Type in header
-	get_money_logs(header: { [k: string]: string },req: GetMoneyLogsReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: GetMoneyLogsResp)=>void){
+	self_money_logs(header: { [k: string]: string },req: SelfMoneyLogsReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: SelfMoneyLogsResp)=>void){
 		if(!Number.isInteger(timeout)){
 			errorf({code:-2,msg:'timeout must be integer'})
 			return
@@ -188,25 +198,26 @@ export class MoneyBrowserClientToC {
 		if(header==null||header==undefined){
 			header={}
 		}
-		header["Content-Type"] = "application/x-www-form-urlencoded"
-		let form: string=''
+		header["Content-Type"] = "application/json"
+		let body: string=''
 		try{
-			form=GetMoneyLogsReqToForm(req)
+			body=SelfMoneyLogsReqToJson(req)
 		}catch(e){
 			errorf({code:-2,msg:''+e})
 			return
 		}
 		let config={
-			url:_WebPathMoneyGetMoneyLogs+'?'+form,
-			method: "get",
+			url:_WebPathMoneySelfMoneyLogs,
+			method: "post",
 			baseURL: this.host,
 			headers: header,
+			data: body,
 			timeout: timeout,
 		}
 		Axios.request(config)
 		.then(function(response){
 			try{
-				let obj:GetMoneyLogsResp=JsonToGetMoneyLogsResp(response.data)
+				let obj:SelfMoneyLogsResp=JsonToSelfMoneyLogsResp(response.data)
 				successf(obj)
 			}catch(e){
 				let err:Error={code:-1,msg:'response error'}

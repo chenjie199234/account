@@ -14,13 +14,15 @@ import (
 	metadata "github.com/chenjie199234/Corelib/metadata"
 )
 
-var _CGrpcPathMoneyGetMoneyLogs = "/account.money/get_money_logs"
+var _CGrpcPathMoneyGetUserMoneyLogs = "/account.money/get_user_money_logs"
+var _CGrpcPathMoneySelfMoneyLogs = "/account.money/self_money_logs"
 var _CGrpcPathMoneyRechargeMoney = "/account.money/recharge_money"
 var _CGrpcPathMoneySpendMoney = "/account.money/spend_money"
 var _CGrpcPathMoneyRefundMoney = "/account.money/refund_money"
 
 type MoneyCGrpcClient interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
+	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)
 	RechargeMoney(context.Context, *RechargeMoneyReq) (*RechargeMoneyResp, error)
 	SpendMoney(context.Context, *SpendMoneyReq) (*SpendMoneyResp, error)
 	RefundMoney(context.Context, *RefundMoneyReq) (*RefundMoneyResp, error)
@@ -34,12 +36,22 @@ func NewMoneyCGrpcClient(c *cgrpc.CGrpcClient) MoneyCGrpcClient {
 	return &moneyCGrpcClient{cc: c}
 }
 
-func (c *moneyCGrpcClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq) (*GetMoneyLogsResp, error) {
+func (c *moneyCGrpcClient) GetUserMoneyLogs(ctx context.Context, req *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
-	resp := new(GetMoneyLogsResp)
-	if e := c.cc.Call(ctx, _CGrpcPathMoneyGetMoneyLogs, req, resp, metadata.GetMetadata(ctx)); e != nil {
+	resp := new(GetUserMoneyLogsResp)
+	if e := c.cc.Call(ctx, _CGrpcPathMoneyGetUserMoneyLogs, req, resp, metadata.GetMetadata(ctx)); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *moneyCGrpcClient) SelfMoneyLogs(ctx context.Context, req *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(SelfMoneyLogsResp)
+	if e := c.cc.Call(ctx, _CGrpcPathMoneySelfMoneyLogs, req, resp, metadata.GetMetadata(ctx)); e != nil {
 		return nil, e
 	}
 	return resp, nil
@@ -76,22 +88,23 @@ func (c *moneyCGrpcClient) RefundMoney(ctx context.Context, req *RefundMoneyReq)
 }
 
 type MoneyCGrpcServer interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
+	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)
 	RechargeMoney(context.Context, *RechargeMoneyReq) (*RechargeMoneyResp, error)
 	SpendMoney(context.Context, *SpendMoneyReq) (*SpendMoneyResp, error)
 	RefundMoney(context.Context, *RefundMoneyReq) (*RefundMoneyResp, error)
 }
 
-func _Money_GetMoneyLogs_CGrpcHandler(handler func(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)) cgrpc.OutsideHandler {
+func _Money_GetUserMoneyLogs_CGrpcHandler(handler func(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)) cgrpc.OutsideHandler {
 	return func(ctx *cgrpc.Context) {
-		req := new(GetMoneyLogsReq)
+		req := new(GetUserMoneyLogsReq)
 		if e := ctx.DecodeReq(req); e != nil {
-			log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": e})
+			log.Error(ctx, "[/account.money/get_user_money_logs]", map[string]interface{}{"error": e})
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": errstr})
+			log.Error(ctx, "[/account.money/get_user_money_logs]", map[string]interface{}{"error": errstr})
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -101,7 +114,31 @@ func _Money_GetMoneyLogs_CGrpcHandler(handler func(context.Context, *GetMoneyLog
 			return
 		}
 		if resp == nil {
-			resp = new(GetMoneyLogsResp)
+			resp = new(GetUserMoneyLogsResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _Money_SelfMoneyLogs_CGrpcHandler(handler func(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(SelfMoneyLogsReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": e})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(SelfMoneyLogsResp)
 		}
 		ctx.Write(resp)
 	}
@@ -166,7 +203,8 @@ func _Money_RefundMoney_CGrpcHandler(handler func(context.Context, *RefundMoneyR
 func RegisterMoneyCGrpcServer(engine *cgrpc.CGrpcServer, svc MoneyCGrpcServer, allmids map[string]cgrpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.money", "get_money_logs", _Money_GetMoneyLogs_CGrpcHandler(svc.GetMoneyLogs))
+	engine.RegisterHandler("account.money", "get_user_money_logs", _Money_GetUserMoneyLogs_CGrpcHandler(svc.GetUserMoneyLogs))
+	engine.RegisterHandler("account.money", "self_money_logs", _Money_SelfMoneyLogs_CGrpcHandler(svc.SelfMoneyLogs))
 	engine.RegisterHandler("account.money", "recharge_money", _Money_RechargeMoney_CGrpcHandler(svc.RechargeMoney))
 	engine.RegisterHandler("account.money", "spend_money", _Money_SpendMoney_CGrpcHandler(svc.SpendMoney))
 	engine.RegisterHandler("account.money", "refund_money", _Money_RefundMoney_CGrpcHandler(svc.RefundMoney))

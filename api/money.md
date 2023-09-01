@@ -5,19 +5,22 @@
 // source: api/money.proto<br />
 
 ## money
-### get_money_logs
+### self_money_logs
 
 #### Req:
 ```
-Path:         /account.money/get_money_logs
-Method:       GET
-Content-Type: application/x-www-form-urlencoded
-//don't forget the url encode
+Path:         /account.money/self_money_logs
+Method:       POST
+Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
-//Mongodb's ObjectId.Hex()
-//string
-//value length must == 24
-user_id=str
+{
+	//0:return all logs
+	//>0:return the required page's data
+	//uint32
+	"page":0,
+	//value must in ["spend","recharge","refund","all"]
+	"action":"str"
+}
 ------------------------------------------------------------------------------------------------------------
 ```
 #### Resp:
@@ -29,6 +32,12 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
+	//uint32
+	"page":0,
+	//uint32
+	"pagesize":0,
+	//uint32
+	"totalsize":0,
 	//object money_log
 	"logs":[{},{}]
 }
@@ -40,10 +49,10 @@ money_log: {
 	"unique_id":"str",
 	"src_dst":"str",
 	"money_type":"str",
-	//uint64 use string to avoid overflow
-	"money_amount":"0",
-	//int64 use string to avoid overflow
-	"ctime":"0"
+	//uint32
+	"money_amount":0,
+	//uint32
+	"ctime":0
 }
 ------------------------------------------------------------------------------------------------------------
 ```

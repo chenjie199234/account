@@ -16,13 +16,15 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-var _CrpcPathMoneyGetMoneyLogs = "/account.money/get_money_logs"
+var _CrpcPathMoneyGetUserMoneyLogs = "/account.money/get_user_money_logs"
+var _CrpcPathMoneySelfMoneyLogs = "/account.money/self_money_logs"
 var _CrpcPathMoneyRechargeMoney = "/account.money/recharge_money"
 var _CrpcPathMoneySpendMoney = "/account.money/spend_money"
 var _CrpcPathMoneyRefundMoney = "/account.money/refund_money"
 
 type MoneyCrpcClient interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
+	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)
 	RechargeMoney(context.Context, *RechargeMoneyReq) (*RechargeMoneyResp, error)
 	SpendMoney(context.Context, *SpendMoneyReq) (*SpendMoneyResp, error)
 	RefundMoney(context.Context, *RefundMoneyReq) (*RefundMoneyResp, error)
@@ -36,16 +38,38 @@ func NewMoneyCrpcClient(c *crpc.CrpcClient) MoneyCrpcClient {
 	return &moneyCrpcClient{cc: c}
 }
 
-func (c *moneyCrpcClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq) (*GetMoneyLogsResp, error) {
+func (c *moneyCrpcClient) GetUserMoneyLogs(ctx context.Context, req *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	reqd, _ := proto.Marshal(req)
-	respd, e := c.cc.Call(ctx, _CrpcPathMoneyGetMoneyLogs, reqd, metadata.GetMetadata(ctx))
+	respd, e := c.cc.Call(ctx, _CrpcPathMoneyGetUserMoneyLogs, reqd, metadata.GetMetadata(ctx))
 	if e != nil {
 		return nil, e
 	}
-	resp := new(GetMoneyLogsResp)
+	resp := new(GetUserMoneyLogsResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *moneyCrpcClient) SelfMoneyLogs(ctx context.Context, req *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathMoneySelfMoneyLogs, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(SelfMoneyLogsResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -126,22 +150,23 @@ func (c *moneyCrpcClient) RefundMoney(ctx context.Context, req *RefundMoneyReq) 
 }
 
 type MoneyCrpcServer interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
+	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)
 	RechargeMoney(context.Context, *RechargeMoneyReq) (*RechargeMoneyResp, error)
 	SpendMoney(context.Context, *SpendMoneyReq) (*SpendMoneyResp, error)
 	RefundMoney(context.Context, *RefundMoneyReq) (*RefundMoneyResp, error)
 }
 
-func _Money_GetMoneyLogs_CrpcHandler(handler func(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)) crpc.OutsideHandler {
+func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
-		req := new(GetMoneyLogsReq)
+		req := new(GetUserMoneyLogsReq)
 		reqbody := ctx.GetBody()
 		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
 				req.Reset()
 				if e := proto.Unmarshal(reqbody, req); e != nil {
-					log.Error(ctx, "[/account.money/get_money_logs] json and proto format decode both failed", nil)
+					log.Error(ctx, "[/account.money/get_user_money_logs] json and proto format decode both failed", nil)
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -151,7 +176,7 @@ func _Money_GetMoneyLogs_CrpcHandler(handler func(context.Context, *GetMoneyLogs
 		} else if e := proto.Unmarshal(reqbody, req); e != nil {
 			req.Reset()
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
-				log.Error(ctx, "[/account.money/get_money_logs] json and proto format decode both failed", nil)
+				log.Error(ctx, "[/account.money/get_user_money_logs] json and proto format decode both failed", nil)
 				ctx.Abort(cerror.ErrReq)
 				return
 			} else {
@@ -159,7 +184,7 @@ func _Money_GetMoneyLogs_CrpcHandler(handler func(context.Context, *GetMoneyLogs
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": errstr})
+			log.Error(ctx, "[/account.money/get_user_money_logs]", map[string]interface{}{"error": errstr})
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -169,7 +194,55 @@ func _Money_GetMoneyLogs_CrpcHandler(handler func(context.Context, *GetMoneyLogs
 			return
 		}
 		if resp == nil {
-			resp = new(GetMoneyLogsResp)
+			resp = new(GetUserMoneyLogsResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _Money_SelfMoneyLogs_CrpcHandler(handler func(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(SelfMoneyLogsReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.money/self_money_logs] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.money/self_money_logs] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(SelfMoneyLogsResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -312,7 +385,8 @@ func _Money_RefundMoney_CrpcHandler(handler func(context.Context, *RefundMoneyRe
 func RegisterMoneyCrpcServer(engine *crpc.CrpcServer, svc MoneyCrpcServer, allmids map[string]crpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.money", "get_money_logs", _Money_GetMoneyLogs_CrpcHandler(svc.GetMoneyLogs))
+	engine.RegisterHandler("account.money", "get_user_money_logs", _Money_GetUserMoneyLogs_CrpcHandler(svc.GetUserMoneyLogs))
+	engine.RegisterHandler("account.money", "self_money_logs", _Money_SelfMoneyLogs_CrpcHandler(svc.SelfMoneyLogs))
 	engine.RegisterHandler("account.money", "recharge_money", _Money_RechargeMoney_CrpcHandler(svc.RechargeMoney))
 	engine.RegisterHandler("account.money", "spend_money", _Money_SpendMoney_CrpcHandler(svc.SpendMoney))
 	engine.RegisterHandler("account.money", "refund_money", _Money_RefundMoney_CrpcHandler(svc.RefundMoney))

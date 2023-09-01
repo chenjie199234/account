@@ -11,5 +11,5 @@ type MoneyLog struct {
 	UniqueID    string             `bson:"unique_id"`
 	SrcDst      string             `bson:"src_dst"`
 	MoneyType   string             `bson:"money_type"`
-	MoneyAmount string             `bson:"money_amount"`
+	MoneyAmount uint32             `bson:"money_amount"`
 }

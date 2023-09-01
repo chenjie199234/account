@@ -27,6 +27,10 @@ service user{
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
+	rpc self_user_info(self_user_info_req)returns(self_user_info_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc update_static_password(update_static_password_req)returns(update_static_password_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
@@ -59,8 +63,8 @@ message user_info{
 	string tel=3;
 	string email=4;
 	string nick_name=5;
-	int64 ctime=6;
-	map<string,int64> money=7;
+	uint32 ctime=6;
+	map<string,int32> money=7;
 }
 message get_user_info_req{
 	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
@@ -86,6 +90,11 @@ message login_resp{
 	//password:login success,but this account must finish the static password set
 	//success:nothing need to do
 	string step=3;
+}
+message self_user_info_req{
+}
+message self_user_info_resp{
+	user_info info=1;
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password

@@ -8,24 +8,21 @@ package api
 
 import (
 	context "context"
-	json "encoding/json"
 	cerror "github.com/chenjie199234/Corelib/cerror"
 	log "github.com/chenjie199234/Corelib/log"
 	metadata "github.com/chenjie199234/Corelib/metadata"
-	pool "github.com/chenjie199234/Corelib/pool"
 	web "github.com/chenjie199234/Corelib/web"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
 	io "io"
 	http "net/http"
-	url "net/url"
 	strings "strings"
 )
 
-var _WebPathMoneyGetMoneyLogs = "/account.money/get_money_logs"
+var _WebPathMoneySelfMoneyLogs = "/account.money/self_money_logs"
 
 type MoneyWebClient interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq, http.Header) (*GetMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq, http.Header) (*SelfMoneyLogsResp, error)
 }
 
 type moneyWebClient struct {
@@ -36,28 +33,17 @@ func NewMoneyWebClient(c *web.WebClient) MoneyWebClient {
 	return &moneyWebClient{cc: c}
 }
 
-func (c *moneyWebClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq, header http.Header) (*GetMoneyLogsResp, error) {
+func (c *moneyWebClient) SelfMoneyLogs(ctx context.Context, req *SelfMoneyLogsReq, header http.Header) (*SelfMoneyLogsResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	if header == nil {
 		header = make(http.Header)
 	}
-	header.Set("Content-Type", "application/x-www-form-urlencoded")
+	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
-	query := pool.GetBuffer()
-	defer pool.PutBuffer(query)
-	query.AppendString("user_id=")
-	if req.GetUserId() != "" {
-		query.AppendString(url.QueryEscape(req.GetUserId()))
-	}
-	query.AppendByte('&')
-	querystr := query.String()
-	if len(querystr) > 0 {
-		// drop last &
-		querystr = querystr[:len(querystr)-1]
-	}
-	r, e := c.cc.Get(ctx, _WebPathMoneyGetMoneyLogs, querystr, header, metadata.GetMetadata(ctx))
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathMoneySelfMoneyLogs, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -66,7 +52,7 @@ func (c *moneyWebClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq,
 	if e != nil {
 		return nil, cerror.ConvertStdError(e)
 	}
-	resp := new(GetMoneyLogsResp)
+	resp := new(SelfMoneyLogsResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -81,37 +67,47 @@ func (c *moneyWebClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq,
 }
 
 type MoneyWebServer interface {
-	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
+	SelfMoneyLogs(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)
 }
 
-func _Money_GetMoneyLogs_WebHandler(handler func(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)) web.OutsideHandler {
+func _Money_SelfMoneyLogs_WebHandler(handler func(context.Context, *SelfMoneyLogsReq) (*SelfMoneyLogsResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
-		req := new(GetMoneyLogsReq)
-		if e := ctx.ParseForm(); e != nil {
-			log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": e})
+		req := new(SelfMoneyLogsReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": "POST,PUT,PATCH only support application/json or application/x-protobuf"})
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
-		data := pool.GetBuffer()
-		defer pool.PutBuffer(data)
-		data.AppendByte('{')
-		if form := ctx.GetForm("user_id"); len(form) != 0 {
-			data.AppendString("\"user_id\":")
-			// transfer json escape
-			formb, _ := json.Marshal(form)
-			data.AppendBytes(formb)
-			data.AppendByte(',')
-		}
-		if data.Len() > 1 {
-			data.Bytes()[data.Len()-1] = '}'
-			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data.Bytes(), req); e != nil {
-				log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": e})
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.money/get_money_logs]", map[string]interface{}{"error": errstr})
+			log.Error(ctx, "[/account.money/self_money_logs]", map[string]interface{}{"error": errstr})
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -122,7 +118,7 @@ func _Money_GetMoneyLogs_WebHandler(handler func(context.Context, *GetMoneyLogsR
 			return
 		}
 		if resp == nil {
-			resp = new(GetMoneyLogsResp)
+			resp = new(SelfMoneyLogsResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -146,7 +142,7 @@ func RegisterMoneyWebServer(engine *web.WebServer, svc MoneyWebServer, allmids m
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _Money_GetMoneyLogs_WebHandler(svc.GetMoneyLogs))
-		engine.Get(_WebPathMoneyGetMoneyLogs, mids...)
+		mids = append(mids, _Money_SelfMoneyLogs_WebHandler(svc.SelfMoneyLogs))
+		engine.Post(_WebPathMoneySelfMoneyLogs, mids...)
 	}
 }

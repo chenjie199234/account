@@ -22,8 +22,10 @@ service money{
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
 
-	rpc get_money_logs(get_money_logs_req)returns(get_money_logs_resp){
-		option (pbex.method)="get";
+	rpc get_user_money_logs(get_user_money_logs_req)returns(get_user_money_logs_resp);
+
+	rpc self_money_logs(self_money_logs_req)returns(self_money_logs_resp){
+		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
 
@@ -46,14 +48,34 @@ message money_log{
 	string unique_id=3;
 	string src_dst=4;
 	string money_type=5;
-	uint64 money_amount=6;
-	int64 ctime=7;
+	uint32 money_amount=6;
+	uint32 ctime=7;
 }
-message get_money_logs_req{
-	string user_id=1[(pbex.string_bytes_len_eq)=24];//Mongodb's ObjectId.Hex()
+message get_user_money_logs_req{
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
+	string src=2[(pbex.string_bytes_len_gt)=0];
+	//0:return all logs
+	//>0:return the required page's data
+	uint32 page=3;
+	string action=4[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
 }
-message get_money_logs_resp{
-	repeated money_log logs=1;
+message get_user_money_logs_resp{
+	uint32 page=1;
+	uint32 pagesize=2;
+	uint32 totalsize=3;
+	repeated money_log logs=4;
+}
+message self_money_logs_req{
+	//0:return all logs
+	//>0:return the required page's data
+	uint32 page=1;
+	string action=4[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
+}
+message self_money_logs_resp{
+	uint32 page=1;
+	uint32 pagesize=2;
+	uint32 totalsize=3;
+	repeated money_log logs=4;
 }
 message recharge_money_req{
 

@@ -34,7 +34,7 @@ func Start() *Service {
 	return &Service{
 		stop: graceful.New(),
 
-		userDao: userdao.NewDao(config.GetSql("user_sql"), config.GetRedis("user_redis"), config.GetMongo("user_mongo")),
+		userDao: userdao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 	}
 }
 func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*api.GetUserInfoResp, error) {
@@ -79,13 +79,13 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 	}
 	return &api.GetUserInfoResp{
 		Info: &api.UserInfo{
-			UserId:   req.Src,
+			UserId:   user.UserID.Hex(),
 			Idcard:   user.IDCard,
 			Tel:      user.Tel,
 			Email:    user.Email,
 			NickName: user.NickName,
 			Money:    user.Money,
-			Ctime:    user.UserID.Timestamp().Unix(),
+			Ctime:    uint32(user.UserID.Timestamp().Unix()),
 		},
 	}, nil
 }
@@ -114,7 +114,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		}
 		//static
 		if user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"nickname": req.Src, "error": e})
+			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
@@ -274,7 +274,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			Tel:      util.MaskTel(user.Tel),
 			Email:    util.MaskEmail(user.Email),
 			NickName: user.NickName,
-			Ctime:    user.UserID.Timestamp().Unix(),
+			Ctime:    uint32(user.UserID.Timestamp().Unix()),
 			Money:    user.Money,
 		},
 		Step: "success",
@@ -284,6 +284,30 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	}
 	log.Info(ctx, "[Login] success", map[string]interface{}{"operator": user.UserID.Hex()})
 	return resp, nil
+}
+func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*api.SelfUserInfoResp, error) {
+	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	if e != nil {
+		log.Error(ctx, "[SelfUserInfo] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		return nil, ecode.ErrToken
+	}
+	user, e := s.userDao.MongoGetUserByUserID(ctx, operator)
+	if e != nil {
+		log.Error(ctx, "[SelfUserInfo] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	return &api.SelfUserInfoResp{
+		Info: &api.UserInfo{
+			UserId:   user.UserID.Hex(),
+			Idcard:   user.IDCard,
+			Tel:      user.Tel,
+			Email:    user.Email,
+			NickName: user.NickName,
+			Money:    user.Money,
+			Ctime:    uint32(user.UserID.Timestamp().Unix()),
+		},
+	}, nil
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)

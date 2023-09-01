@@ -18,6 +18,7 @@ import (
 
 var _CrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CrpcPathUserLogin = "/account.user/login"
+var _CrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
 var _CrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CrpcPathUserUpdateEmail = "/account.user/update_email"
@@ -26,6 +27,7 @@ var _CrpcPathUserUpdateTel = "/account.user/update_tel"
 type UserCrpcClient interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
+	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
@@ -72,6 +74,28 @@ func (c *userCrpcClient) Login(ctx context.Context, req *LoginReq) (*LoginResp, 
 		return nil, e
 	}
 	resp := new(LoginResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userCrpcClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq) (*SelfUserInfoResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserSelfUserInfo, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(SelfUserInfoResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -176,6 +200,7 @@ func (c *userCrpcClient) UpdateTel(ctx context.Context, req *UpdateTelReq) (*Upd
 type UserCrpcServer interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
+	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
@@ -268,6 +293,49 @@ func _User_Login_CrpcHandler(handler func(context.Context, *LoginReq) (*LoginRes
 		}
 		if resp == nil {
 			resp = new(LoginResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _User_SelfUserInfo_CrpcHandler(handler func(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(SelfUserInfoReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/self_user_info] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/self_user_info] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(SelfUserInfoResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -475,6 +543,7 @@ func RegisterUserCrpcServer(engine *crpc.CrpcServer, svc UserCrpcServer, allmids
 	_ = allmids
 	engine.RegisterHandler("account.user", "get_user_info", _User_GetUserInfo_CrpcHandler(svc.GetUserInfo))
 	engine.RegisterHandler("account.user", "login", _User_Login_CrpcHandler(svc.Login))
+	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CrpcHandler(svc.UpdateStaticPassword))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CrpcHandler(svc.UpdateEmail))

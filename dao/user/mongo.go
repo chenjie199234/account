@@ -45,7 +45,7 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 		NickName: "",
 		Tel:      tel,
 		Email:    "",
-		Money:    map[string]int64{},
+		Money:    map[string]int32{},
 	}
 	var r *mongo.InsertOneResult
 	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
@@ -87,7 +87,7 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 		NickName: "",
 		Tel:      "",
 		Email:    email,
-		Money:    map[string]int64{},
+		Money:    map[string]int32{},
 	}
 	var r *mongo.InsertOneResult
 	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
