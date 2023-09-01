@@ -13,7 +13,7 @@ import (
 
 // action: spend/recharge/refund/all
 // page: 0:means return all,>0:means return the required page,if page overflow,the last page will return
-func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, action string, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
+func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, action string, pagesize, page int64) ([]*model.MoneyLog, int64, int64, error) {
 	filter := bson.M{"user_id": userid}
 	if action == "spend" || action == "recharge" || action == "refund" {
 		filter["action"] = action
@@ -30,19 +30,19 @@ func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, 
 	if page == 0 {
 		cur, e = d.mongo.Database("account").Collection("money_log").Find(ctx, filter, opts)
 	} else {
-		skip := int64((page - 1) * pagesize)
+		skip := (page - 1) * pagesize
 		if skip >= totalsize {
-			if totalsize%int64(pagesize) > 0 {
-				page = uint32(totalsize/int64(pagesize) + 1)
+			if totalsize%pagesize > 0 {
+				page = totalsize/pagesize + 1
 			} else {
-				page = uint32(totalsize / int64(pagesize))
+				page = totalsize / pagesize
 			}
-			skip = int64((page - 1) * pagesize)
+			skip = (page - 1) * pagesize
 		}
-		opts = opts.SetSkip(skip).SetLimit(int64(pagesize))
+		opts = opts.SetSkip(skip).SetLimit(pagesize)
 		cur, e = d.mongo.Database("account").Collection("money_log").Find(ctx, filter, opts)
 	}
 	result := make([]*model.MoneyLog, 0, cur.RemainingBatchLength())
 	e = cur.All(ctx, &result)
-	return result, page, uint32(totalsize), e
+	return result, page, totalsize, e
 }

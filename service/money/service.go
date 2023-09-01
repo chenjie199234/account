@@ -73,7 +73,7 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 		}
 		userid = user.UserID
 	}
-	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, userid, req.Action, 20, req.Page)
+	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, userid, req.Action, 20, int64(req.Page))
 	if e != nil {
 		log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{req.SrcType: req.Src, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -91,9 +91,9 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 		})
 	}
 	return &api.GetUserMoneyLogsResp{
-		Page:      page,
+		Page:      uint32(page),
 		Pagesize:  20,
-		Totalsize: totalsize,
+		Totalsize: uint32(totalsize),
 		Logs:      apilogs,
 	}, nil
 }
@@ -104,7 +104,7 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		log.Error(ctx, "[SelfMoneyLogs] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, operator, req.Action, 20, req.Page)
+	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, operator, req.Action, 20, int64(req.Page))
 	if e != nil {
 		log.Error(ctx, "[SelfMoneyLogs] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -122,9 +122,9 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		})
 	}
 	return &api.SelfMoneyLogsResp{
-		Page:      page,
+		Page:      uint32(page),
 		Pagesize:  20,
-		Totalsize: totalsize,
+		Totalsize: uint32(totalsize),
 		Logs:      apilogs,
 	}, nil
 }
