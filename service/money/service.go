@@ -90,12 +90,16 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 			Ctime:       uint32(v.LogID.Timestamp().Unix()),
 		})
 	}
-	return &api.GetUserMoneyLogsResp{
+	resp := &api.GetUserMoneyLogsResp{
 		Page:      uint32(page),
 		Pagesize:  20,
 		Totalsize: uint32(totalsize),
 		Logs:      apilogs,
-	}, nil
+	}
+	if resp.Page == 0 {
+		resp.Pagesize = resp.Totalsize
+	}
+	return resp, nil
 }
 func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) (*api.SelfMoneyLogsResp, error) {
 	md := metadata.GetMetadata(ctx)
@@ -121,12 +125,16 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 			Ctime:       uint32(v.LogID.Timestamp().Unix()),
 		})
 	}
-	return &api.SelfMoneyLogsResp{
+	resp := &api.SelfMoneyLogsResp{
 		Page:      uint32(page),
 		Pagesize:  20,
 		Totalsize: uint32(totalsize),
 		Logs:      apilogs,
-	}, nil
+	}
+	if resp.Page == 0 {
+		resp.Pagesize = resp.Totalsize
+	}
+	return resp, nil
 }
 func (s *Service) RechargeMoney(ctx context.Context, req *api.RechargeMoneyReq) (*api.RechargeMoneyResp, error) {
 	//TODO
