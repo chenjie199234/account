@@ -182,7 +182,7 @@ func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*mod
 	}
 	return user, nil
 }
-func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID, newTel string) (e error) {
+func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID, newTel string) (oldTel string, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -216,10 +216,12 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 		}
 		return
 	}
-	_, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid})
+	if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid}); e == nil {
+		oldTel = user.Tel
+	}
 	return
 }
-func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (e error) {
+func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (oldEmail string, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -253,10 +255,12 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 		}
 		return
 	}
-	_, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid})
+	if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid}); e == nil {
+		oldEmail = user.Email
+	}
 	return
 }
-func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (e error) {
+func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (update bool, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -295,6 +299,7 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 		}
 		return
 	}
+	update = true
 	return
 }
 func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (oldNickName string, e error) {
@@ -325,14 +330,15 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 	if user.NickName == newNickName {
 		return
 	}
-	oldNickName = user.NickName
 	if _, e = d.mongo.Database("account").Collection("user_nick_name_index").InsertOne(sctx, bson.M{"nick_name": newNickName, "user_id": userid}); e != nil {
 		if mongo.IsDuplicateKeyError(e) {
 			e = ecode.ErrNickNameAlreadyUsed
 		}
 		return
 	}
-	_, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid})
+	if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid}); e == nil {
+		oldNickName = user.NickName
+	}
 	return
 }
 func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.ObjectID, oldpassword, newpassword string) (e error) {

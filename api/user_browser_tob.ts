@@ -241,6 +241,33 @@ function JsonToUpdateEmailResp(jsonobj: { [k:string]:any }): UpdateEmailResp{
 	}
 	return obj
 }
+export interface UpdateIdcardReq{
+	new_idcard: string;
+}
+function UpdateIdcardReqToJson(msg: UpdateIdcardReq): string{
+	let s: string="{"
+	//new_idcard
+	if(msg.new_idcard==null||msg.new_idcard==undefined){
+		throw 'UpdateIdcardReq.new_idcard must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.new_idcard)
+		s+='"new_idcard":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface UpdateIdcardResp{
+}
+function JsonToUpdateIdcardResp(_jsonobj: { [k:string]:any }): UpdateIdcardResp{
+	let obj: UpdateIdcardResp={
+	}
+	return obj
+}
 export interface UpdateNickNameReq{
 	new_nick_name: string;
 }
@@ -466,6 +493,7 @@ const _WebPathUserGetUserInfo: string ="/account.user/get_user_info";
 const _WebPathUserLogin: string ="/account.user/login";
 const _WebPathUserSelfUserInfo: string ="/account.user/self_user_info";
 const _WebPathUserUpdateStaticPassword: string ="/account.user/update_static_password";
+const _WebPathUserUpdateIdcard: string ="/account.user/update_idcard";
 const _WebPathUserUpdateNickName: string ="/account.user/update_nick_name";
 const _WebPathUserUpdateEmail: string ="/account.user/update_email";
 const _WebPathUserUpdateTel: string ="/account.user/update_tel";
@@ -657,6 +685,55 @@ export class UserBrowserClientToB {
 		.then(function(response){
 			try{
 				let obj:UpdateStaticPasswordResp=JsonToUpdateStaticPasswordResp(response.data.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	update_idcard(header: { [k: string]: string },req: UpdateIdcardReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: UpdateIdcardResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserUpdateIdcard,
+				appname:'account',
+				groupname:this.group,
+				data:UpdateIdcardReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:UpdateIdcardResp=JsonToUpdateIdcardResp(response.data.data)
 				successf(obj)
 			}catch(e){
 				let err:Error={code:-1,msg:'response error'}

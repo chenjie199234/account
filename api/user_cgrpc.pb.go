@@ -18,6 +18,7 @@ var _CGrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CGrpcPathUserLogin = "/account.user/login"
 var _CGrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CGrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _CGrpcPathUserUpdateIdcard = "/account.user/update_idcard"
 var _CGrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CGrpcPathUserUpdateEmail = "/account.user/update_email"
 var _CGrpcPathUserUpdateTel = "/account.user/update_tel"
@@ -27,6 +28,7 @@ type UserCGrpcClient interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
@@ -80,6 +82,16 @@ func (c *userCGrpcClient) UpdateStaticPassword(ctx context.Context, req *UpdateS
 	}
 	return resp, nil
 }
+func (c *userCGrpcClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq) (*UpdateIdcardResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(UpdateIdcardResp)
+	if e := c.cc.Call(ctx, _CGrpcPathUserUpdateIdcard, req, resp, metadata.GetMetadata(ctx)); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
 func (c *userCGrpcClient) UpdateNickName(ctx context.Context, req *UpdateNickNameReq) (*UpdateNickNameResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -116,6 +128,7 @@ type UserCGrpcServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
@@ -212,6 +225,30 @@ func _User_UpdateStaticPassword_CGrpcHandler(handler func(context.Context, *Upda
 		ctx.Write(resp)
 	}
 }
+func _User_UpdateIdcard_CGrpcHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(UpdateIdcardReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/update_idcard]", map[string]interface{}{"error": e})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/update_idcard]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UpdateIdcardResp)
+		}
+		ctx.Write(resp)
+	}
+}
 func _User_UpdateNickName_CGrpcHandler(handler func(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)) cgrpc.OutsideHandler {
 	return func(ctx *cgrpc.Context) {
 		req := new(UpdateNickNameReq)
@@ -291,6 +328,7 @@ func RegisterUserCGrpcServer(engine *cgrpc.CGrpcServer, svc UserCGrpcServer, all
 	engine.RegisterHandler("account.user", "login", _User_Login_CGrpcHandler(svc.Login))
 	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CGrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CGrpcHandler(svc.UpdateStaticPassword))
+	engine.RegisterHandler("account.user", "update_idcard", _User_UpdateIdcard_CGrpcHandler(svc.UpdateIdcard))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CGrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CGrpcHandler(svc.UpdateEmail))
 	engine.RegisterHandler("account.user", "update_tel", _User_UpdateTel_CGrpcHandler(svc.UpdateTel))

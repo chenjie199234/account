@@ -40,6 +40,14 @@ func (m *UpdateStaticPasswordReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *UpdateIdcardReq) Validate() (errstr string) {
+	if len(m.GetNewIdcard()) <= 0 {
+		return "field: new_idcard in object: update_idcard_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *UpdateNickNameReq) Validate() (errstr string) {
 	if len(m.GetNewNickName()) <= 0 {
 		return "field: new_nick_name in object: update_nick_name_req check value str len gt failed"

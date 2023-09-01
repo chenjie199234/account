@@ -559,6 +559,31 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	}()
 	return &api.UpdateStaticPasswordResp{}, nil
 }
+func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*api.UpdateIdcardResp, error) {
+	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	if e != nil {
+		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		return nil, ecode.ErrToken
+	}
+	var update bool
+	if update, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, req.NewIdcard); e != nil {
+		log.Error(ctx, "[UpdateIdcard] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	log.Info(ctx, "[UpdateIdcard] success", map[string]interface{}{"operator": md["Token-Data"]})
+	if update {
+		//idcard can only set once
+		//success means this is the first time to set the idcard
+		//only need to clean the user info
+		go func() {
+			if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
+				log.Error(ctx, "[UpdateIdcard] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			}
+		}()
+	}
+	return &api.UpdateIdcardResp{}, nil
+}
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
@@ -691,7 +716,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
 		}
 	}
-	user, e := s.userDao.MongoGetUserByUserID(ctx, operator)
+	user, e := s.userDao.MongoGetUser(ctx, operator)
 	if e != nil {
 		log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -884,7 +909,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
 		}
 	}
-	user, e := s.userDao.MongoGetUserByUserID(ctx, operator)
+	user, e := s.userDao.MongoGetUser(ctx, operator)
 	if e != nil {
 		log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)

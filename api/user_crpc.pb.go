@@ -20,6 +20,7 @@ var _CrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CrpcPathUserLogin = "/account.user/login"
 var _CrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _CrpcPathUserUpdateIdcard = "/account.user/update_idcard"
 var _CrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CrpcPathUserUpdateEmail = "/account.user/update_email"
 var _CrpcPathUserUpdateTel = "/account.user/update_tel"
@@ -29,6 +30,7 @@ type UserCrpcClient interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
@@ -130,6 +132,28 @@ func (c *userCrpcClient) UpdateStaticPassword(ctx context.Context, req *UpdateSt
 	}
 	return resp, nil
 }
+func (c *userCrpcClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq) (*UpdateIdcardResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserUpdateIdcard, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(UpdateIdcardResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userCrpcClient) UpdateNickName(ctx context.Context, req *UpdateNickNameReq) (*UpdateNickNameResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -202,6 +226,7 @@ type UserCrpcServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
@@ -394,6 +419,54 @@ func _User_UpdateStaticPassword_CrpcHandler(handler func(context.Context, *Updat
 		}
 	}
 }
+func _User_UpdateIdcard_CrpcHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(UpdateIdcardReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/update_idcard] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/update_idcard] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/update_idcard]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UpdateIdcardResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
 func _User_UpdateNickName_CrpcHandler(handler func(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
@@ -545,6 +618,7 @@ func RegisterUserCrpcServer(engine *crpc.CrpcServer, svc UserCrpcServer, allmids
 	engine.RegisterHandler("account.user", "login", _User_Login_CrpcHandler(svc.Login))
 	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CrpcHandler(svc.UpdateStaticPassword))
+	engine.RegisterHandler("account.user", "update_idcard", _User_UpdateIdcard_CrpcHandler(svc.UpdateIdcard))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CrpcHandler(svc.UpdateEmail))
 	engine.RegisterHandler("account.user", "update_tel", _User_UpdateTel_CrpcHandler(svc.UpdateTel))
