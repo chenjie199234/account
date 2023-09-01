@@ -38,8 +38,65 @@ func Start() *Service {
 	}
 }
 func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*api.GetUserInfoResp, error) {
+	var setRedisUser, setRedisUserTel, setRedisUserEmail, setRedisUserIDCard, setRedisUserNickName bool
 	var user *model.User
-	var e error
+	defer func() {
+		if setRedisUser {
+			go func() {
+				if user == nil || user.UserID.IsZero() {
+					if e := s.userDao.RedisSetUser(context.Background(), req.Src, nil); e != nil {
+						log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"user_id": req.Src, "error": e})
+					}
+				} else if e := s.userDao.RedisSetUser(context.Background(), user.UserID.Hex(), user); e != nil {
+					log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"user_id": user.UserID.Hex(), "error": e})
+				}
+			}()
+		}
+		if setRedisUserTel {
+			go func() {
+				if user == nil || user.UserID.IsZero() {
+					if e := s.userDao.RedisSetUserIndexTel(context.Background(), req.Src, ""); e != nil {
+						log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"tel": req.Src, "error": e})
+					}
+				} else if e := s.userDao.RedisSetUserIndexTel(context.Background(), user.Tel, user.UserID.Hex()); e != nil {
+					log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"tel": user.Tel, "error": e})
+				}
+			}()
+		}
+		if setRedisUserEmail {
+			go func() {
+				if user == nil || user.UserID.IsZero() {
+					if e := s.userDao.RedisSetUserIndexEmail(context.Background(), req.Src, ""); e != nil {
+						log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"email": req.Src, "error": e})
+					}
+				} else if e := s.userDao.RedisSetUserIndexEmail(context.Background(), user.Email, user.UserID.Hex()); e != nil {
+					log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"email": user.Email, "error": e})
+				}
+			}()
+		}
+		if setRedisUserIDCard {
+			go func() {
+				if user == nil || user.UserID.IsZero() {
+					if e := s.userDao.RedisSetUserIndexIDCard(context.Background(), req.Src, ""); e != nil {
+						log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"idcard": req.Src, "error": e})
+					}
+				} else if e := s.userDao.RedisSetUserIndexIDCard(context.Background(), user.IDCard, user.UserID.Hex()); e != nil {
+					log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"idcard": user.IDCard, "error": e})
+				}
+			}()
+		}
+		if setRedisUserNickName {
+			go func() {
+				if user == nil || user.UserID.IsZero() {
+					if e := s.userDao.RedisSetUserIndexNickName(context.Background(), req.Src, ""); e != nil {
+						log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"nick_name": req.Src, "error": e})
+					}
+				} else if e := s.userDao.RedisSetUserIndexNickName(context.Background(), user.NickName, user.UserID.Hex()); e != nil {
+					log.Error(ctx, "[GetUserInfo] update redis failed", map[string]interface{}{"nick_name": user.NickName, "error": e})
+				}
+			}()
+		}
+	}()
 	switch req.SrcType {
 	case "user_id":
 		userid, e := primitive.ObjectIDFromHex(req.Src)
@@ -47,35 +104,149 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 			log.Error(ctx, "[GetUserInfo] user_id format wrong", map[string]interface{}{"user_id": req.Src, "error": e})
 			return nil, ecode.ErrReq
 		}
-		user, e = s.userDao.MongoGetUserByUserID(ctx, userid)
+		if user, e = s.userDao.RedisGetUser(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] redis op failed", map[string]interface{}{"user_id": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				//empty key in redis
+				return nil, e
+			}
+		}
+		if user != nil {
+			break
+		}
+		user, e = s.userDao.MongoGetUser(ctx, userid)
 		if e != nil {
 			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"user_id": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				setRedisUser = true
+			}
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		setRedisUser = true
+		if user.Tel != "" {
+			setRedisUserTel = true
+		}
+		if user.Email != "" {
+			setRedisUserEmail = true
+		}
+		if user.IDCard != "" {
+			setRedisUserIDCard = true
+		}
+		if user.NickName != "" {
+			setRedisUserNickName = true
 		}
 	case "tel":
-		user, e = s.userDao.MongoGetUserByTel(ctx, req.Src)
-		if e != nil {
-			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		var e error
+		if user, e = s.userDao.RedisGetUserByTel(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] redis op failed", map[string]interface{}{"tel": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				//empty key in redis
+				return nil, e
+			}
 		}
+		if user != nil {
+			break
+		}
+		for {
+			user, e = s.userDao.MongoGetUserByTel(ctx, req.Src)
+			if e != nil {
+				log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				if e == ecode.ErrDBConflict {
+					continue
+				}
+				if e == ecode.ErrUserNotExist {
+					setRedisUserTel = true
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			break
+		}
+		setRedisUser = true
+		setRedisUserTel = true
 	case "email":
-		user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src)
-		if e != nil {
-			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"email": req.Src, "error": e})
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		var e error
+		if user, e = s.userDao.RedisGetUserByEmail(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] redis op failed", map[string]interface{}{"email": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				//empty key in redis
+				return nil, e
+			}
 		}
+		if user != nil {
+			break
+		}
+		for {
+			user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src)
+			if e != nil {
+				log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"email": req.Src, "error": e})
+				if e == ecode.ErrDBConflict {
+					continue
+				}
+				if e == ecode.ErrUserNotExist {
+					setRedisUserEmail = true
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			break
+		}
+		setRedisUser = true
+		setRedisUserEmail = true
 	case "idcard":
-		user, e = s.userDao.MongoGetUserByIDCard(ctx, req.Src)
-		if e != nil {
-			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		var e error
+		if user, e = s.userDao.RedisGetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] redis op failed", map[string]interface{}{"idcard": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				//empty key in redis
+				return nil, e
+			}
 		}
+		if user != nil {
+			break
+		}
+		for {
+			user, e = s.userDao.MongoGetUserByIDCard(ctx, req.Src)
+			if e != nil {
+				log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
+				if e == ecode.ErrDBConflict {
+					continue
+				}
+				if e == ecode.ErrUserNotExist {
+					setRedisUserIDCard = true
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			break
+		}
+		setRedisUser = true
+		setRedisUserIDCard = true
 	case "nickname":
-		user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src)
-		if e != nil {
-			log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		var e error
+		if user, e = s.userDao.RedisGetUserByNickName(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] redis op failed", map[string]interface{}{"nickname": req.Src, "error": e})
+			if e == ecode.ErrUserNotExist {
+				//empty key in redis
+				return nil, e
+			}
 		}
+		if user != nil {
+			break
+		}
+		for {
+			user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src)
+			if e != nil {
+				log.Error(ctx, "[GetUserInfo] db op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
+				if e == ecode.ErrDBConflict {
+					continue
+				}
+				if e == ecode.ErrUserNotExist {
+					setRedisUserNickName = true
+				}
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			break
+		}
+		setRedisUser = true
+		setRedisUserNickName = true
 	}
 	return &api.GetUserInfoResp{
 		Info: &api.UserInfo{
@@ -292,10 +463,70 @@ func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*
 		log.Error(ctx, "[SelfUserInfo] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	user, e := s.userDao.MongoGetUserByUserID(ctx, operator)
-	if e != nil {
-		log.Error(ctx, "[SelfUserInfo] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	var setRedis bool
+	var user *model.User
+	defer func() {
+		if setRedis {
+			if user == nil || user.UserID.IsZero() {
+				go func() {
+					if e := s.userDao.RedisSetUser(context.Background(), md["Token-Data"], nil); e != nil {
+						log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"user_id": md["Token-Data"], "error": e})
+					}
+				}()
+			} else {
+				go func() {
+					if e := s.userDao.RedisSetUser(context.Background(), user.UserID.Hex(), user); e != nil {
+						log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"user_id": user.UserID.Hex(), "error": e})
+					}
+				}()
+				if user.Tel != "" {
+					go func() {
+						if e := s.userDao.RedisSetUserIndexTel(context.Background(), user.Tel, user.UserID.Hex()); e != nil {
+							log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"tel": user.Tel, "error": e})
+						}
+					}()
+				}
+				if user.Email != "" {
+					go func() {
+						if e := s.userDao.RedisSetUserIndexEmail(context.Background(), user.Email, user.UserID.Hex()); e != nil {
+							log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"email": user.Email, "error": e})
+						}
+					}()
+				}
+				if user.IDCard != "" {
+					go func() {
+						if e := s.userDao.RedisSetUserIndexIDCard(context.Background(), user.IDCard, user.UserID.Hex()); e != nil {
+							log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"idcard": user.IDCard, "error": e})
+						}
+					}()
+				}
+				if user.NickName != "" {
+					go func() {
+						if e := s.userDao.RedisSetUserIndexNickName(context.Background(), user.NickName, user.UserID.Hex()); e != nil {
+							log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"nick_name": user.NickName, "error": e})
+						}
+					}()
+				}
+			}
+		}
+	}()
+	if user, e = s.userDao.RedisGetUser(ctx, md["Token-Data"]); e != nil {
+		log.Error(ctx, "[SelfUserInfo] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		if e == ecode.ErrUserNotExist {
+			//empty key in redis
+			return nil, e
+		}
+	}
+	if user == nil {
+		user, e = s.userDao.MongoGetUser(ctx, operator)
+		if e != nil {
+			log.Error(ctx, "[SelfUserInfo] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			if e == ecode.ErrUserNotExist {
+				setRedis = true
+			}
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		setRedis = true
 	}
 	return &api.SelfUserInfoResp{
 		Info: &api.UserInfo{
@@ -321,6 +552,11 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	log.Info(ctx, "[UpdateStaticPassword] success", map[string]interface{}{"operator": md["Token-Data"]})
+	go func() {
+		if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
+			log.Error(ctx, "[UpdateStaticPassword] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		}
+	}()
 	return &api.UpdateStaticPasswordResp{}, nil
 }
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
@@ -330,11 +566,24 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		log.Error(ctx, "[UpdateNickName] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	if e := s.userDao.MongoUpdateUserNickName(ctx, operator, req.NewNickName); e != nil {
+	var oldNickName string
+	if oldNickName, e = s.userDao.MongoUpdateUserNickName(ctx, operator, req.NewNickName); e != nil {
 		log.Error(ctx, "[UpdateNickName] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	log.Info(ctx, "[UpdateNickName] success", map[string]interface{}{"operator": md["Token-Data"], "new_nick_name": req.NewNickName})
+	if oldNickName != req.NewNickName {
+		go func() {
+			if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
+				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			}
+		}()
+		go func() {
+			if e := s.userDao.RedisDelUserIndexNickName(context.Background(), oldNickName); e != nil {
+				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"nick_name": oldNickName, "error": e})
+			}
+		}()
+	}
 	return &api.UpdateNickNameResp{}, nil
 }
 
