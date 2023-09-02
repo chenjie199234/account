@@ -20,10 +20,6 @@ func init() {
 	hcheckcode = hex.EncodeToString(h[:])
 }
 
-func rediskey(target, action string) string {
-	return target + "_" + action + "_code"
-}
-
 // argv 1 = code
 // argc 2 = max check times
 // argc 3 = expire time(unit second)
@@ -47,9 +43,9 @@ func (d *Dao) RedisSetCode(ctx context.Context, target, action string, code stri
 	}
 	defer c.Close()
 	var rest int
-	rest, e = redis.Int(c.DoContext(ctx, "EVALSHA", hsetcode, 1, rediskey(target, action), code, DefaultCheckTimes, DefaultExpireSeconds))
+	rest, e = redis.Int(c.DoContext(ctx, "EVALSHA", hsetcode, 1, "code_{"+target+"}_"+action, code, DefaultCheckTimes, DefaultExpireSeconds))
 	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
-		rest, e = redis.Int(c.DoContext(ctx, "EVAL", setcode, 1, rediskey(target, action), code, DefaultCheckTimes, DefaultExpireSeconds))
+		rest, e = redis.Int(c.DoContext(ctx, "EVAL", setcode, 1, "code_{"+target+"}_"+action, code, DefaultCheckTimes, DefaultExpireSeconds))
 	}
 	if e != nil {
 		return 0, e
@@ -99,12 +95,12 @@ func (d *Dao) RedisCheckCode(ctx context.Context, target, action string, code st
 	}
 	defer c.Close()
 	var rest int
-	rest, e = redis.Int(c.DoContext(ctx, "EVALSHA", hcheckcode, 1, rediskey(target, action), code, DefaultCheckTimes, DefaultExpireSeconds))
+	rest, e = redis.Int(c.DoContext(ctx, "EVALSHA", hcheckcode, 1, "code_{"+target+"}_"+action, code, DefaultCheckTimes, DefaultExpireSeconds))
 	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
-		rest, e = redis.Int(c.DoContext(ctx, "EVAL", checkcode, 1, rediskey(target, action), code, DefaultCheckTimes, DefaultExpireSeconds))
+		rest, e = redis.Int(c.DoContext(ctx, "EVAL", checkcode, 1, "code_{"+target+"}_"+action, code, DefaultCheckTimes, DefaultExpireSeconds))
 	}
 	if e == redis.ErrNil {
-		e = ecode.ErrCodeAlreadyExpire
+		e = ecode.ErrCodeNotExist
 	}
 	return rest, e
 }
@@ -114,10 +110,10 @@ func (d *Dao) RedisGetCode(ctx context.Context, target, action string) (string, 
 		return "", 0, e
 	}
 	defer c.Close()
-	values, e := redis.Values(c.DoContext(ctx, "HMGET", rediskey(target, action), "code", "check"))
+	values, e := redis.Values(c.DoContext(ctx, "HMGET", "code_{"+target+"}_"+action, "code", "check"))
 	if e != nil {
 		if e == redis.ErrNil {
-			e = ecode.ErrCodeAlreadyExpire
+			e = ecode.ErrCodeNotExist
 		}
 		return "", 0, e
 	}
@@ -130,6 +126,6 @@ func (d *Dao) RedisDelCode(ctx context.Context, target, action string) error {
 		return e
 	}
 	defer c.Close()
-	_, e = c.DoContext(ctx, "DEL", rediskey(target, action))
+	_, e = c.DoContext(ctx, "DEL", "code_{"+target+"}_"+action)
 	return e
 }

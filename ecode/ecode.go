@@ -26,7 +26,7 @@ var (
 	ErrDBRedisConflict = cerror.MakeError(11003, http.StatusInternalServerError, "redis's data and db's data conflict")
 
 	ErrCodeAlreadySend     = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password already send,check your email or tel")
-	ErrCodeAlreadyExpire   = cerror.MakeError(20002, http.StatusBadRequest, "dynamic password already expire,please get it again")
+	ErrCodeNotExist        = cerror.MakeError(20002, http.StatusBadRequest, "dynamic password not exist,please get it again")
 	ErrUserNotExist        = cerror.MakeError(20003, http.StatusBadRequest, "user not exist")
 	ErrTelAlreadyUsed      = cerror.MakeError(20004, http.StatusBadRequest, "tel already used")
 	ErrEmailAlreadyUsed    = cerror.MakeError(20005, http.StatusBadRequest, "email already used")

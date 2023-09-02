@@ -7,9 +7,9 @@ const (
 
 	UpdateEmailOldEmail = "updateemail_oldemail"
 	UpdateEmailOldTel   = "updateemail_oldtel"
-	NewEmail            = "newemail"
+	UpdateEmailNewEmail = "updateemail_newemail"
 
 	UpdateTelOldEmail = "updatetel_oldemail"
 	UpdateTelOldTel   = "updatetel_oldtel"
-	NewTel            = "newtel"
+	UpdateTelNewTel   = "updatetel_newtel"
 )
