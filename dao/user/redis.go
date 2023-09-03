@@ -34,12 +34,13 @@ func (d *Dao) RedisGetUser(ctx context.Context, userid string) (*model.User, err
 	data, e := redis.Bytes(c.DoContext(ctx, "GET", "user_{"+userid+"}_info"))
 	if e != nil {
 		if e == redis.ErrNil {
+			//key not exist
 			return nil, nil
 		}
 		return nil, e
 	}
 	if len(data) == 0 {
-		//this is empty key
+		//key exist but value is empty
 		return nil, ecode.ErrUserNotExist
 	}
 	user := &model.User{}
@@ -75,35 +76,33 @@ func (d *Dao) RedisGetUserIndexTel(ctx context.Context, tel string) (string, err
 	userid, e := redis.String(c.DoContext(ctx, "GET", "tel_{"+tel+"}_index"))
 	if e != nil {
 		if e == redis.ErrNil {
+			//key not exist
 			return "", nil
 		}
 		return "", e
 	}
 	if userid == "" {
-		//this is empty key
+		//key exist but value is empty
 		return "", ecode.ErrUserNotExist
 	}
 	return userid, nil
 }
 func (d *Dao) RedisGetUserByTel(ctx context.Context, tel string) (*model.User, error) {
-	userid, e := d.RedisGetUserIndexTel(ctx, tel)
-	if e != nil {
+	//tel -> userid -> user
+	if userid, e := d.RedisGetUserIndexTel(ctx, tel); e != nil {
 		return nil, e
-	}
-	if userid == "" {
+	} else if userid == "" {
 		return nil, nil
-	}
-	user, e := d.RedisGetUser(ctx, userid)
-	if e != nil {
+	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
 			e = ecode.ErrRedisConflict
 		}
 		return nil, e
-	}
-	if user.Tel != tel {
+	} else if user == nil || user.Tel != tel {
 		return nil, ecode.ErrRedisConflict
+	} else {
+		return user, nil
 	}
-	return user, nil
 }
 func (d *Dao) RedisDelUserIndexTel(ctx context.Context, tel string) error {
 	c, e := d.redis.GetContext(ctx)
@@ -132,35 +131,33 @@ func (d *Dao) RedisGetUserIndexEmail(ctx context.Context, email string) (string,
 	userid, e := redis.String(c.DoContext(ctx, "GET", "email_{"+email+"}_index"))
 	if e != nil {
 		if e == redis.ErrNil {
+			//key not exist
 			return "", nil
 		}
 		return "", e
 	}
 	if userid == "" {
-		//this is empty key
+		//key exist but value is empty
 		return "", ecode.ErrUserNotExist
 	}
 	return userid, nil
 }
 func (d *Dao) RedisGetUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	userid, e := d.RedisGetUserIndexEmail(ctx, email)
-	if e != nil {
+	//email -> userid -> user
+	if userid, e := d.RedisGetUserIndexEmail(ctx, email); e != nil {
 		return nil, e
-	}
-	if userid == "" {
+	} else if userid == "" {
 		return nil, nil
-	}
-	user, e := d.RedisGetUser(ctx, userid)
-	if e != nil {
+	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
 			e = ecode.ErrRedisConflict
 		}
 		return nil, e
-	}
-	if user.Email != email {
+	} else if user == nil || user.Email != email {
 		return nil, ecode.ErrRedisConflict
+	} else {
+		return user, nil
 	}
-	return user, nil
 }
 func (d *Dao) RedisDelUserIndexEmail(ctx context.Context, email string) error {
 	c, e := d.redis.GetContext(ctx)
@@ -189,35 +186,33 @@ func (d *Dao) RedisGetUserIndexIDCard(ctx context.Context, idcard string) (strin
 	userid, e := redis.String(c.DoContext(ctx, "GET", "idcard_{"+idcard+"}_index"))
 	if e != nil {
 		if e == redis.ErrNil {
+			//key not exist
 			return "", nil
 		}
 		return "", e
 	}
 	if userid == "" {
-		//this is empty key
+		//key exist but value is empty
 		return "", ecode.ErrUserNotExist
 	}
 	return userid, nil
 }
 func (d *Dao) RedisGetUserByIDCard(ctx context.Context, idcard string) (*model.User, error) {
-	userid, e := d.RedisGetUserIndexIDCard(ctx, idcard)
-	if e != nil {
+	//idcard -> userid -> user
+	if userid, e := d.RedisGetUserIndexIDCard(ctx, idcard); e != nil {
 		return nil, e
-	}
-	if userid == "" {
+	} else if userid == "" {
 		return nil, nil
-	}
-	user, e := d.RedisGetUser(ctx, userid)
-	if e != nil {
+	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
 			e = ecode.ErrRedisConflict
 		}
 		return nil, e
-	}
-	if user.IDCard != idcard {
+	} else if user == nil || user.IDCard != idcard {
 		return nil, ecode.ErrRedisConflict
+	} else {
+		return user, nil
 	}
-	return user, nil
 }
 func (d *Dao) RedisDelUserIndexIDCard(ctx context.Context, idcard string) error {
 	c, e := d.redis.GetContext(ctx)
@@ -246,35 +241,33 @@ func (d *Dao) RedisGetUserIndexNickName(ctx context.Context, nickname string) (s
 	userid, e := redis.String(c.DoContext(ctx, "GET", "nickname_{"+nickname+"}_index"))
 	if e != nil {
 		if e == redis.ErrNil {
+			//key not exist
 			return "", nil
 		}
 		return "", e
 	}
 	if userid == "" {
-		//this is empty key
+		//key exist but value is empty
 		return "", ecode.ErrUserNotExist
 	}
 	return userid, nil
 }
 func (d *Dao) RedisGetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
-	userid, e := d.RedisGetUserIndexNickName(ctx, nickname)
-	if e != nil {
+	//nickname -> userid -> user
+	if userid, e := d.RedisGetUserIndexNickName(ctx, nickname); e != nil {
 		return nil, e
-	}
-	if userid == "" {
+	} else if userid == "" {
 		return nil, nil
-	}
-	user, e := d.RedisGetUser(ctx, userid)
-	if e != nil {
+	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
 			e = ecode.ErrRedisConflict
 		}
 		return nil, e
-	}
-	if user.NickName != nickname {
+	} else if user == nil || user.NickName != nickname {
 		return nil, ecode.ErrRedisConflict
+	} else {
+		return user, nil
 	}
-	return user, nil
 }
 func (d *Dao) RedisDelUserIndexNickName(ctx context.Context, nickname string) error {
 	c, e := d.redis.GetContext(ctx)
