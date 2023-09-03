@@ -4,6 +4,12 @@ import (
 	"context"
 )
 
+func RedisRateLoginIDCard(ctx context.Context, idcard string) {
+
+}
+func RedisRateLoginNickName(ctx context.Context, nickname string) {
+
+}
 func RedisRateLoginTel(ctx context.Context, tel string) {
 
 }
