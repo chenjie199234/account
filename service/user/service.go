@@ -481,14 +481,14 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 }
 func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*api.SelfUserInfoResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[SelfUserInfo] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[SelfUserInfo] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	var user *model.User
-	if user, e = s.userDao.RedisGetUser(ctx, md["Token-Data"]); e != nil {
-		log.Error(ctx, "[SelfUserInfo] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+	if user, e = s.userDao.RedisGetUser(ctx, md["Token-User"]); e != nil {
+		log.Error(ctx, "[SelfUserInfo] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		if e == ecode.ErrUserNotExist {
 			//empty key in redis
 			return nil, e
@@ -497,12 +497,12 @@ func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*
 	if user == nil {
 		user, e = s.userDao.MongoGetUser(ctx, operator)
 		if e != nil {
-			log.Error(ctx, "[SelfUserInfo] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[SelfUserInfo] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			if e == ecode.ErrUserNotExist {
 				//set redis empty key
 				go func() {
-					if e := s.userDao.RedisSetUser(context.Background(), md["Token-Data"], nil); e != nil {
-						log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"user_id": md["Token-Data"], "error": e})
+					if e := s.userDao.RedisSetUser(context.Background(), md["Token-User"], nil); e != nil {
+						log.Error(ctx, "[SelfUserInfo] update redis failed", map[string]interface{}{"user_id": md["Token-User"], "error": e})
 					}
 				}()
 			}
@@ -557,43 +557,43 @@ func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[UpdateStaticPassword] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateStaticPassword] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	if e := s.userDao.MongoUpdateUserPassword(ctx, operator, req.OldStaticPassword, req.NewStaticPassword); e != nil {
-		log.Error(ctx, "[UpdateStaticPassword] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateStaticPassword] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	log.Info(ctx, "[UpdateStaticPassword] success", map[string]interface{}{"operator": md["Token-Data"]})
+	log.Info(ctx, "[UpdateStaticPassword] success", map[string]interface{}{"operator": md["Token-User"]})
 	go func() {
-		if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
-			log.Error(ctx, "[UpdateStaticPassword] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+			log.Error(ctx, "[UpdateStaticPassword] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		}
 	}()
 	return &api.UpdateStaticPasswordResp{}, nil
 }
 func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*api.UpdateIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	var update bool
 	if update, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, req.NewIdcard); e != nil {
-		log.Error(ctx, "[UpdateIdcard] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateIdcard] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	log.Info(ctx, "[UpdateIdcard] success", map[string]interface{}{"operator": md["Token-Data"]})
+	log.Info(ctx, "[UpdateIdcard] success", map[string]interface{}{"operator": md["Token-User"]})
 	if update {
 		//idcard can only set once
 		//success means this is the first time to set the idcard
 		//only need to clean the user info
 		go func() {
-			if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
-				log.Error(ctx, "[UpdateIdcard] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				log.Error(ctx, "[UpdateIdcard] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			}
 		}()
 	}
@@ -601,21 +601,21 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 }
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[UpdateNickName] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateNickName] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	var oldNickName string
 	if oldNickName, e = s.userDao.MongoUpdateUserNickName(ctx, operator, req.NewNickName); e != nil {
-		log.Error(ctx, "[UpdateNickName] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateNickName] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	log.Info(ctx, "[UpdateNickName] success", map[string]interface{}{"operator": md["Token-Data"], "new_nick_name": req.NewNickName})
+	log.Info(ctx, "[UpdateNickName] success", map[string]interface{}{"operator": md["Token-User"], "new_nick_name": req.NewNickName})
 	if oldNickName != req.NewNickName {
 		go func() {
-			if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
-				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			}
 		}()
 		go func() {
@@ -632,37 +632,37 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 // UpdateTel Step 3:verify new email's dynamic and update
 func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*api.UpdateEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[UpdateEmail] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateEmail] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	if req.NewEmailDynamicPassword != "" {
 		//step 3
-		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateEmailNewEmail, req.NewEmail+"_"+req.NewEmailDynamicPassword)
+		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailNewEmail, req.NewEmail+"_"+req.NewEmailDynamicPassword)
 		if e != nil {
-			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.NewEmailDynamicPassword, "error": e})
+			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "code": req.NewEmailDynamicPassword, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest > 0 {
-			log.Error(ctx, "[UpdateEmail] code check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.NewEmailDynamicPassword, "rest": rest})
+			log.Error(ctx, "[UpdateEmail] code check failed", map[string]interface{}{"operator": md["Token-User"], "code": req.NewEmailDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
 
 		oldEmail, e := s.userDao.MongoUpdateUserEmail(ctx, operator, req.NewEmail)
 		if e != nil {
-			log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		log.Info(ctx, "[UpdateEmail] success", map[string]interface{}{"operator": md["Token-Data"], "new_email": req.NewEmail})
+		log.Info(ctx, "[UpdateEmail] success", map[string]interface{}{"operator": md["Token-User"], "new_email": req.NewEmail})
 		if oldEmail != req.NewEmail {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
-					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				}
 			}()
 			go func() {
@@ -678,19 +678,19 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		var e error
 		switch req.OldReceiverType {
 		case "tel":
-			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateEmailOldTel, req.OldDynamicPassword)
+			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailOldTel, req.OldDynamicPassword)
 		case "email":
-			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateEmailOldEmail, req.OldDynamicPassword)
+			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailOldEmail, req.OldDynamicPassword)
 		}
 		if e != nil {
-			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.OldDynamicPassword, "error": e})
+			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "code": req.OldDynamicPassword, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest > 0 {
-			log.Error(ctx, "[UpdateEmail] code check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.OldDynamicPassword, "rest": rest})
+			log.Error(ctx, "[UpdateEmail] code check failed", map[string]interface{}{"operator": md["Token-User"], "code": req.OldDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
@@ -703,10 +703,10 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			return nil, cerror.ErrServerClosing
 		}
 		code := util.MakeRandCode()
-		if rest, e := s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateEmailNewEmail, req.NewEmail+"_"+code); e != nil {
+		if rest, e := s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateEmailNewEmail, req.NewEmail+"_"+code); e != nil {
 			s.stop.DoneOne()
 			if e != ecode.ErrCodeAlreadySend {
-				log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+				log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if rest != 0 {
@@ -714,16 +714,16 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 				return &api.UpdateEmailResp{Step: "newverify"}, nil
 			}
 			//already failed on step 3,ban some time
-			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendEmailCode(ctx, req.NewEmail, code, util.UpdateEmailNewEmail); e != nil {
-			log.Error(ctx, "[UpdateEmail] send email failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
-			if e := s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateEmailNewEmail); e != nil {
-				log.Error(ctx, "[UpdateEmail] del redis code failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] send email failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+			if e := s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateEmailNewEmail); e != nil {
+				log.Error(ctx, "[UpdateEmail] del redis code failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				go func() {
-					if e := s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateEmailNewEmail); e != nil {
-						log.Error(ctx, "[UpdateEmail] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+					if e := s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateEmailNewEmail); e != nil {
+						log.Error(ctx, "[UpdateEmail] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-User"], "error": e})
 					}
 					s.stop.DoneOne()
 				}()
@@ -732,27 +732,27 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			}
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		log.Info(ctx, "[UpdateEmail] send dynamic password to new email success", map[string]interface{}{"operator": md["Token-Data"], "new_email": req.NewEmail, "code": code})
+		log.Info(ctx, "[UpdateEmail] send dynamic password to new email success", map[string]interface{}{"operator": md["Token-User"], "new_email": req.NewEmail, "code": code})
 		s.stop.DoneOne()
 		return &api.UpdateEmailResp{Step: "newverify"}, nil
 	}
 	//step 1
-	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-Data"], util.UpdateEmailNewEmail); e != nil {
+	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.UpdateEmailNewEmail); e != nil {
 		if e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//if new tel's code not sended,we continue step 1
 	} else if rest == 0 {
 		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	} else {
 		//if new tel's code already send,we jump to step 3
 		return &api.UpdateEmailResp{Step: "newverify"}, nil
 	}
 	var user *model.User
-	if user, e = s.userDao.RedisGetUser(ctx, md["Token-Data"]); e != nil {
+	if user, e = s.userDao.RedisGetUser(ctx, md["Token-User"]); e != nil {
 		if e == ecode.ErrUserNotExist {
 			//empty key in redis
 			return nil, e
@@ -760,11 +760,11 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 	if user == nil {
 		if user, e = s.userDao.MongoGetUser(ctx, operator); e != nil {
-			log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			//set redis empty key
 			go func() {
-				if e := s.userDao.RedisSetUser(context.Background(), md["Token-Data"], nil); e != nil {
-					log.Error(ctx, "[UpdateEmail] update redis failed", map[string]interface{}{"user_id": md["Token-Data"], "error": e})
+				if e := s.userDao.RedisSetUser(context.Background(), md["Token-User"], nil); e != nil {
+					log.Error(ctx, "[UpdateEmail] update redis failed", map[string]interface{}{"user_id": md["Token-User"], "error": e})
 				}
 			}()
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -808,11 +808,11 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	}
 	if req.OldReceiverType == "tel" && user.Tel == "" {
-		log.Error(ctx, "[UpdateEmail] missing tel,can't use tel to receive dynamic password", map[string]interface{}{"operator": md["Token-Data"]})
+		log.Error(ctx, "[UpdateEmail] missing tel,can't use tel to receive dynamic password", map[string]interface{}{"operator": md["Token-User"]})
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" && user.Email == "" {
-		log.Error(ctx, "[UpdateEmail] missing email,can't use email to receive dynamic password", map[string]interface{}{"operator": md["Token-Data"]})
+		log.Error(ctx, "[UpdateEmail] missing email,can't use email to receive dynamic password", map[string]interface{}{"operator": md["Token-User"]})
 		return nil, ecode.ErrReq
 	}
 
@@ -827,14 +827,14 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	var rest int
 	switch req.OldReceiverType {
 	case "tel":
-		rest, e = s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateEmailOldTel, code)
+		rest, e = s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateEmailOldTel, code)
 	case "email":
-		rest, e = s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateEmailOldEmail, code)
+		rest, e = s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateEmailOldEmail, code)
 	}
 	if e != nil {
 		s.stop.DoneOne()
 		if e != ecode.ErrCodeAlreadySend {
-			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest != 0 {
@@ -842,39 +842,39 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			return &api.UpdateEmailResp{Step: "oldverify"}, nil
 		}
 		//already failed on step 2,ban some time
-		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	}
 	switch req.OldReceiverType {
 	case "tel":
 		if e = util.SendTelCode(ctx, user.Tel, code, util.UpdateEmailOldTel); e != nil {
-			log.Error(ctx, "[UpdateEmail] send tel failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] send tel failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		}
 	case "email":
 		if e = util.SendEmailCode(ctx, user.Email, code, util.UpdateEmailOldEmail); e != nil {
-			log.Error(ctx, "[UpdateEmail] send email failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateEmail] send email failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		}
 	}
 	if e != nil {
 		var ee error
 		switch req.OldReceiverType {
 		case "tel":
-			ee = s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateEmailOldTel)
+			ee = s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateEmailOldTel)
 		case "email":
-			ee = s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateEmailOldEmail)
+			ee = s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateEmailOldEmail)
 		}
 		if ee != nil {
-			log.Error(ctx, "[UpdateEmail] del redis code failed", map[string]interface{}{"operator": md["Token-Data"], "error": ee})
+			log.Error(ctx, "[UpdateEmail] del redis code failed", map[string]interface{}{"operator": md["Token-User"], "error": ee})
 			go func() {
 				var e error
 				switch req.OldReceiverType {
 				case "tel":
-					e = s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateEmailOldTel)
+					e = s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateEmailOldTel)
 				case "email":
-					e = s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateEmailOldEmail)
+					e = s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateEmailOldEmail)
 				}
 				if e != nil {
-					log.Error(ctx, "[UpdateEmail] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+					log.Error(ctx, "[UpdateEmail] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				}
 				s.stop.DoneOne()
 			}()
@@ -885,9 +885,9 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 	switch req.OldReceiverType {
 	case "tel":
-		log.Info(ctx, "[UpdateEmail] send dynamic password to old tel success", map[string]interface{}{"operator": md["Token-Data"], "old_tel": user.Tel, "code": code})
+		log.Info(ctx, "[UpdateEmail] send dynamic password to old tel success", map[string]interface{}{"operator": md["Token-User"], "old_tel": user.Tel, "code": code})
 	case "email":
-		log.Info(ctx, "[UpdateEmail] send dynamic password to old email success", map[string]interface{}{"operator": md["Token-Data"], "old_email": user.Email, "code": code})
+		log.Info(ctx, "[UpdateEmail] send dynamic password to old email success", map[string]interface{}{"operator": md["Token-User"], "old_email": user.Email, "code": code})
 	}
 	s.stop.DoneOne()
 	return &api.UpdateEmailResp{Step: "oldverify"}, nil
@@ -898,37 +898,37 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 // UpdateTel Step 3:verify new tel's dynamic and update
 func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.UpdateTelResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[UpdateTel] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[UpdateTel] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	if req.NewTelDynamicPassword != "" {
 		//step 3
-		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateTelNewTel, req.NewTel+"_"+req.NewTelDynamicPassword)
+		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelNewTel, req.NewTel+"_"+req.NewTelDynamicPassword)
 		if e != nil {
-			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.NewTelDynamicPassword, "error": e})
+			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "code": req.NewTelDynamicPassword, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest > 0 {
-			log.Error(ctx, "[UpdateTel] code check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.NewTelDynamicPassword, "rest": rest})
+			log.Error(ctx, "[UpdateTel] code check failed", map[string]interface{}{"operator": md["Token-User"], "code": req.NewTelDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
 
 		oldTel, e := s.userDao.MongoUpdateUserTel(ctx, operator, req.NewTel)
 		if e != nil {
-			log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		log.Info(ctx, "[UpdateTel] success", map[string]interface{}{"operator": md["Token-Data"], "new_tel": req.NewTel})
+		log.Info(ctx, "[UpdateTel] success", map[string]interface{}{"operator": md["Token-User"], "new_tel": req.NewTel})
 		if oldTel != req.NewTel {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-Data"]); e != nil {
-					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				}
 			}()
 			go func() {
@@ -944,19 +944,19 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		var e error
 		switch req.OldReceiverType {
 		case "tel":
-			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateTelOldTel, req.OldDynamicPassword)
+			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelOldTel, req.OldDynamicPassword)
 		case "email":
-			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-Data"], util.UpdateTelOldEmail, req.OldDynamicPassword)
+			rest, e = s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelOldEmail, req.OldDynamicPassword)
 		}
 		if e != nil {
-			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.OldDynamicPassword, "error": e})
+			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "code": req.OldDynamicPassword, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest > 0 {
-			log.Error(ctx, "[UpdateTel] code check failed", map[string]interface{}{"operator": md["Token-Data"], "code": req.OldDynamicPassword, "rest": rest})
+			log.Error(ctx, "[UpdateTel] code check failed", map[string]interface{}{"operator": md["Token-User"], "code": req.OldDynamicPassword, "rest": rest})
 			return nil, ecode.ErrPasswordWrong
 		} else if rest == 0 {
-			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		//verify success
@@ -969,10 +969,10 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			return nil, cerror.ErrServerClosing
 		}
 		code := util.MakeRandCode()
-		if rest, e := s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateTelNewTel, req.NewTel+"_"+code); e != nil {
+		if rest, e := s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateTelNewTel, req.NewTel+"_"+code); e != nil {
 			s.stop.DoneOne()
 			if e != ecode.ErrCodeAlreadySend {
-				log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+				log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if rest != 0 {
@@ -980,16 +980,16 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 				return &api.UpdateTelResp{Step: "newverify"}, nil
 			}
 			//already failed on step 3,ban some time
-			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 			return nil, ecode.ErrBan
 		}
 		if e := util.SendTelCode(ctx, req.NewTel, code, util.UpdateTelNewTel); e != nil {
-			log.Error(ctx, "[UpdateTel] send tel failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
-			if e := s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateTelNewTel); e != nil {
-				log.Error(ctx, "[UpdateTel] del redis code failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] send tel failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+			if e := s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateTelNewTel); e != nil {
+				log.Error(ctx, "[UpdateTel] del redis code failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				go func() {
-					if e := s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateTelNewTel); e != nil {
-						log.Error(ctx, "[UpdateTel] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+					if e := s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateTelNewTel); e != nil {
+						log.Error(ctx, "[UpdateTel] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-User"], "error": e})
 					}
 					s.stop.DoneOne()
 				}()
@@ -998,27 +998,27 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			}
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		log.Info(ctx, "[UpdateTel] send dynamic password to new tel success", map[string]interface{}{"operator": md["Token-Data"], "new_tel": req.NewTel, "code": code})
+		log.Info(ctx, "[UpdateTel] send dynamic password to new tel success", map[string]interface{}{"operator": md["Token-User"], "new_tel": req.NewTel, "code": code})
 		s.stop.DoneOne()
 		return &api.UpdateTelResp{Step: "newverify"}, nil
 	}
 	//step 1
-	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-Data"], util.UpdateTelNewTel); e != nil {
+	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.UpdateTelNewTel); e != nil {
 		if e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//if new tel's code not sended,we continue step 1
 	} else if rest == 0 {
 		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	} else {
 		//if new tel's code already send,we jump to step 3
 		return &api.UpdateTelResp{Step: "newverify"}, nil
 	}
 	var user *model.User
-	if user, e = s.userDao.RedisGetUser(ctx, md["Token-Data"]); e != nil {
+	if user, e = s.userDao.RedisGetUser(ctx, md["Token-User"]); e != nil {
 		if e == ecode.ErrUserNotExist {
 			//empty key in redis
 			return nil, e
@@ -1026,12 +1026,12 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 	if user == nil {
 		if user, e = s.userDao.MongoGetUser(ctx, operator); e != nil {
-			log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			if e == ecode.ErrUserNotExist {
 				//set redis empty key
 				go func() {
-					if e := s.userDao.RedisSetUser(context.Background(), md["Token-Data"], nil); e != nil {
-						log.Error(ctx, "[UpdateTel] update redis failed", map[string]interface{}{"user_id": md["Token-Data"], "error": e})
+					if e := s.userDao.RedisSetUser(context.Background(), md["Token-User"], nil); e != nil {
+						log.Error(ctx, "[UpdateTel] update redis failed", map[string]interface{}{"user_id": md["Token-User"], "error": e})
 					}
 				}()
 			}
@@ -1076,11 +1076,11 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return &api.UpdateTelResp{Step: "success"}, nil
 	}
 	if req.OldReceiverType == "tel" && user.Tel == "" {
-		log.Error(ctx, "[UpdateTel] missing tel,can't use tel to receive dynamic password", map[string]interface{}{"operator": md["Token-Data"]})
+		log.Error(ctx, "[UpdateTel] missing tel,can't use tel to receive dynamic password", map[string]interface{}{"operator": md["Token-User"]})
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" && user.Email == "" {
-		log.Error(ctx, "[UpdateTel] missing email,can't use email to receive dynamic password", map[string]interface{}{"operator": md["Token-Data"]})
+		log.Error(ctx, "[UpdateTel] missing email,can't use email to receive dynamic password", map[string]interface{}{"operator": md["Token-User"]})
 		return nil, ecode.ErrReq
 	}
 
@@ -1095,14 +1095,14 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	var rest int
 	switch req.OldReceiverType {
 	case "tel":
-		rest, e = s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateTelOldTel, code)
+		rest, e = s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateTelOldTel, code)
 	case "email":
-		rest, e = s.userDao.RedisSetCode(ctx, md["Token-Data"], util.UpdateTelOldEmail, code)
+		rest, e = s.userDao.RedisSetCode(ctx, md["Token-User"], util.UpdateTelOldEmail, code)
 	}
 	if e != nil {
 		s.stop.DoneOne()
 		if e != ecode.ErrCodeAlreadySend {
-			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if rest != 0 {
@@ -1110,39 +1110,39 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			return &api.UpdateTelResp{Step: "oldverify"}, nil
 		}
 		//already failed on step 2,ban some time
-		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-Data"], "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	}
 	switch req.OldReceiverType {
 	case "tel":
 		if e = util.SendTelCode(ctx, user.Tel, code, util.UpdateTelOldTel); e != nil {
-			log.Error(ctx, "[UpdateTel] send tel failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] send tel failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		}
 	case "email":
 		if e = util.SendEmailCode(ctx, user.Email, code, util.UpdateTelOldEmail); e != nil {
-			log.Error(ctx, "[UpdateTel] send email failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+			log.Error(ctx, "[UpdateTel] send email failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		}
 	}
 	if e != nil {
 		var ee error
 		switch req.OldReceiverType {
 		case "tel":
-			ee = s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateTelOldTel)
+			ee = s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateTelOldTel)
 		case "email":
-			ee = s.userDao.RedisDelCode(ctx, md["Token-Data"], util.UpdateTelOldEmail)
+			ee = s.userDao.RedisDelCode(ctx, md["Token-User"], util.UpdateTelOldEmail)
 		}
 		if ee != nil {
-			log.Error(ctx, "[UpdateTel] del redis code failed", map[string]interface{}{"operator": md["Token-Data"], "error": ee})
+			log.Error(ctx, "[UpdateTel] del redis code failed", map[string]interface{}{"operator": md["Token-User"], "error": ee})
 			go func() {
 				var e error
 				switch req.OldReceiverType {
 				case "tel":
-					e = s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateTelOldTel)
+					e = s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateTelOldTel)
 				case "email":
-					e = s.userDao.RedisDelCode(context.Background(), md["Token-Data"], util.UpdateTelOldEmail)
+					e = s.userDao.RedisDelCode(context.Background(), md["Token-User"], util.UpdateTelOldEmail)
 				}
 				if e != nil {
-					log.Error(ctx, "[UpdateTel] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+					log.Error(ctx, "[UpdateTel] del redis code failed in goroutine", map[string]interface{}{"operator": md["Token-User"], "error": e})
 				}
 				s.stop.DoneOne()
 			}()
@@ -1153,9 +1153,9 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 	switch req.OldReceiverType {
 	case "tel":
-		log.Info(ctx, "[UpdateTel] send dynamic password to old tel success", map[string]interface{}{"operator": md["Token-Data"], "old_tel": user.Tel, "code": code})
+		log.Info(ctx, "[UpdateTel] send dynamic password to old tel success", map[string]interface{}{"operator": md["Token-User"], "old_tel": user.Tel, "code": code})
 	case "email":
-		log.Info(ctx, "[UpdateTel] send dynamic password to old email success", map[string]interface{}{"operator": md["Token-Data"], "old_email": user.Email, "code": code})
+		log.Info(ctx, "[UpdateTel] send dynamic password to old email success", map[string]interface{}{"operator": md["Token-User"], "old_email": user.Email, "code": code})
 	}
 	s.stop.DoneOne()
 	return &api.UpdateTelResp{Step: "oldverify"}, nil

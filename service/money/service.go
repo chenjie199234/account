@@ -102,14 +102,14 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 }
 func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) (*api.SelfMoneyLogsResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-Data"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[SelfMoneyLogs] operator's token format wrong", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[SelfMoneyLogs] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
 	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, operator, req.Action, 20, int64(req.Page))
 	if e != nil {
-		log.Error(ctx, "[SelfMoneyLogs] db op failed", map[string]interface{}{"operator": md["Token-Data"], "error": e})
+		log.Error(ctx, "[SelfMoneyLogs] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	resp := &api.SelfMoneyLogsResp{
