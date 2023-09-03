@@ -308,6 +308,7 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		log.Error(ctx, "[UpdateStaticPassword] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
+	//TODO add rate limit
 	if e := s.userDao.MongoUpdateUserPassword(ctx, operator, req.OldStaticPassword, req.NewStaticPassword); e != nil {
 		log.Error(ctx, "[UpdateStaticPassword] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -326,6 +327,17 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	if e != nil {
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
+	}
+	//TODO add rate limit
+	user, e := s.userDao.GetUser(ctx, "UpdateIdcard", operator)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if user.IDCard == req.NewIdcard {
+		return &api.UpdateIdcardResp{}, nil
+	}
+	if user.IDCard != "" {
+		return nil, ecode.ErrIDCardAlreadySetted
 	}
 	var update bool
 	if update, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, req.NewIdcard); e != nil {
@@ -351,6 +363,14 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	if e != nil {
 		log.Error(ctx, "[UpdateNickName] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
+	}
+	//TODO add rate limit
+	user, e := s.userDao.GetUser(ctx, "UpdateNickName", operator)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if user.NickName == req.NewNickName {
+		return &api.UpdateNickNameResp{}, nil
 	}
 	var oldNickName string
 	if oldNickName, e = s.userDao.MongoUpdateUserNickName(ctx, operator, req.NewNickName); e != nil {
@@ -383,6 +403,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		log.Error(ctx, "[UpdateEmail] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
+	//TODO add rate limit
 	if req.NewEmailDynamicPassword != "" {
 		//step 3
 		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailNewEmail, req.NewEmail+"_"+req.NewEmailDynamicPassword)
@@ -601,6 +622,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		log.Error(ctx, "[UpdateTel] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
+	//TODO add rate limit
 	if req.NewTelDynamicPassword != "" {
 		//step 3
 		rest, e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelNewTel, req.NewTel+"_"+req.NewTelDynamicPassword)
