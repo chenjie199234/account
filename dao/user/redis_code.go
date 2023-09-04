@@ -23,16 +23,17 @@ func init() {
 // argv 1 = code
 // argc 2 = max check times
 // argc 3 = expire time(unit second)
-// return -1 = set success
-// return >=0 = already setted before,data is the rest check times
+// return nil = set success
+// return <=0 = already setted before and all check times failed,ban some time
+// return >0 = already setted before,data is the rest check times
 const setcode = `local used=redis.call("HGET",KEYS[1],"check")
 if(used~=nil)
 then
 	return ARGV[2]-used
 end
 redis.call("HMSET",KEYS[1],"code",ARGV[1],"check",0)
-redis.call("EXPIRE",KEYS[1],ARGV[2])
-return -1`
+redis.call("EXPIRE",KEYS[1],ARGV[3])
+return nil`
 
 var hsetcode string
 
@@ -47,13 +48,15 @@ func (d *Dao) RedisSetCode(ctx context.Context, target, action string, code stri
 	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
 		rest, e = redis.Int(c.DoContext(ctx, "EVAL", setcode, 1, "code_{"+target+"}_"+action, code, DefaultCheckTimes, DefaultExpireSeconds))
 	}
+	if e == redis.ErrNil {
+		return DefaultCheckTimes, nil
+	}
 	if e != nil {
 		return 0, e
 	}
-	if rest != -1 {
+	if rest <= 0 {
+		rest = 0
 		e = ecode.ErrCodeAlreadySend
-	} else {
-		rest = DefaultCheckTimes
 	}
 	return rest, e
 }
@@ -79,7 +82,7 @@ if(data[2]>=ARGV[2])
 then
 	return 0
 end
-if(redis.call("EXPIRE",KEYS[1],ARGV[2])==0)
+if(redis.call("EXPIRE",KEYS[1],ARGV[3])==0)
 then
 	return nil
 end

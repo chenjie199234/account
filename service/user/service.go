@@ -96,8 +96,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.MongoGetUserByIDCard(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
+		if user, e = s.userDao.GetUserByIDCard(ctx, "Login", req.Src); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "nickname":
@@ -106,15 +105,14 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.MongoGetUserByNickName(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] db op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
+		if user, e = s.userDao.GetUserByNickName(ctx, "Login", req.Src); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
 		if req.PasswordType == "dynamic" && req.Password == "" {
 			//send code
-			//set redis and send tel is async
-			//if set redis success and send tel failed
+			//set redis and send is async
+			//if set redis success and send failed
 			//we need to clean the redis
 			if !s.stop.AddOne() {
 				return nil, cerror.ErrServerClosing
@@ -127,8 +125,10 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 					return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 				}
 				if rest != 0 {
+					//if tel's code already send,we jump to verify step
 					return &api.LoginResp{Step: "verify"}, nil
 				}
+				//already failed on verify step,ban some time
 				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
@@ -158,7 +158,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if rest > 0 {
-				log.Error(ctx, "[Login] check failed", map[string]interface{}{"tel": req.Src, "code": req.Password, "rest": rest})
+				log.Error(ctx, "[Login] code check failed", map[string]interface{}{"tel": req.Src, "code": req.Password, "rest": rest})
 				return nil, ecode.ErrPasswordWrong
 			} else if rest == 0 {
 				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"tel": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
@@ -167,22 +167,22 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			//verify success
 		}
 		//static or dynamic's verify success
-		user, e = s.userDao.MongoGetUserByTel(ctx, req.Src)
+		user, e = s.userDao.GetUserByTel(ctx, "Login", req.Src)
 		if e != nil {
 			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
-				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
+			//dynamic and user not exist,create now
 			if user, e = s.userDao.MongoCreateUserByTel(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				log.Error(ctx, "[Login] create new account failed", map[string]interface{}{"tel": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		}
 	case "email":
 		if req.PasswordType == "dynamic" && req.Password == "" {
 			//send code
-			//set redis and send email is async
-			//if set redis success and send email failed
+			//set redis and send is async
+			//if set redis success and send failed
 			//we need to clean the redis
 			if !s.stop.AddOne() {
 				return nil, cerror.ErrServerClosing
@@ -195,8 +195,10 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 					return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 				}
 				if rest != 0 {
+					//if tel's code already send,we jump to verify step
 					return &api.LoginResp{Step: "verify"}, nil
 				}
+				//already failed on verify step,ban some time
 				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
 				return nil, ecode.ErrBan
 			}
@@ -226,7 +228,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if rest > 0 {
-				log.Error(ctx, "[Login] check failed", map[string]interface{}{"email": req.Src, "code": req.Password, "rest": rest})
+				log.Error(ctx, "[Login] code check failed", map[string]interface{}{"email": req.Src, "code": req.Password, "rest": rest})
 				return nil, ecode.ErrPasswordWrong
 			} else if rest == 0 {
 				log.Error(ctx, "[Login] all check times failed", map[string]interface{}{"email": req.Src, "ban_seconds": userdao.DefaultExpireSeconds})
@@ -235,30 +237,29 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			//verify success
 		}
 		//static or dynamic's verify success
-		user, e = s.userDao.MongoGetUserByEmail(ctx, req.Src)
+		user, e = s.userDao.GetUserByEmail(ctx, "Login", req.Src)
 		if e != nil {
 			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
-				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"email": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
+			//dynamic and user not exist,create now
 			if user, e = s.userDao.MongoCreateUserByEmail(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] db op failed", map[string]interface{}{"email": req.Src, "error": e})
+				log.Error(ctx, "[Login] create new account failed", map[string]interface{}{"email": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		}
 	}
-	needSetPassword := false
-	if req.PasswordType == "dynamic" {
-		needSetPassword = util.SignCheck("", user.Password) == nil
-	} else if e := util.SignCheck(req.Password, user.Password); e != nil {
-		if e == ecode.ErrSignCheckFailed {
-			e = ecode.ErrPasswordWrong
+	if req.PasswordType == "static" {
+		if e := util.SignCheck(req.Password, user.Password); e != nil {
+			if e == ecode.ErrSignCheckFailed {
+				e = ecode.ErrPasswordWrong
+			}
+			log.Error(ctx, "[Login] sign check failed", map[string]interface{}{"src_type": req.SrcType, "src": req.Src, "error": e})
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		log.Error(ctx, "[Login] sign check failed", map[string]interface{}{"src_type": req.SrcType, "src": req.Src, "error": e})
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	//TODO set the puber
-	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex())
+	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "")
 	resp := &api.LoginResp{
 		Token: token,
 		Info: &api.UserInfo{
@@ -272,7 +273,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		},
 		Step: "success",
 	}
-	if needSetPassword {
+	if req.PasswordType == "dynamic" && util.SignCheck("", user.Password) == nil {
+		//this is a new account
 		resp.Step = "password"
 	}
 	log.Info(ctx, "[Login] success", map[string]interface{}{"operator": user.UserID.Hex()})
