@@ -20,9 +20,13 @@ var _CrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CrpcPathUserLogin = "/account.user/login"
 var _CrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _CrpcPathUserIdcardDuplicateCheck = "/account.user/idcard_duplicate_check"
 var _CrpcPathUserUpdateIdcard = "/account.user/update_idcard"
+var _CrpcPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _CrpcPathUserUpdateNickName = "/account.user/update_nick_name"
+var _CrpcPathUserEmailDuplicateCheck = "/account.user/email_duplicate_check"
 var _CrpcPathUserUpdateEmail = "/account.user/update_email"
+var _CrpcPathUserTelDuplicateCheck = "/account.user/tel_duplicate_check"
 var _CrpcPathUserUpdateTel = "/account.user/update_tel"
 
 type UserCrpcClient interface {
@@ -30,9 +34,13 @@ type UserCrpcClient interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
+	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
+	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
+	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
 }
 
@@ -132,6 +140,28 @@ func (c *userCrpcClient) UpdateStaticPassword(ctx context.Context, req *UpdateSt
 	}
 	return resp, nil
 }
+func (c *userCrpcClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserIdcardDuplicateCheck, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(IdcardDuplicateCheckResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userCrpcClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq) (*UpdateIdcardResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -142,6 +172,28 @@ func (c *userCrpcClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq)
 		return nil, e
 	}
 	resp := new(UpdateIdcardResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userCrpcClient) NickNameDuplicateCheck(ctx context.Context, req *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserNickNameDuplicateCheck, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(NickNameDuplicateCheckResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -176,6 +228,28 @@ func (c *userCrpcClient) UpdateNickName(ctx context.Context, req *UpdateNickName
 	}
 	return resp, nil
 }
+func (c *userCrpcClient) EmailDuplicateCheck(ctx context.Context, req *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserEmailDuplicateCheck, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(EmailDuplicateCheckResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userCrpcClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq) (*UpdateEmailResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -186,6 +260,28 @@ func (c *userCrpcClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq) (
 		return nil, e
 	}
 	resp := new(UpdateEmailResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userCrpcClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserTelDuplicateCheck, reqd, metadata.GetMetadata(ctx))
+	if e != nil {
+		return nil, e
+	}
+	resp := new(TelDuplicateCheckResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -226,9 +322,13 @@ type UserCrpcServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
+	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
+	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
+	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
 }
 
@@ -419,6 +519,54 @@ func _User_UpdateStaticPassword_CrpcHandler(handler func(context.Context, *Updat
 		}
 	}
 }
+func _User_IdcardDuplicateCheck_CrpcHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(IdcardDuplicateCheckReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/idcard_duplicate_check] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/idcard_duplicate_check] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(IdcardDuplicateCheckResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
 func _User_UpdateIdcard_CrpcHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
@@ -457,6 +605,54 @@ func _User_UpdateIdcard_CrpcHandler(handler func(context.Context, *UpdateIdcardR
 		}
 		if resp == nil {
 			resp = new(UpdateIdcardResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _User_NickNameDuplicateCheck_CrpcHandler(handler func(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(NickNameDuplicateCheckReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/nick_name_duplicate_check] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/nick_name_duplicate_check] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(NickNameDuplicateCheckResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -515,6 +711,54 @@ func _User_UpdateNickName_CrpcHandler(handler func(context.Context, *UpdateNickN
 		}
 	}
 }
+func _User_EmailDuplicateCheck_CrpcHandler(handler func(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(EmailDuplicateCheckReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/email_duplicate_check] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/email_duplicate_check] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(EmailDuplicateCheckResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
 func _User_UpdateEmail_CrpcHandler(handler func(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
@@ -553,6 +797,54 @@ func _User_UpdateEmail_CrpcHandler(handler func(context.Context, *UpdateEmailReq
 		}
 		if resp == nil {
 			resp = new(UpdateEmailResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _User_TelDuplicateCheck_CrpcHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(TelDuplicateCheckReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/tel_duplicate_check] json and proto format decode both failed", nil)
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/tel_duplicate_check] json and proto format decode both failed", nil)
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(TelDuplicateCheckResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -618,8 +910,12 @@ func RegisterUserCrpcServer(engine *crpc.CrpcServer, svc UserCrpcServer, allmids
 	engine.RegisterHandler("account.user", "login", _User_Login_CrpcHandler(svc.Login))
 	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CrpcHandler(svc.UpdateStaticPassword))
+	engine.RegisterHandler("account.user", "idcard_duplicate_check", _User_IdcardDuplicateCheck_CrpcHandler(svc.IdcardDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_idcard", _User_UpdateIdcard_CrpcHandler(svc.UpdateIdcard))
+	engine.RegisterHandler("account.user", "nick_name_duplicate_check", _User_NickNameDuplicateCheck_CrpcHandler(svc.NickNameDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CrpcHandler(svc.UpdateNickName))
+	engine.RegisterHandler("account.user", "email_duplicate_check", _User_EmailDuplicateCheck_CrpcHandler(svc.EmailDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CrpcHandler(svc.UpdateEmail))
+	engine.RegisterHandler("account.user", "tel_duplicate_check", _User_TelDuplicateCheck_CrpcHandler(svc.TelDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_tel", _User_UpdateTel_CrpcHandler(svc.UpdateTel))
 }

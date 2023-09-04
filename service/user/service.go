@@ -340,6 +340,19 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	}()
 	return &api.UpdateStaticPasswordResp{}, nil
 }
+func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDuplicateCheckReq) (*api.IdcardDuplicateCheckResp, error) {
+	md := metadata.GetMetadata(ctx)
+	//redis lock
+	if e := s.userDao.RedisLockDuplicateCheck(ctx, "idcard", md["Token-User"]); e != nil {
+		log.Error(ctx, "[IdcardDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	userid, e := s.userDao.GetUserIDCardIndex(ctx, "IdcardDuplicateCheck", req.Idcard)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	return &api.IdcardDuplicateCheckResp{Duplicate: userid != ""}, nil
+}
 func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*api.UpdateIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -375,6 +388,19 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	}
 	return &api.UpdateIdcardResp{}, nil
 }
+func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameDuplicateCheckReq) (*api.NickNameDuplicateCheckResp, error) {
+	md := metadata.GetMetadata(ctx)
+	//redis lock
+	if e := s.userDao.RedisLockDuplicateCheck(ctx, "nickname", md["Token-User"]); e != nil {
+		log.Error(ctx, "[NickNameDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	userid, e := s.userDao.GetUserNickNameIndex(ctx, "NickNameDuplicateCheck", req.NickName)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	return &api.NickNameDuplicateCheckResp{Duplicate: userid != ""}, nil
+}
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -408,12 +434,26 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 			}
 		}()
 		go func() {
-			if e := s.userDao.RedisDelUserIndexNickName(context.Background(), oldNickName); e != nil {
+			if e := s.userDao.RedisDelUserNickNameIndex(context.Background(), oldNickName); e != nil {
 				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"nick_name": oldNickName, "error": e})
 			}
 		}()
 	}
 	return &api.UpdateNickNameResp{}, nil
+}
+
+func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplicateCheckReq) (*api.EmailDuplicateCheckResp, error) {
+	md := metadata.GetMetadata(ctx)
+	//redis lock
+	if e := s.userDao.RedisLockDuplicateCheck(ctx, "email", md["Token-User"]); e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	userid, e := s.userDao.GetUserEmailIndex(ctx, "EmailDuplicateCheck", req.Email)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	return &api.EmailDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
 // UpdateTel Step 1:send dynamic password to old email or tel
@@ -456,7 +496,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 				}
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserIndexEmail(context.Background(), oldEmail); e != nil {
+				if e := s.userDao.RedisDelUserEmailIndex(context.Background(), oldEmail); e != nil {
 					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"email": oldEmail, "error": e})
 				}
 			}()
@@ -640,6 +680,20 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	return &api.UpdateEmailResp{Step: "oldverify"}, nil
 }
 
+func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCheckReq) (*api.TelDuplicateCheckResp, error) {
+	md := metadata.GetMetadata(ctx)
+	//redis lock
+	if e := s.userDao.RedisLockDuplicateCheck(ctx, "tel", md["Token-User"]); e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	userid, e := s.userDao.GetUserTelIndex(ctx, "EmailDuplicateCheck", req.Tel)
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	return &api.TelDuplicateCheckResp{Duplicate: userid != ""}, nil
+}
+
 // UpdateTel Step 1:send dynamic password to old email or tel
 // UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new tel
 // UpdateTel Step 3:verify new tel's dynamic and update
@@ -680,7 +734,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 				}
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserIndexTel(context.Background(), oldTel); e != nil {
+				if e := s.userDao.RedisDelUserTelIndex(context.Background(), oldTel); e != nil {
 					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"tel": oldTel, "error": e})
 				}
 			}()

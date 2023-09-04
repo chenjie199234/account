@@ -35,7 +35,15 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc update_idcard(update_idcard_req)returns(update_idcard_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc nick_name_duplicate_check(nick_name_duplicate_check_req)returns(nick_name_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -43,7 +51,15 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc email_duplicate_check(email_duplicate_check_req)returns(email_duplicate_check_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc update_email(update_email_req)returns(update_email_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc tel_duplicate_check(tel_duplicate_check_req)returns(tel_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -107,15 +123,33 @@ message update_static_password_req{
 }
 message update_static_password_resp{
 }
+message idcard_duplicate_check_req{
+	string idcard=1[(pbex.string_bytes_len_gt)=0];
+}
+message idcard_duplicate_check_resp{
+	bool duplicate=1;
+}
 message update_idcard_req{
 	string new_idcard=1[(pbex.string_bytes_len_gt)=0];
 }
 message update_idcard_resp{
 }
+message nick_name_duplicate_check_req{
+	string nick_name=1[(pbex.string_bytes_len_gt)=0];
+}
+message nick_name_duplicate_check_resp{
+	bool duplicate=1;
+}
 message update_nick_name_req{
 	string new_nick_name=1[(pbex.string_bytes_len_gt)=0];
 }
 message update_nick_name_resp{
+}
+message email_duplicate_check_req{
+	string email=1[(pbex.string_bytes_len_gt)=0];
+}
+message email_duplicate_check_resp{
+	bool duplicate=1;
 }
 message update_email_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
@@ -132,6 +166,12 @@ message update_email_resp{
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+}
+message tel_duplicate_check_req{
+	string tel=1[(pbex.string_bytes_len_gt)=0];
+}
+message tel_duplicate_check_resp{
+	bool duplicate=1;
 }
 message update_tel_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];

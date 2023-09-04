@@ -11,6 +11,42 @@ export interface Error{
 	msg: string;
 }
 
+export interface EmailDuplicateCheckReq{
+	email: string;
+}
+function EmailDuplicateCheckReqToJson(msg: EmailDuplicateCheckReq): string{
+	let s: string="{"
+	//email
+	if(msg.email==null||msg.email==undefined){
+		throw 'EmailDuplicateCheckReq.email must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.email)
+		s+='"email":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface EmailDuplicateCheckResp{
+	duplicate: boolean;
+}
+function JsonToEmailDuplicateCheckResp(jsonobj: { [k:string]:any }): EmailDuplicateCheckResp{
+	let obj: EmailDuplicateCheckResp={
+		duplicate:false,
+	}
+	//duplicate
+	if(jsonobj['duplicate']!=null&&jsonobj['duplicate']!=undefined){
+		if(typeof jsonobj['duplicate']!='boolean'){
+			throw 'EmailDuplicateCheckResp.duplicate must be boolean'
+		}
+		obj['duplicate']=jsonobj['duplicate']
+	}
+	return obj
+}
 export interface GetUserInfoReq{
 	src_type: string;
 	src: string;
@@ -53,6 +89,42 @@ function JsonToGetUserInfoResp(jsonobj: { [k:string]:any }): GetUserInfoResp{
 			throw 'GetUserInfoResp.info must be UserInfo'
 		}
 		obj['info']=JsonToUserInfo(jsonobj['info'])
+	}
+	return obj
+}
+export interface IdcardDuplicateCheckReq{
+	idcard: string;
+}
+function IdcardDuplicateCheckReqToJson(msg: IdcardDuplicateCheckReq): string{
+	let s: string="{"
+	//idcard
+	if(msg.idcard==null||msg.idcard==undefined){
+		throw 'IdcardDuplicateCheckReq.idcard must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.idcard)
+		s+='"idcard":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface IdcardDuplicateCheckResp{
+	duplicate: boolean;
+}
+function JsonToIdcardDuplicateCheckResp(jsonobj: { [k:string]:any }): IdcardDuplicateCheckResp{
+	let obj: IdcardDuplicateCheckResp={
+		duplicate:false,
+	}
+	//duplicate
+	if(jsonobj['duplicate']!=null&&jsonobj['duplicate']!=undefined){
+		if(typeof jsonobj['duplicate']!='boolean'){
+			throw 'IdcardDuplicateCheckResp.duplicate must be boolean'
+		}
+		obj['duplicate']=jsonobj['duplicate']
 	}
 	return obj
 }
@@ -144,6 +216,42 @@ function JsonToLoginResp(jsonobj: { [k:string]:any }): LoginResp{
 	}
 	return obj
 }
+export interface NickNameDuplicateCheckReq{
+	nick_name: string;
+}
+function NickNameDuplicateCheckReqToJson(msg: NickNameDuplicateCheckReq): string{
+	let s: string="{"
+	//nick_name
+	if(msg.nick_name==null||msg.nick_name==undefined){
+		throw 'NickNameDuplicateCheckReq.nick_name must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.nick_name)
+		s+='"nick_name":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface NickNameDuplicateCheckResp{
+	duplicate: boolean;
+}
+function JsonToNickNameDuplicateCheckResp(jsonobj: { [k:string]:any }): NickNameDuplicateCheckResp{
+	let obj: NickNameDuplicateCheckResp={
+		duplicate:false,
+	}
+	//duplicate
+	if(jsonobj['duplicate']!=null&&jsonobj['duplicate']!=undefined){
+		if(typeof jsonobj['duplicate']!='boolean'){
+			throw 'NickNameDuplicateCheckResp.duplicate must be boolean'
+		}
+		obj['duplicate']=jsonobj['duplicate']
+	}
+	return obj
+}
 export interface SelfUserInfoReq{
 }
 function SelfUserInfoReqToJson(_msg: SelfUserInfoReq): string{
@@ -168,6 +276,42 @@ function JsonToSelfUserInfoResp(jsonobj: { [k:string]:any }): SelfUserInfoResp{
 			throw 'SelfUserInfoResp.info must be UserInfo'
 		}
 		obj['info']=JsonToUserInfo(jsonobj['info'])
+	}
+	return obj
+}
+export interface TelDuplicateCheckReq{
+	tel: string;
+}
+function TelDuplicateCheckReqToJson(msg: TelDuplicateCheckReq): string{
+	let s: string="{"
+	//tel
+	if(msg.tel==null||msg.tel==undefined){
+		throw 'TelDuplicateCheckReq.tel must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.tel)
+		s+='"tel":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface TelDuplicateCheckResp{
+	duplicate: boolean;
+}
+function JsonToTelDuplicateCheckResp(jsonobj: { [k:string]:any }): TelDuplicateCheckResp{
+	let obj: TelDuplicateCheckResp={
+		duplicate:false,
+	}
+	//duplicate
+	if(jsonobj['duplicate']!=null&&jsonobj['duplicate']!=undefined){
+		if(typeof jsonobj['duplicate']!='boolean'){
+			throw 'TelDuplicateCheckResp.duplicate must be boolean'
+		}
+		obj['duplicate']=jsonobj['duplicate']
 	}
 	return obj
 }
@@ -493,9 +637,13 @@ const _WebPathUserGetUserInfo: string ="/account.user/get_user_info";
 const _WebPathUserLogin: string ="/account.user/login";
 const _WebPathUserSelfUserInfo: string ="/account.user/self_user_info";
 const _WebPathUserUpdateStaticPassword: string ="/account.user/update_static_password";
+const _WebPathUserIdcardDuplicateCheck: string ="/account.user/idcard_duplicate_check";
 const _WebPathUserUpdateIdcard: string ="/account.user/update_idcard";
+const _WebPathUserNickNameDuplicateCheck: string ="/account.user/nick_name_duplicate_check";
 const _WebPathUserUpdateNickName: string ="/account.user/update_nick_name";
+const _WebPathUserEmailDuplicateCheck: string ="/account.user/email_duplicate_check";
 const _WebPathUserUpdateEmail: string ="/account.user/update_email";
+const _WebPathUserTelDuplicateCheck: string ="/account.user/tel_duplicate_check";
 const _WebPathUserUpdateTel: string ="/account.user/update_tel";
 //ToB means this is used for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
@@ -709,6 +857,55 @@ export class UserBrowserClientToB {
 	}
 	//timeout must be integer,timeout's unit is millisecond
 	//don't set Content-Type in header
+	idcard_duplicate_check(header: { [k: string]: string },req: IdcardDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: IdcardDuplicateCheckResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserIdcardDuplicateCheck,
+				appname:'account',
+				groupname:this.group,
+				data:IdcardDuplicateCheckReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:IdcardDuplicateCheckResp=JsonToIdcardDuplicateCheckResp(response.data.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
 	update_idcard(header: { [k: string]: string },req: UpdateIdcardReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: UpdateIdcardResp)=>void){
 		if(!Number.isInteger(timeout)){
 			throw 'timeout must be integer'
@@ -734,6 +931,55 @@ export class UserBrowserClientToB {
 		.then(function(response){
 			try{
 				let obj:UpdateIdcardResp=JsonToUpdateIdcardResp(response.data.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	nick_name_duplicate_check(header: { [k: string]: string },req: NickNameDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: NickNameDuplicateCheckResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserNickNameDuplicateCheck,
+				appname:'account',
+				groupname:this.group,
+				data:NickNameDuplicateCheckReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:NickNameDuplicateCheckResp=JsonToNickNameDuplicateCheckResp(response.data.data)
 				successf(obj)
 			}catch(e){
 				let err:Error={code:-1,msg:'response error'}
@@ -807,6 +1053,55 @@ export class UserBrowserClientToB {
 	}
 	//timeout must be integer,timeout's unit is millisecond
 	//don't set Content-Type in header
+	email_duplicate_check(header: { [k: string]: string },req: EmailDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: EmailDuplicateCheckResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserEmailDuplicateCheck,
+				appname:'account',
+				groupname:this.group,
+				data:EmailDuplicateCheckReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:EmailDuplicateCheckResp=JsonToEmailDuplicateCheckResp(response.data.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
 	update_email(header: { [k: string]: string },req: UpdateEmailReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: UpdateEmailResp)=>void){
 		if(!Number.isInteger(timeout)){
 			throw 'timeout must be integer'
@@ -832,6 +1127,55 @@ export class UserBrowserClientToB {
 		.then(function(response){
 			try{
 				let obj:UpdateEmailResp=JsonToUpdateEmailResp(response.data.data)
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'response error'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	tel_duplicate_check(header: { [k: string]: string },req: TelDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: TelDuplicateCheckResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserTelDuplicateCheck,
+				appname:'account',
+				groupname:this.group,
+				data:TelDuplicateCheckReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			try{
+				let obj:TelDuplicateCheckResp=JsonToTelDuplicateCheckResp(response.data.data)
 				successf(obj)
 			}catch(e){
 				let err:Error={code:-1,msg:'response error'}

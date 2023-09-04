@@ -58,7 +58,7 @@ func (d *Dao) RedisDelUser(ctx context.Context, userid string) error {
 	_, e = redis.String(c.DoContext(ctx, "DEL", "user_{"+userid+"}_info"))
 	return e
 }
-func (d *Dao) RedisSetUserIndexTel(ctx context.Context, tel string, userid string) error {
+func (d *Dao) RedisSetUserTelIndex(ctx context.Context, tel string, userid string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -67,7 +67,7 @@ func (d *Dao) RedisSetUserIndexTel(ctx context.Context, tel string, userid strin
 	_, e = redis.String(c.DoContext(ctx, "SET", "tel_{"+tel+"}_index", userid, "EX", 604800))
 	return e
 }
-func (d *Dao) RedisGetUserIndexTel(ctx context.Context, tel string) (string, error) {
+func (d *Dao) RedisGetUserTelIndex(ctx context.Context, tel string) (string, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return "", e
@@ -89,7 +89,7 @@ func (d *Dao) RedisGetUserIndexTel(ctx context.Context, tel string) (string, err
 }
 func (d *Dao) RedisGetUserByTel(ctx context.Context, tel string) (*model.User, error) {
 	//tel -> userid -> user
-	if userid, e := d.RedisGetUserIndexTel(ctx, tel); e != nil {
+	if userid, e := d.RedisGetUserTelIndex(ctx, tel); e != nil {
 		return nil, e
 	} else if userid == "" {
 		return nil, nil
@@ -104,7 +104,7 @@ func (d *Dao) RedisGetUserByTel(ctx context.Context, tel string) (*model.User, e
 		return user, nil
 	}
 }
-func (d *Dao) RedisDelUserIndexTel(ctx context.Context, tel string) error {
+func (d *Dao) RedisDelUserTelIndex(ctx context.Context, tel string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -113,7 +113,7 @@ func (d *Dao) RedisDelUserIndexTel(ctx context.Context, tel string) error {
 	_, e = redis.String(c.DoContext(ctx, "DEL", "tel_{"+tel+"}_index"))
 	return e
 }
-func (d *Dao) RedisSetUserIndexEmail(ctx context.Context, email string, userid string) error {
+func (d *Dao) RedisSetUserEmailIndex(ctx context.Context, email string, userid string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -122,7 +122,7 @@ func (d *Dao) RedisSetUserIndexEmail(ctx context.Context, email string, userid s
 	_, e = redis.String(c.DoContext(ctx, "SET", "email_{"+email+"}_index", userid, "EX", 604800))
 	return e
 }
-func (d *Dao) RedisGetUserIndexEmail(ctx context.Context, email string) (string, error) {
+func (d *Dao) RedisGetUserEmailIndex(ctx context.Context, email string) (string, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return "", e
@@ -144,7 +144,7 @@ func (d *Dao) RedisGetUserIndexEmail(ctx context.Context, email string) (string,
 }
 func (d *Dao) RedisGetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	//email -> userid -> user
-	if userid, e := d.RedisGetUserIndexEmail(ctx, email); e != nil {
+	if userid, e := d.RedisGetUserEmailIndex(ctx, email); e != nil {
 		return nil, e
 	} else if userid == "" {
 		return nil, nil
@@ -159,7 +159,7 @@ func (d *Dao) RedisGetUserByEmail(ctx context.Context, email string) (*model.Use
 		return user, nil
 	}
 }
-func (d *Dao) RedisDelUserIndexEmail(ctx context.Context, email string) error {
+func (d *Dao) RedisDelUserEmailIndex(ctx context.Context, email string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -168,7 +168,7 @@ func (d *Dao) RedisDelUserIndexEmail(ctx context.Context, email string) error {
 	_, e = redis.String(c.DoContext(ctx, "DEL", "email_{"+email+"}_index"))
 	return e
 }
-func (d *Dao) RedisSetUserIndexIDCard(ctx context.Context, idcard string, userid string) error {
+func (d *Dao) RedisSetUserIDCardIndex(ctx context.Context, idcard string, userid string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -177,7 +177,7 @@ func (d *Dao) RedisSetUserIndexIDCard(ctx context.Context, idcard string, userid
 	_, e = redis.String(c.DoContext(ctx, "SET", "idcard_{"+idcard+"}_index", userid, "EX", 604800))
 	return e
 }
-func (d *Dao) RedisGetUserIndexIDCard(ctx context.Context, idcard string) (string, error) {
+func (d *Dao) RedisGetUserIDCardIndex(ctx context.Context, idcard string) (string, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return "", e
@@ -199,7 +199,7 @@ func (d *Dao) RedisGetUserIndexIDCard(ctx context.Context, idcard string) (strin
 }
 func (d *Dao) RedisGetUserByIDCard(ctx context.Context, idcard string) (*model.User, error) {
 	//idcard -> userid -> user
-	if userid, e := d.RedisGetUserIndexIDCard(ctx, idcard); e != nil {
+	if userid, e := d.RedisGetUserIDCardIndex(ctx, idcard); e != nil {
 		return nil, e
 	} else if userid == "" {
 		return nil, nil
@@ -214,7 +214,7 @@ func (d *Dao) RedisGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 		return user, nil
 	}
 }
-func (d *Dao) RedisDelUserIndexIDCard(ctx context.Context, idcard string) error {
+func (d *Dao) RedisDelUserIDCardIndex(ctx context.Context, idcard string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -223,7 +223,7 @@ func (d *Dao) RedisDelUserIndexIDCard(ctx context.Context, idcard string) error 
 	_, e = redis.String(c.DoContext(ctx, "DEL", "idcard_{"+idcard+"}_index"))
 	return e
 }
-func (d *Dao) RedisSetUserIndexNickName(ctx context.Context, nickname string, userid string) error {
+func (d *Dao) RedisSetUserNickNameIndex(ctx context.Context, nickname string, userid string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e
@@ -232,7 +232,7 @@ func (d *Dao) RedisSetUserIndexNickName(ctx context.Context, nickname string, us
 	_, e = redis.String(c.DoContext(ctx, "SET", "nickname_{"+nickname+"}_index", userid, "EX", 604800))
 	return e
 }
-func (d *Dao) RedisGetUserIndexNickName(ctx context.Context, nickname string) (string, error) {
+func (d *Dao) RedisGetUserNickNameIndex(ctx context.Context, nickname string) (string, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return "", e
@@ -254,7 +254,7 @@ func (d *Dao) RedisGetUserIndexNickName(ctx context.Context, nickname string) (s
 }
 func (d *Dao) RedisGetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
 	//nickname -> userid -> user
-	if userid, e := d.RedisGetUserIndexNickName(ctx, nickname); e != nil {
+	if userid, e := d.RedisGetUserNickNameIndex(ctx, nickname); e != nil {
 		return nil, e
 	} else if userid == "" {
 		return nil, nil
@@ -269,7 +269,7 @@ func (d *Dao) RedisGetUserByNickName(ctx context.Context, nickname string) (*mod
 		return user, nil
 	}
 }
-func (d *Dao) RedisDelUserIndexNickName(ctx context.Context, nickname string) error {
+func (d *Dao) RedisDelUserNickNameIndex(ctx context.Context, nickname string) error {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return e

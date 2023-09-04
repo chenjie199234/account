@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/chenjie199234/account/ecode"
+
+	"github.com/chenjie199234/Corelib/redis"
 )
 
 // 5 times per 10 min
@@ -61,6 +63,20 @@ func (d *Dao) RedisLockUpdateEmail(ctx context.Context, userid string) error {
 	rate := map[string][2]uint64{"update_email_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
+		e = ecode.ErrTooFast
+	}
+	return e
+}
+
+// 1 times per second
+func (d *Dao) RedisLockDuplicateCheck(ctx context.Context, srctype, userid string) error {
+	c, e := d.redis.GetContext(ctx)
+	if e != nil {
+		return e
+	}
+	defer c.Close()
+	_, e = redis.String(c.DoContext(ctx, "SET", srctype+"_duplicate_check_lock_{"+userid+"}", 1, "EX", 1, "NX"))
+	if e == redis.ErrNil {
 		e = ecode.ErrTooFast
 	}
 	return e

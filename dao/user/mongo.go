@@ -111,16 +111,13 @@ func (d *Dao) MongoGetUser(ctx context.Context, userid primitive.ObjectID) (*mod
 	return user, nil
 }
 func (d *Dao) MongoGetUserByTel(ctx context.Context, tel string) (*model.User, error) {
-	telindex := &model.UserTelIndex{}
-	if e := d.mongo.Database("account").Collection("user_tel_index").FindOne(ctx, bson.M{"tel": tel}).Decode(telindex); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
+	index, e := d.MongoGetUserTelIndex(ctx, tel)
+	if e != nil {
 		return nil, e
 	}
 	//between find tel index and find user
 	//another thread may change the association between user and tel
-	user, e := d.MongoGetUser(ctx, telindex.UserID)
+	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		return nil, e
 	}
@@ -130,16 +127,13 @@ func (d *Dao) MongoGetUserByTel(ctx context.Context, tel string) (*model.User, e
 	return user, nil
 }
 func (d *Dao) MongoGetUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	emailindex := &model.UserEmailIndex{}
-	if e := d.mongo.Database("account").Collection("user_email_index").FindOne(ctx, bson.M{"email": email}).Decode(emailindex); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
+	index, e := d.MongoGetUserEmailIndex(ctx, email)
+	if e != nil {
 		return nil, e
 	}
 	//between find email index and find user
 	//another thread may change the association between user and email
-	user, e := d.MongoGetUser(ctx, emailindex.UserID)
+	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		return nil, e
 	}
@@ -149,14 +143,11 @@ func (d *Dao) MongoGetUserByEmail(ctx context.Context, email string) (*model.Use
 	return user, nil
 }
 func (d *Dao) MongoGetUserByIDCard(ctx context.Context, idcard string) (*model.User, error) {
-	idcardindex := &model.UserIDCardIndex{}
-	if e := d.mongo.Database("account").Collection("user_idcard_index").FindOne(ctx, bson.M{"idcard": idcard}).Decode(idcardindex); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
+	index, e := d.MongoGetUserIDCardIndex(ctx, idcard)
+	if e != nil {
 		return nil, e
 	}
-	user, e := d.MongoGetUser(ctx, idcardindex.UserID)
+	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		return nil, e
 	}
@@ -166,14 +157,11 @@ func (d *Dao) MongoGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 	return user, nil
 }
 func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
-	nicknameindex := &model.UserNickNameIndex{}
-	if e := d.mongo.Database("account").Collection("user_nick_name_index").FindOne(ctx, bson.M{"nick_name": nickname}).Decode(nicknameindex); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
+	index, e := d.MongoGetUserNickNameIndex(ctx, nickname)
+	if e != nil {
 		return nil, e
 	}
-	user, e := d.MongoGetUser(ctx, nicknameindex.UserID)
+	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		return nil, e
 	}
@@ -221,6 +209,16 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 	}
 	return
 }
+func (d *Dao) MongoGetUserTelIndex(ctx context.Context, tel string) (*model.UserTelIndex, error) {
+	index := &model.UserTelIndex{}
+	if e := d.mongo.Database("account").Collection("user_tel_index").FindOne(ctx, bson.M{"tel": tel}).Decode(index); e != nil {
+		if e == mongo.ErrNoDocuments {
+			e = ecode.ErrUserNotExist
+		}
+		return nil, e
+	}
+	return index, nil
+}
 func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (oldEmail string, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
@@ -259,6 +257,16 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 		oldEmail = user.Email
 	}
 	return
+}
+func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.UserEmailIndex, error) {
+	index := &model.UserEmailIndex{}
+	if e := d.mongo.Database("account").Collection("user_email_index").FindOne(ctx, bson.M{"email": email}).Decode(index); e != nil {
+		if e == mongo.ErrNoDocuments {
+			e = ecode.ErrUserNotExist
+		}
+		return nil, e
+	}
+	return index, nil
 }
 func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (update bool, e error) {
 	var s mongo.Session
@@ -302,6 +310,16 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 	update = true
 	return
 }
+func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*model.UserIDCardIndex, error) {
+	index := &model.UserIDCardIndex{}
+	if e := d.mongo.Database("account").Collection("user_idcard_index").FindOne(ctx, bson.M{"idcard": idcard}).Decode(index); e != nil {
+		if e == mongo.ErrNoDocuments {
+			e = ecode.ErrUserNotExist
+		}
+		return nil, e
+	}
+	return index, nil
+}
 func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (oldNickName string, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
@@ -340,6 +358,16 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 		oldNickName = user.NickName
 	}
 	return
+}
+func (d *Dao) MongoGetUserNickNameIndex(ctx context.Context, nickname string) (*model.UserNickNameIndex, error) {
+	index := &model.UserNickNameIndex{}
+	if e := d.mongo.Database("account").Collection("user_nick_name_index").FindOne(ctx, bson.M{"nick_name": nickname}).Decode(index); e != nil {
+		if e == mongo.ErrNoDocuments {
+			e = ecode.ErrUserNotExist
+		}
+		return nil, e
+	}
+	return index, nil
 }
 func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.ObjectID, oldpassword, newpassword string) (e error) {
 	var s mongo.Session

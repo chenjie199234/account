@@ -40,9 +40,25 @@ func (m *UpdateStaticPasswordReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *IdcardDuplicateCheckReq) Validate() (errstr string) {
+	if len(m.GetIdcard()) <= 0 {
+		return "field: idcard in object: idcard_duplicate_check_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *UpdateIdcardReq) Validate() (errstr string) {
 	if len(m.GetNewIdcard()) <= 0 {
 		return "field: new_idcard in object: update_idcard_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *NickNameDuplicateCheckReq) Validate() (errstr string) {
+	if len(m.GetNickName()) <= 0 {
+		return "field: nick_name in object: nick_name_duplicate_check_req check value str len gt failed"
 	}
 	return ""
 }
@@ -56,12 +72,28 @@ func (m *UpdateNickNameReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *EmailDuplicateCheckReq) Validate() (errstr string) {
+	if len(m.GetEmail()) <= 0 {
+		return "field: email in object: email_duplicate_check_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *UpdateEmailReq) Validate() (errstr string) {
 	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
 		return "field: old_receiver_type in object: update_email_req check value str in failed"
 	}
 	if len(m.GetNewEmail()) <= 0 {
 		return "field: new_email in object: update_email_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *TelDuplicateCheckReq) Validate() (errstr string) {
+	if len(m.GetTel()) <= 0 {
+		return "field: tel in object: tel_duplicate_check_req check value str len gt failed"
 	}
 	return ""
 }

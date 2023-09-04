@@ -22,18 +22,26 @@ import (
 var _WebPathUserLogin = "/account.user/login"
 var _WebPathUserSelfUserInfo = "/account.user/self_user_info"
 var _WebPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _WebPathUserIdcardDuplicateCheck = "/account.user/idcard_duplicate_check"
 var _WebPathUserUpdateIdcard = "/account.user/update_idcard"
+var _WebPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _WebPathUserUpdateNickName = "/account.user/update_nick_name"
+var _WebPathUserEmailDuplicateCheck = "/account.user/email_duplicate_check"
 var _WebPathUserUpdateEmail = "/account.user/update_email"
+var _WebPathUserTelDuplicateCheck = "/account.user/tel_duplicate_check"
 var _WebPathUserUpdateTel = "/account.user/update_tel"
 
 type UserWebClient interface {
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq, http.Header) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq, http.Header) (*UpdateIdcardResp, error)
+	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, http.Header) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq, http.Header) (*UpdateNickNameResp, error)
+	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq, http.Header) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq, http.Header) (*UpdateEmailResp, error)
+	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq, http.Header) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq, http.Header) (*UpdateTelResp, error)
 }
 
@@ -141,6 +149,38 @@ func (c *userWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 	}
 	return resp, nil
 }
+func (c *userWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(IdcardDuplicateCheckResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, header http.Header) (*UpdateIdcardResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -161,6 +201,38 @@ func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, 
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(UpdateIdcardResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userWebClient) NickNameDuplicateCheck(ctx context.Context, req *NickNameDuplicateCheckReq, header http.Header) (*NickNameDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserNickNameDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(NickNameDuplicateCheckResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -205,6 +277,38 @@ func (c *userWebClient) UpdateNickName(ctx context.Context, req *UpdateNickNameR
 	}
 	return resp, nil
 }
+func (c *userWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDuplicateCheckReq, header http.Header) (*EmailDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserEmailDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(EmailDuplicateCheckResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, header http.Header) (*UpdateEmailResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -225,6 +329,38 @@ func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, he
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(UpdateEmailResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq, header http.Header) (*TelDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserTelDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(TelDuplicateCheckResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -274,9 +410,13 @@ type UserWebServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
+	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
+	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
+	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
 }
 
@@ -452,6 +592,65 @@ func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 		}
 	}
 }
+func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(IdcardDuplicateCheckReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": "POST,PUT,PATCH only support application/json or application/x-protobuf"})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/idcard_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(IdcardDuplicateCheckResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateIdcardReq)
@@ -501,6 +700,65 @@ func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardRe
 		}
 		if resp == nil {
 			resp = new(UpdateIdcardResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _User_NickNameDuplicateCheck_WebHandler(handler func(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(NickNameDuplicateCheckReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": "POST,PUT,PATCH only support application/json or application/x-protobuf"})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/nick_name_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(NickNameDuplicateCheckResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -570,6 +828,65 @@ func _User_UpdateNickName_WebHandler(handler func(context.Context, *UpdateNickNa
 		}
 	}
 }
+func _User_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(EmailDuplicateCheckReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": "POST,PUT,PATCH only support application/json or application/x-protobuf"})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/email_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(EmailDuplicateCheckResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateEmailReq)
@@ -619,6 +936,65 @@ func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq)
 		}
 		if resp == nil {
 			resp = new(UpdateEmailResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(TelDuplicateCheckReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": e})
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": e})
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": "POST,PUT,PATCH only support application/json or application/x-protobuf"})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/tel_duplicate_check]", map[string]interface{}{"error": errstr})
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(TelDuplicateCheckResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -728,8 +1104,34 @@ func RegisterUserWebServer(engine *web.WebServer, svc UserWebServer, allmids map
 				panic("missing midware:" + v)
 			}
 		}
+		mids = append(mids, _User_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
+		engine.Post(_WebPathUserIdcardDuplicateCheck, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
 		mids = append(mids, _User_UpdateIdcard_WebHandler(svc.UpdateIdcard))
 		engine.Post(_WebPathUserUpdateIdcard, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_NickNameDuplicateCheck_WebHandler(svc.NickNameDuplicateCheck))
+		engine.Post(_WebPathUserNickNameDuplicateCheck, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -754,8 +1156,34 @@ func RegisterUserWebServer(engine *web.WebServer, svc UserWebServer, allmids map
 				panic("missing midware:" + v)
 			}
 		}
+		mids = append(mids, _User_EmailDuplicateCheck_WebHandler(svc.EmailDuplicateCheck))
+		engine.Post(_WebPathUserEmailDuplicateCheck, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
 		mids = append(mids, _User_UpdateEmail_WebHandler(svc.UpdateEmail))
 		engine.Post(_WebPathUserUpdateEmail, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_TelDuplicateCheck_WebHandler(svc.TelDuplicateCheck))
+		engine.Post(_WebPathUserTelDuplicateCheck, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
