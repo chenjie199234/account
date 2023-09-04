@@ -109,7 +109,13 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
-		if req.PasswordType == "dynamic" && req.Password == "" {
+		if req.PasswordType == "static" {
+		} else if req.Password == "" {
+			//redis lock
+			if e := s.userDao.RedisLockLoginTelDynamic(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 			//send code
 			//set redis and send is async
 			//if set redis success and send failed
@@ -150,7 +156,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 			s.stop.DoneOne()
 			return &api.LoginResp{Step: "verify"}, nil
-		} else if req.PasswordType == "dynamic" {
+		} else {
 			//verify code
 			rest, e := s.userDao.RedisCheckCode(ctx, req.Src, util.LoginTel, req.Password)
 			if e != nil {
@@ -179,7 +185,13 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 		}
 	case "email":
-		if req.PasswordType == "dynamic" && req.Password == "" {
+		if req.PasswordType == "static" {
+		} else if req.Password == "" {
+			//redis lock
+			if e := s.userDao.RedisLockLoginEmailDynamic(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"email": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 			//send code
 			//set redis and send is async
 			//if set redis success and send failed
@@ -220,7 +232,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 			s.stop.DoneOne()
 			return &api.LoginResp{Step: "verify"}, nil
-		} else if req.PasswordType == "dynamic" {
+		} else {
 			//verify code
 			rest, e := s.userDao.RedisCheckCode(ctx, req.Src, util.LoginEmail, req.Password)
 			if e != nil {
@@ -310,7 +322,12 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		log.Error(ctx, "[UpdateStaticPassword] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	//TODO add rate limit
+	//redis lock
+	if e := s.userDao.RedisLockUpdatePassword(ctx, md["Token-User"]); e != nil {
+		log.Error(ctx, "[UpdateStaticPassword] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+
 	if e := s.userDao.MongoUpdateUserPassword(ctx, operator, req.OldStaticPassword, req.NewStaticPassword); e != nil {
 		log.Error(ctx, "[UpdateStaticPassword] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -330,7 +347,6 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	//TODO add rate limit
 	user, e := s.userDao.GetUser(ctx, "UpdateIdcard", operator)
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -366,7 +382,12 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		log.Error(ctx, "[UpdateNickName] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	//TODO add rate limit
+	//redis lock
+	if e := s.userDao.RedisLockUpdateNickName(ctx, md["Token-User"]); e != nil {
+		log.Error(ctx, "[UpdateNickName] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+
 	user, e := s.userDao.GetUser(ctx, "UpdateNickName", operator)
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -537,6 +558,11 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ErrReq
 	}
 
+	//redis lock
+	if e := s.userDao.RedisLockUpdateEmail(ctx, md["Token-User"]); e != nil {
+		log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
 	//send code
 	//set redis and send is async
 	//if set redis success and send failed
@@ -756,6 +782,11 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return nil, ecode.ErrReq
 	}
 
+	//redis lock
+	if e := s.userDao.RedisLockUpdateTel(ctx, md["Token-User"]); e != nil {
+		log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
 	//send code
 	//set redis and send is async
 	//if set redis success and send failed
