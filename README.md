@@ -125,6 +125,7 @@ collection money_log
     src_dst:"",
     money_type:"",
     money_amount:10,
+    ext_data:"",
 }
 //手动创建数据库
 use account;
