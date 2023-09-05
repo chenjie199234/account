@@ -119,6 +119,9 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target
 	//not the RedisDelCode's
 	return e
 }
+
+// target & action: generate redis's unique key
+// extracode must same with the sendcode's extracode
 func (s *Service) verifycode(ctx context.Context, callerName, target, action, code, extracode string) error {
 	rest, e := s.userDao.RedisCheckCode(ctx, target, action, code+extracode)
 	if e != nil {
