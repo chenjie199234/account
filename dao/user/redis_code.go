@@ -37,7 +37,7 @@ return nil`
 
 var hsetcode string
 
-func (d *Dao) RedisSetCode(ctx context.Context, target, action string, code string) (int, error) {
+func (d *Dao) RedisSetCode(ctx context.Context, target, action, code string) (int, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return 0, e
@@ -91,7 +91,7 @@ return ARGV[2]-data[2]`
 
 var hcheckcode string
 
-func (d *Dao) RedisCheckCode(ctx context.Context, target, action string, code string) (int, error) {
+func (d *Dao) RedisCheckCode(ctx context.Context, target, action, code string) (int, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return 0, e

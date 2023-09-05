@@ -21,9 +21,8 @@ var (
 	ErrBusy       = cerror.ErrBusy       //10011 // http code 503
 	ErrNotExist   = cerror.ErrNotExist   //10012 // http code 404
 
-	ErrDBConflict      = cerror.MakeError(11001, http.StatusInternalServerError, "db data conflict")
-	ErrRedisConflict   = cerror.MakeError(11002, http.StatusInternalServerError, "redis data conflict")
-	ErrDBRedisConflict = cerror.MakeError(11003, http.StatusInternalServerError, "redis's data and db's data conflict")
+	ErrDBConflict    = cerror.MakeError(11001, http.StatusInternalServerError, "db data conflict")
+	ErrRedisConflict = cerror.MakeError(11002, http.StatusInternalServerError, "redis data conflict")
 
 	ErrCodeAlreadySend     = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password already send,check your email or tel")
 	ErrCodeNotExist        = cerror.MakeError(20002, http.StatusBadRequest, "dynamic password not exist,please get it again")

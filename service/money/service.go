@@ -45,42 +45,50 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 			return nil, ecode.ErrReq
 		}
 	case "tel":
-		user, e := s.userDao.MongoGetUserByTel(ctx, req.Src)
+		useridstr, e := s.userDao.GetUserTelIndex(ctx, "GetUserMoneyLogs", req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{"tel": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		userid = user.UserID
+		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+			log.Error(ctx, "[GetUserMoneyLogs] userid in redis format wrong", map[string]interface{}{"tel": req.Src, "error": e})
+			return nil, ecode.ErrSystem
+		}
 	case "email":
-		user, e := s.userDao.MongoGetUserByEmail(ctx, req.Src)
+		useridstr, e := s.userDao.GetUserEmailIndex(ctx, "GetUserMoneyLogs", req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{"email": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		userid = user.UserID
+		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+			log.Error(ctx, "[GetUserMoneyLogs] userid in redis format wrong", map[string]interface{}{"email": req.Src, "error": e})
+			return nil, ecode.ErrSystem
+		}
 	case "idcard":
-		user, e := s.userDao.MongoGetUserByIDCard(ctx, req.Src)
+		useridstr, e := s.userDao.GetUserIDCardIndex(ctx, "GetUserMoneyLogs", req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{"idcard": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		userid = user.UserID
+		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+			log.Error(ctx, "[GetUserMoneyLogs] userid in redis format wrong", map[string]interface{}{"idcard": req.Src, "error": e})
+			return nil, ecode.ErrSystem
+		}
 	case "nickname":
-		user, e := s.userDao.MongoGetUserByNickName(ctx, req.Src)
+		useridstr, e := s.userDao.GetUserNickNameIndex(ctx, "GetUserMoneyLogs", req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		userid = user.UserID
+		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+			log.Error(ctx, "[GetUserMoneyLogs] userid in redis format wrong", map[string]interface{}{"nick_name": req.Src, "error": e})
+			return nil, ecode.ErrSystem
+		}
 	}
-	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, userid, req.Action, 20, int64(req.Page))
+	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, userid, req.Action, int64(req.Page))
 	if e != nil {
 		log.Error(ctx, "[GetUserMoneyLogs] db op failed", map[string]interface{}{req.SrcType: req.Src, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	resp := &api.GetUserMoneyLogsResp{
 		Page:      uint32(page),
-		Pagesize:  20,
+		Pagesize:  moneydao.DefaultMoneyLogsPageSize,
 		Totalsize: uint32(totalsize),
 		Logs:      make([]*api.MoneyLog, 0, len(logs)),
 	}
@@ -107,14 +115,14 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		log.Error(ctx, "[SelfMoneyLogs] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, operator, req.Action, 20, int64(req.Page))
+	logs, page, totalsize, e := s.moneyDao.MongoGetMoneyLogs(ctx, operator, req.Action, int64(req.Page))
 	if e != nil {
 		log.Error(ctx, "[SelfMoneyLogs] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	resp := &api.SelfMoneyLogsResp{
 		Page:      uint32(page),
-		Pagesize:  20,
+		Pagesize:  moneydao.DefaultMoneyLogsPageSize,
 		Totalsize: uint32(totalsize),
 		Logs:      make([]*api.MoneyLog, 0, len(logs)),
 	}

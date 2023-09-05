@@ -12,5 +12,4 @@ type MoneyLog struct {
 	SrcDst      string             `bson:"src_dst"`
 	MoneyType   string             `bson:"money_type"`
 	MoneyAmount uint32             `bson:"money_amount"`
-	ExtData     string             `bson:"ext_data"`
 }

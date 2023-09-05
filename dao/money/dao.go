@@ -7,6 +7,8 @@ import (
 	cmongo "go.mongodb.org/mongo-driver/mongo"
 )
 
+const DefaultMoneyLogsPageSize = 20
+
 // Dao this is a data operation layer to operate money service's data
 type Dao struct {
 	sql   *csql.DB
@@ -24,3 +26,4 @@ func NewDao(sql *csql.DB, redis *credis.Pool, mongo *cmongo.Client) *Dao {
 		mongo: mongo,
 	}
 }
+
