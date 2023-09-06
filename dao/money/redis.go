@@ -152,15 +152,15 @@ var hGetMoneyLogs = ""
 // if page == 0,return all money logs
 // if page != 0,return the required page's logs
 // if page != 0 and page overflow,return the last page's logs
-func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, action string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
+func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return nil, 0, 0, e
 	}
 	defer c.Close()
-	values, e := redis.Values(c.DoContext(ctx, "EVALSHA", hGetMoneyLogs, 1, action+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
+	values, e := redis.Values(c.DoContext(ctx, "EVALSHA", hGetMoneyLogs, 1, opaction+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
 	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
-		values, e = redis.Values(c.DoContext(ctx, "EVAL", getMoneyLogs, 1, action+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
+		values, e = redis.Values(c.DoContext(ctx, "EVAL", getMoneyLogs, 1, opaction+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
 	}
 	if e != nil {
 		if e == redis.ErrNil {
