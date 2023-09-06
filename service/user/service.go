@@ -97,17 +97,12 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target
 	}
 	//clean redis code
 	if ee := s.userDao.RedisDelCode(ctx, target, action); ee != nil {
-		if srctype == "email" {
-			log.Error(ctx, "["+callerName+"] del redis code failed", map[string]interface{}{"operator": target, "email": src, "error": ee})
-		} else {
-			log.Error(ctx, "["+callerName+"] del redis code failed", map[string]interface{}{"operator": target, "tel": src, "error": ee})
-		}
 		go func() {
 			if ee := s.userDao.RedisDelCode(context.Background(), target, action); ee != nil {
 				if srctype == "email" {
-					log.Error(ctx, "["+callerName+"] del redis code failed in goroutine", map[string]interface{}{"operator": target, "email": src, "error": ee})
+					log.Error(ctx, "["+callerName+"] del redis code failed", map[string]interface{}{"operator": target, "email": src, "error": ee})
 				} else {
-					log.Error(ctx, "["+callerName+"] del redis code failed in goroutine", map[string]interface{}{"operator": target, "tel": src, "error": ee})
+					log.Error(ctx, "["+callerName+"] del redis code failed", map[string]interface{}{"operator": target, "tel": src, "error": ee})
 				}
 			}
 			s.stop.DoneOne()
