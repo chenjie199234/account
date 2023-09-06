@@ -35,6 +35,8 @@ var (
 	ErrPasswordWrong       = cerror.MakeError(20009, http.StatusBadRequest, "password wrong")
 	ErrDataBroken          = cerror.MakeError(20010, http.StatusBadRequest, "data broken")
 	ErrSignCheckFailed     = cerror.MakeError(20011, http.StatusBadRequest, "sign check failed")
+
+	ErrMoneyLogsNotExist = cerror.MakeError(21001, http.StatusBadRequest, "money logs not exist")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

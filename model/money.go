@@ -7,7 +7,7 @@ import (
 type MoneyLog struct {
 	LogID       primitive.ObjectID `bson:"_id,omitempty"`
 	UserID      primitive.ObjectID `bson:"user_id"`
-	Action      string             `bson:"action"`
+	Action      string             `bson:"action"` //spend,recharge,refund
 	UniqueID    string             `bson:"unique_id"`
 	SrcDst      string             `bson:"src_dst"`
 	MoneyType   string             `bson:"money_type"`

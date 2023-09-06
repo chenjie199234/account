@@ -13,39 +13,19 @@ import (
 )
 
 // action: spend/recharge/refund/all
-// page: 0:means return all,>0:means return the required page,if page overflow,the last page will return
-func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, action string, page int64) ([]*model.MoneyLog, int64, int64, error) {
+func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opaction string) ([]*model.MoneyLog, error) {
 	filter := bson.M{"user_id": userid}
-	if action == "spend" || action == "recharge" || action == "refund" {
-		filter["action"] = action
-	}
-	totalsize, e := d.mongo.Database("account").Collection("money_log").CountDocuments(ctx, filter)
-	if e != nil {
-		return nil, 0, 0, e
-	}
-	if totalsize == 0 {
-		return make([]*model.MoneyLog, 0), 0, 0, nil
+	if opaction == "spend" || opaction == "recharge" || opaction == "refund" {
+		filter["action"] = opaction
 	}
 	opts := options.Find().SetSort(bson.M{"_id": -1})
-	if page != 0 {
-		skip := (page - 1) * DefaultMoneyLogsPageSize
-		if skip >= totalsize {
-			if totalsize%DefaultMoneyLogsPageSize > 0 {
-				page = totalsize/DefaultMoneyLogsPageSize + 1
-			} else {
-				page = totalsize / DefaultMoneyLogsPageSize
-			}
-			skip = (page - 1) * DefaultMoneyLogsPageSize
-		}
-		opts = opts.SetSkip(skip).SetLimit(DefaultMoneyLogsPageSize)
-	}
 	cur, e := d.mongo.Database("account").Collection("money_log").Find(ctx, filter, opts)
 	if e != nil {
-		return nil, 0, 0, e
+		return nil, e
 	}
 	result := make([]*model.MoneyLog, 0, cur.RemainingBatchLength())
 	e = cur.All(ctx, &result)
-	return result, page, totalsize, e
+	return result, e
 }
 func (d *Dao) MongoInsertMoneyLogs(ctx context.Context, log *model.MoneyLog) error {
 	r, e := d.mongo.Database("account").Collection("money_log").InsertOne(ctx, log)

@@ -21,8 +21,8 @@ func init() {
 }
 
 // argv 1 = code
-// argc 2 = max check times
-// argc 3 = expire time(unit second)
+// argv 2 = max check times
+// argv 3 = expire time(unit second)
 // return nil = set success
 // return <=0 = already setted before and all check times failed,ban some time
 // return >0 = already setted before,data is the rest check times
