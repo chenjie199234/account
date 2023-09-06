@@ -21,8 +21,11 @@ var (
 	ErrBusy       = cerror.ErrBusy       //10011 // http code 503
 	ErrNotExist   = cerror.ErrNotExist   //10012 // http code 404
 
-	ErrDBConflict    = cerror.MakeError(11001, http.StatusInternalServerError, "db data conflict")
-	ErrRedisConflict = cerror.MakeError(11002, http.StatusInternalServerError, "redis data conflict")
+	ErrDBConflict      = cerror.MakeError(11001, http.StatusInternalServerError, "db data conflict")
+	ErrDBDataBroken    = cerror.MakeError(11002, http.StatusInternalServerError, "db data broken")
+	ErrRedisConflict   = cerror.MakeError(11003, http.StatusInternalServerError, "redis data conflict")
+	ErrRedisDataBroken = cerror.MakeError(11004, http.StatusInternalServerError, "redis data broken")
+	ErrRedisKeyMissing = cerror.MakeError(11005, http.StatusInternalServerError, "redis key missing")
 
 	ErrCodeAlreadySend     = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password already send,check your email or tel")
 	ErrCodeNotExist        = cerror.MakeError(20002, http.StatusBadRequest, "dynamic password not exist,please get it again")
@@ -35,8 +38,6 @@ var (
 	ErrPasswordWrong       = cerror.MakeError(20009, http.StatusBadRequest, "password wrong")
 	ErrDataBroken          = cerror.MakeError(20010, http.StatusBadRequest, "data broken")
 	ErrSignCheckFailed     = cerror.MakeError(20011, http.StatusBadRequest, "sign check failed")
-
-	ErrMoneyLogsNotExist = cerror.MakeError(21001, http.StatusBadRequest, "money logs not exist")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

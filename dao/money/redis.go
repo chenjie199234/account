@@ -27,7 +27,7 @@ func init() {
 // argv 1 = expire time(uint second)
 // argv rest = data
 const setMoneyLogs = `redis.call("DEL",KEYS[1])
-redis.call("ZADD",KEYS[1],0,"")
+redis.call("ZADD",KEYS[1],-1,"")
 for i=2,#ARGV,2 do
 	redis.call("ZADD",KEYS[1],ARGV[i],ARGV[i+1])
 end
@@ -86,10 +86,8 @@ func (d *Dao) RedisAppendMoneyLogs(ctx context.Context, userid, opaction string,
 	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
 		_, e = redis.String(c.DoContext(ctx, "EVAL", appendMoneyLogs, 1, opaction+"_money_logs_{"+userid+"}", 604800, log.LogID.Timestamp().Unix(), data))
 	}
-	if e != nil {
-		if e == redis.ErrNil {
-			e = ecode.ErrMoneyLogsNotExist
-		}
+	if e != nil && e == redis.ErrNil {
+		e = ecode.ErrRedisKeyMissing
 	}
 	return e
 }
@@ -103,59 +101,85 @@ func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) er
 	return e
 }
 
-// argv 1 = starttime
-// argv 2 = endtime
-// argv 3 = pagesize
-// argv 4 = page
+// argv 1 = starttime(unit second)
+// argv 2 = endtime(unit second)
+// argv 3 = page //if page == 0,return all data //if page != 0,return the required page's data //if page != 0 and page overflow,return the last page's data
+// argv 4 = pagesize
+// return data is a list
+// return data's last element = curpage
+// return data's last second element = totalsize
+// return data's rest element is the data
 const getMoneyLogs = `if(redis.call("EXISTS",KEYS[1])==0)
 then
 	return nil
-end`
+end
+local result={}
+local totalsize=0
+local curpage=0
+if(ARGV[3]==0)
+then
+	local tmp=redis.call("ZRANGE",KEYS[1],ARGV[2],ARGV[1],"BYSCORE","REV")
+	if(tmp~=nil and #tmp>0)
+	then
+		result=tmp
+		totalsize=#result
+	end
+else
+	totalsize=redis.call("ZCOUNT",KEYS[1],ARGV[1],ARGV[2])
+	if(totalsize~=0)
+	then
+		curpage=ARGV[3]
+		local skip=(curpage-1)*ARGV[4]
+		if(skip>=totalsize)
+		then
+			if(totalsize%ARGV[4]>0)
+			then
+				curpage=(totalsize-totalsize%ARGV[4])/ARGV[4]+1
+			else
+				curpage=totalsize/ARGV[4]
+			end
+			skip=(curpage-1)*ARGV[4]
+		end
+		result=redis.call("ZRANGE",KEYS[1],ARGV[2],ARGV[1],"BYSCORE","REV","LIMIT",skip,ARGV[4])
+	end
+end
+result[#result+1]=totalsize
+result[#result+1]=curpage
+return result`
 
 var hGetMoneyLogs = ""
 
 // if page == 0,return all money logs
 // if page != 0,return the required page's logs
-// if page != 0 and overflow,return the last page's logs
-func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, action string, starttime, endtime, pagesize, page int64) ([]*model.MoneyLog, int64, int64, error) {
+// if page != 0 and page overflow,return the last page's logs
+func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, action string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	c, e := d.redis.GetContext(ctx)
 	if e != nil {
 		return nil, 0, 0, e
 	}
 	defer c.Close()
-	var totalsize int64
-	var curpage int64
-	var datas [][]byte
-
-	if page == 0 {
-		// if datas, e = redis.ByteSlices(c.DoContext(ctx, "ZRANGE", action+"_money_logs_{"+userid+"}", endtime, starttime, "BYSCORE", "REV")); e != nil {
-		// 	return nil, 0, 0, e
-		// }
-		// if len(datas) == 0 {
-		// 	return nil, 0, 0, ecode.ErrMoneyLogsNotExist
-		// }
-		// totalsize = int64(len(datas)) - 1 //delete the score 0(empty key,placeholder)
-		// curpage = 0
-	} else {
-		// totalsize, e = redis.Int64(c.DoContext(ctx, "ZCOUNT", action+"_money_logs_{"+userid+"}", starttime, endtime))
-		// if e != nil {
-		// 	return nil, 0, 0, e
-		// }
-		// if totalsize == 0 {
-		// 	return nil, 0, 0, nil
-		// }
-		// curpage = page
-		// skip := (curpage - 1) * pagesize
-		// if skip >= totalsize {
-		// 	if totalsize%pagesize > 0 {
-		// 		curpage = totalsize/page + 1
-		// 	} else {
-		// 		curpage = totalsize / page
-		// 	}
-		// 	skip = (curpage - 1) * pagesize
-		// }
-		// if datas, e = redis.ByteSlices(c.DoContext(ctx, "LRANGE", action+"_money_logs_{"+userid+"}", skip, skip+pagesize)); e != nil {
-		// 	return nil, 0, 0, e
-		// }
+	values, e := redis.Values(c.DoContext(ctx, "EVALSHA", hGetMoneyLogs, 1, action+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
+	if e != nil && strings.Contains(e.Error(), "NOSCRIPT") {
+		values, e = redis.Values(c.DoContext(ctx, "EVAL", getMoneyLogs, 1, action+"_money_logs_{"+userid+"}", starttime, endtime, page, pagesize))
 	}
+	if e != nil {
+		if e == redis.ErrNil {
+			e = ecode.ErrRedisKeyMissing
+		}
+		return nil, 0, 0, e
+	}
+	curpage := values[len(values)-1].(uint32)
+	totalsize := values[len(values)-2].(uint32)
+	r := make([]*model.MoneyLog, 0, len(values)-2)
+	for i := range values {
+		if i == len(values)-2 {
+			break
+		}
+		tmp := &model.MoneyLog{}
+		if e := json.Unmarshal(values[i].([]byte), tmp); e != nil {
+			return nil, 0, 0, ecode.ErrRedisDataBroken
+		}
+		r = append(r, tmp)
+	}
+	return r, totalsize, curpage, nil
 }
