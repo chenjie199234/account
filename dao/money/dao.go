@@ -35,7 +35,7 @@ func NewDao(sql *csql.DB, redis *credis.Pool, mongo *cmongo.Client) *Dao {
 
 func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	if moneylogs, totalsize, curpage, e := d.RedisGetMoneyLogs(ctx, userid.Hex(), opaction, starttime, endtime, pagesize, page); e != nil {
-		log.Error(nil, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "error": e})
+		log.Error(nil, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
 	} else {
 		return moneylogs, totalsize, curpage, nil
 	}
@@ -43,12 +43,13 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 	unsafeAll, e := oneshot.Do("GetMoneyLogs_"+opaction+"_"+userid.Hex(), func() (unsafe.Pointer, error) {
 		all, e := d.MongoGetMoneyLogs(ctx, userid, opaction)
 		if e != nil {
+			log.Error(nil, "[dao.GetMoneyLogs] db op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction})
 			return nil, e
 		}
 		//update redis
 		go func() {
 			if e := d.RedisSetMoneyLogs(context.Background(), userid.Hex(), opaction, all); e != nil {
-				log.Error(nil, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "error": e})
+				log.Error(nil, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
 			}
 		}()
 		return unsafe.Pointer(&all), nil
@@ -75,11 +76,11 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 			break
 		}
 	}
+	if !startfind && !endfind {
+		return nil, 0, 0, nil
+	}
 	need := all[start:end]
 	totalsize := uint32(len(need))
-	if totalsize == 0 {
-		return need, 0, 0, nil
-	}
 	if page == 0 {
 		return need, totalsize, 0, nil
 	}

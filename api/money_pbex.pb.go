@@ -14,6 +14,12 @@ func (m *GetUserMoneyLogsReq) Validate() (errstr string) {
 	if len(m.GetSrc()) <= 0 {
 		return "field: src in object: get_user_money_logs_req check value str len gt failed"
 	}
+	if m.GetStartTime() <= 0 {
+		return "field: start_time in object: get_user_money_logs_req check value uint gt failed"
+	}
+	if m.GetEndTime() <= 0 {
+		return "field: end_time in object: get_user_money_logs_req check value uint gt failed"
+	}
 	if m.GetAction() != "spend" && m.GetAction() != "recharge" && m.GetAction() != "refund" && m.GetAction() != "all" {
 		return "field: action in object: get_user_money_logs_req check value str in failed"
 	}

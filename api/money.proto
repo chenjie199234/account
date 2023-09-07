@@ -56,8 +56,10 @@ message get_user_money_logs_req{
 	string src=2[(pbex.string_bytes_len_gt)=0];
 	//0:return all logs
 	//>0:return the required page's data
-	uint32 page=3;
-	string action=4[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
+	uint32 start_time=3[(pbex.uint_gt)=0];//unit second
+	uint32 end_time=4[(pbex.uint_gt)=0];//unit second
+	uint32 page=5;
+	string action=6[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
 }
 message get_user_money_logs_resp{
 	uint32 page=1;
