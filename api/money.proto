@@ -70,7 +70,9 @@ message get_user_money_logs_resp{
 message self_money_logs_req{
 	//0:return all logs
 	//>0:return the required page's data
-	uint32 page=1;
+	uint32 start_time=1[(pbex.uint_gt)=0];
+	uint32 end_time=2[(pbex.uint_gt)=0];
+	uint32 page=3;
 	string action=4[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
 }
 message self_money_logs_resp{

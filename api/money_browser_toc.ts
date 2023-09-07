@@ -91,11 +91,31 @@ export interface SelfMoneyLogsReq{
 	//0:return all logs
 	//>0:return the required page's data
 	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	start_time: number;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	end_time: number;
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
 	page: number;
 	action: string;
 }
 function SelfMoneyLogsReqToJson(msg: SelfMoneyLogsReq): string{
 	let s: string="{"
+	//start_time
+	if(msg.start_time==null||msg.start_time==undefined||!Number.isInteger(msg.start_time)){
+		throw 'SelfMoneyLogsReq.start_time must be integer'
+	}else if(msg.start_time>4294967295||msg.start_time<0){
+		throw 'SelfMoneyLogsReq.start_time overflow'
+	}else{
+		s+='"start_time":'+msg.start_time+','
+	}
+	//end_time
+	if(msg.end_time==null||msg.end_time==undefined||!Number.isInteger(msg.end_time)){
+		throw 'SelfMoneyLogsReq.end_time must be integer'
+	}else if(msg.end_time>4294967295||msg.end_time<0){
+		throw 'SelfMoneyLogsReq.end_time overflow'
+	}else{
+		s+='"end_time":'+msg.end_time+','
+	}
 	//page
 	if(msg.page==null||msg.page==undefined||!Number.isInteger(msg.page)){
 		throw 'SelfMoneyLogsReq.page must be integer'

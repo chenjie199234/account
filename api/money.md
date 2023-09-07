@@ -17,6 +17,12 @@ Content-Type: application/json
 	//0:return all logs
 	//>0:return the required page's data
 	//uint32
+	//value must > 0
+	"start_time":0,
+	//uint32
+	//value must > 0
+	"end_time":0,
+	//uint32
 	"page":0,
 	//value must in ["spend","recharge","refund","all"]
 	"action":"str"

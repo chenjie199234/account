@@ -28,6 +28,12 @@ func (m *GetUserMoneyLogsReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *SelfMoneyLogsReq) Validate() (errstr string) {
+	if m.GetStartTime() <= 0 {
+		return "field: start_time in object: self_money_logs_req check value uint gt failed"
+	}
+	if m.GetEndTime() <= 0 {
+		return "field: end_time in object: self_money_logs_req check value uint gt failed"
+	}
 	if m.GetAction() != "spend" && m.GetAction() != "recharge" && m.GetAction() != "refund" && m.GetAction() != "all" {
 		return "field: action in object: self_money_logs_req check value str in failed"
 	}
