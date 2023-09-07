@@ -35,7 +35,7 @@ func (d *Dao) RedisGetUser(ctx context.Context, userid string) (*model.User, err
 	if e != nil {
 		if e == redis.ErrNil {
 			//key not exist
-			return nil, nil
+			e = ecode.ErrRedisKeyMissing
 		}
 		return nil, e
 	}
@@ -77,7 +77,7 @@ func (d *Dao) RedisGetUserTelIndex(ctx context.Context, tel string) (string, err
 	if e != nil {
 		if e == redis.ErrNil {
 			//key not exist
-			return "", nil
+			e = ecode.ErrRedisKeyMissing
 		}
 		return "", e
 	}
@@ -132,7 +132,7 @@ func (d *Dao) RedisGetUserEmailIndex(ctx context.Context, email string) (string,
 	if e != nil {
 		if e == redis.ErrNil {
 			//key not exist
-			return "", nil
+			e = ecode.ErrRedisKeyMissing
 		}
 		return "", e
 	}
@@ -187,7 +187,7 @@ func (d *Dao) RedisGetUserIDCardIndex(ctx context.Context, idcard string) (strin
 	if e != nil {
 		if e == redis.ErrNil {
 			//key not exist
-			return "", nil
+			e = ecode.ErrRedisKeyMissing
 		}
 		return "", e
 	}
@@ -242,7 +242,7 @@ func (d *Dao) RedisGetUserNickNameIndex(ctx context.Context, nickname string) (s
 	if e != nil {
 		if e == redis.ErrNil {
 			//key not exist
-			return "", nil
+			e = ecode.ErrRedisKeyMissing
 		}
 		return "", e
 	}
