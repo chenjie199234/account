@@ -56,14 +56,26 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 	if e != nil {
 		return nil, 0, 0, e
 	}
+	//all is sorted by DESC by db's query
 	all := *(*[]*model.MoneyLog)(unsafeAll)
-	need := make([]*model.MoneyLog, 0, len(all))
-	for _, moneylog := range all {
-		logtime := moneylog.LogID.Timestamp().Unix()
-		if logtime >= int64(starttime) && logtime <= int64(endtime) {
-			need = append(need, moneylog)
+	start := 0
+	startfind := false
+	end := len(all)
+	endfind := false
+	for i, moneylog := range all {
+		if moneylog.LogID.Timestamp().Unix() <= int64(endtime) && start == 0 {
+			start = i
+			startfind = true
+		}
+		if moneylog.LogID.Timestamp().Unix() < int64(starttime) && end == 0 {
+			end = i
+			endfind = true
+		}
+		if startfind && endfind {
+			break
 		}
 	}
+	need := all[start:end]
 	totalsize := uint32(len(need))
 	if totalsize == 0 {
 		return need, 0, 0, nil
