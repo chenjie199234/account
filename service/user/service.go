@@ -141,27 +141,32 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 			log.Error(ctx, "[GetUserInfo] user_id format wrong", map[string]interface{}{"user_id": req.Src, "error": e})
 			return nil, ecode.ErrReq
 		}
-		if user, e = s.userDao.GetUser(ctx, "GetUserInfo", userid); e != nil {
+		if user, e = s.userDao.GetUser(ctx, userid); e != nil {
+			log.Error(ctx, "[GetUserInfo] dao op failed", map[string]interface{}{"user_id": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
 		var e error
-		if user, e = s.userDao.GetUserByTel(ctx, "GetUserInfo", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] dao op failed", map[string]interface{}{"tel": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "email":
 		var e error
-		if user, e = s.userDao.GetUserByEmail(ctx, "GetUserInfo", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] dao op failed", map[string]interface{}{"email": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "idcard":
 		var e error
-		if user, e = s.userDao.GetUserByIDCard(ctx, "GetUserInfo", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] dao op failed", map[string]interface{}{"idcard": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "nickname":
 		var e error
-		if user, e = s.userDao.GetUserByNickName(ctx, "GetUserInfo", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByNickName(ctx, req.Src); e != nil {
+			log.Error(ctx, "[GetUserInfo] dao op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	}
@@ -191,7 +196,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.GetUserByIDCard(ctx, "Login", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"idcard": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "nickname":
@@ -200,7 +206,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.GetUserByNickName(ctx, "Login", req.Src); e != nil {
+		if user, e = s.userDao.GetUserByNickName(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"nick_name": req.Src, "error": e})
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
@@ -222,8 +229,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 		}
 		//static or dynamic's verify success
-		user, e = s.userDao.GetUserByTel(ctx, "Login", req.Src)
-		if e != nil {
+		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"tel": req.Src, "error": e})
 			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -252,8 +259,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 		}
 		//static or dynamic's verify success
-		user, e = s.userDao.GetUserByEmail(ctx, "Login", req.Src)
-		if e != nil {
+		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"email": req.Src, "error": e})
 			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -302,8 +309,9 @@ func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*
 		log.Error(ctx, "[SelfUserInfo] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	user, e := s.userDao.GetUser(ctx, "SelfUserInfo", operator)
+	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
+		log.Error(ctx, "[SelfUserInfo] dao op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	return &api.SelfUserInfoResp{
@@ -362,8 +370,9 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 		log.Error(ctx, "[IdcardDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserIDCardIndex(ctx, "IdcardDuplicateCheck", req.Idcard)
+	userid, e := s.userDao.GetUserIDCardIndex(ctx, req.Idcard)
 	if e != nil {
+		log.Error(ctx, "[IdcardDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "idcard": req.Idcard, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	return &api.IdcardDuplicateCheckResp{Duplicate: userid != ""}, nil
@@ -375,8 +384,9 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	user, e := s.userDao.GetUser(ctx, "UpdateIdcard", operator)
+	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
+		log.Error(ctx, "[UpdateIdcard],dao op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	if user.IDCard == req.NewIdcard {
@@ -425,8 +435,9 @@ func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameD
 		log.Error(ctx, "[NickNameDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserNickNameIndex(ctx, "NickNameDuplicateCheck", req.NickName)
+	userid, e := s.userDao.GetUserNickNameIndex(ctx, req.NickName)
 	if e != nil {
+		log.Error(ctx, "[NickNameDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "nick_name": req.NickName, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	return &api.NickNameDuplicateCheckResp{Duplicate: userid != ""}, nil
@@ -439,8 +450,9 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		return nil, ecode.ErrToken
 	}
 
-	user, e := s.userDao.GetUser(ctx, "UpdateNickName", operator)
+	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
+		log.Error(ctx, "[UpdateNickName] dao op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	if user.NickName == req.NewNickName {
@@ -500,8 +512,9 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 		log.Error(ctx, "[EmailDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserEmailIndex(ctx, "EmailDuplicateCheck", req.Email)
+	userid, e := s.userDao.GetUserEmailIndex(ctx, req.Email)
 	if e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "email": req.Email, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	return &api.EmailDuplicateCheckResp{Duplicate: userid != ""}, nil
@@ -592,8 +605,9 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return &api.UpdateEmailResp{Step: "newverify"}, nil
 	}
 
-	user, e := s.userDao.GetUser(ctx, "UpdateEmail", operator)
+	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
+		log.Error(ctx, "[UpdateEmail] dao op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	if user.Email == req.NewEmail {
@@ -632,8 +646,9 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 		log.Error(ctx, "[EmailDuplicateCheck] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserTelIndex(ctx, "EmailDuplicateCheck", req.Tel)
+	userid, e := s.userDao.GetUserTelIndex(ctx, req.Tel)
 	if e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "tel": req.Tel, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	return &api.TelDuplicateCheckResp{Duplicate: userid != ""}, nil
@@ -724,8 +739,9 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return &api.UpdateTelResp{Step: "newverify"}, nil
 	}
 
-	user, e := s.userDao.GetUser(ctx, "UpdateTel", operator)
+	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
+		log.Error(ctx, "[UpdateTel] dao op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	if user.Tel == req.NewTel {
