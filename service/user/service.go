@@ -361,7 +361,7 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	userid, e := s.userDao.GetUserIDCardIndex(ctx, req.Idcard)
-	if e != nil {
+	if e != nil && e != ecode.ErrUserNotExist {
 		log.Error(ctx, "[IdcardDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "idcard": req.Idcard, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -389,7 +389,7 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	//update db and clean redis is async
 	//the service's rolling update may happened between update db and clean redis
 	//so we need to make this not happened
-	if e := s.stop.Add(1); e != nil {
+	if e := s.stop.Add(2); e != nil {
 		if e == graceful.ErrClosing {
 			return nil, cerror.ErrServerClosing
 		}
@@ -399,21 +399,26 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	var update bool
 	if update, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, req.NewIdcard); e != nil {
 		s.stop.DoneOne()
+		s.stop.DoneOne()
 		log.Error(ctx, "[UpdateIdcard] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	log.Info(ctx, "[UpdateIdcard] success", map[string]interface{}{"operator": md["Token-User"]})
 	if update {
-		//idcard can only set once
-		//success means this is the first time to set the idcard
-		//only need to clean the user info
 		go func() {
 			if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
 				log.Error(ctx, "[UpdateIdcard] clean redis failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 			}
 			s.stop.DoneOne()
 		}()
+		go func() {
+			if e := s.userDao.RedisDelUserIDCardIndex(context.Background(), req.NewIdcard); e != nil {
+				log.Error(ctx, "[UpdateIdcard] clean redis failed", map[string]interface{}{"idcard": req.NewIdcard, "error": e})
+			}
+			s.stop.DoneOne()
+		}()
 	} else {
+		s.stop.DoneOne()
 		s.stop.DoneOne()
 	}
 	return &api.UpdateIdcardResp{}, nil
@@ -426,7 +431,7 @@ func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameD
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	userid, e := s.userDao.GetUserNickNameIndex(ctx, req.NickName)
-	if e != nil {
+	if e != nil && e != ecode.ErrUserNotExist {
 		log.Error(ctx, "[NickNameDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "nick_name": req.NickName, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -452,7 +457,7 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	//update db and clean redis is async
 	//the service's rolling update may happened between update db and clean redis
 	//so we need to make this not happened
-	if e := s.stop.Add(2); e != nil {
+	if e := s.stop.Add(3); e != nil {
 		if e == graceful.ErrClosing {
 			return nil, cerror.ErrServerClosing
 		}
@@ -471,6 +476,7 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	if oldNickName, e = s.userDao.MongoUpdateUserNickName(ctx, operator, req.NewNickName); e != nil {
 		s.stop.DoneOne()
 		s.stop.DoneOne()
+		s.stop.DoneOne()
 		log.Error(ctx, "[UpdateNickName] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -484,11 +490,18 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		}()
 		go func() {
 			if e := s.userDao.RedisDelUserNickNameIndex(context.Background(), oldNickName); e != nil {
-				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"nick_name": oldNickName, "error": e})
+				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"old_nick_name": oldNickName, "error": e})
+			}
+			s.stop.DoneOne()
+		}()
+		go func() {
+			if e := s.userDao.RedisDelUserNickNameIndex(context.Background(), req.NewNickName); e != nil {
+				log.Error(ctx, "[UpdateNickName] clean redis failed", map[string]interface{}{"new_nick_name": req.NewNickName, "error": e})
 			}
 			s.stop.DoneOne()
 		}()
 	} else {
+		s.stop.DoneOne()
 		s.stop.DoneOne()
 		s.stop.DoneOne()
 	}
@@ -503,7 +516,7 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	userid, e := s.userDao.GetUserEmailIndex(ctx, req.Email)
-	if e != nil {
+	if e != nil && e != ecode.ErrUserNotExist {
 		log.Error(ctx, "[EmailDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "email": req.Email, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -531,7 +544,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
-		if e := s.stop.Add(2); e != nil {
+		if e := s.stop.Add(3); e != nil {
 			if e == graceful.ErrClosing {
 				return nil, cerror.ErrServerClosing
 			}
@@ -539,6 +552,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		}
 		oldEmail, e := s.userDao.MongoUpdateUserEmail(ctx, operator, req.NewEmail)
 		if e != nil {
+			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[UpdateEmail] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
@@ -554,17 +568,39 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			}()
 			go func() {
 				if e := s.userDao.RedisDelUserEmailIndex(context.Background(), oldEmail); e != nil {
-					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"email": oldEmail, "error": e})
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"old_email": oldEmail, "error": e})
+				}
+				s.stop.DoneOne()
+			}()
+			go func() {
+				if e := s.userDao.RedisDelUserEmailIndex(context.Background(), req.NewEmail); e != nil {
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"new_email": req.NewEmail, "error": e})
 				}
 				s.stop.DoneOne()
 			}()
 		} else {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
+			s.stop.DoneOne()
 		}
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	} else if req.OldDynamicPassword != "" {
 		//step 2
+		if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.UpdateEmailNewEmail); e != nil {
+			if e != ecode.ErrCodeNotExist {
+				log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			//if new tel's code not sended,we continue step 2
+		} else if rest == 0 {
+			//already failed on step 3,ban some time
+			log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
+			return nil, ecode.ErrBan
+		} else {
+			//if new tel's code already send,we jump to step 3
+			return &api.UpdateEmailResp{Step: "newverify"}, nil
+		}
+
 		if req.OldReceiverType == "email" {
 			e = s.verifycode(ctx, "UpdateEmail", md["Token-User"], util.UpdateEmailOldEmail, req.OldDynamicPassword, "")
 		} else {
@@ -588,7 +624,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		//if new tel's code not sended,we continue step 1
 	} else if rest == 0 {
 		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateEmail] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	} else {
 		//if new tel's code already send,we jump to step 3
@@ -637,7 +673,7 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	userid, e := s.userDao.GetUserTelIndex(ctx, req.Tel)
-	if e != nil {
+	if e != nil && e != ecode.ErrUserNotExist {
 		log.Error(ctx, "[EmailDuplicateCheck] dao op failed", map[string]interface{}{"operator": md["Token-User"], "tel": req.Tel, "error": e})
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -665,7 +701,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
-		if e := s.stop.Add(2); e != nil {
+		if e := s.stop.Add(3); e != nil {
 			if e == graceful.ErrClosing {
 				return nil, cerror.ErrServerClosing
 			}
@@ -673,6 +709,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		}
 		oldTel, e := s.userDao.MongoUpdateUserTel(ctx, operator, req.NewTel)
 		if e != nil {
+			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[UpdateTel] db op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
@@ -688,17 +725,39 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			}()
 			go func() {
 				if e := s.userDao.RedisDelUserTelIndex(context.Background(), oldTel); e != nil {
-					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"tel": oldTel, "error": e})
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"old_tel": oldTel, "error": e})
+				}
+				s.stop.DoneOne()
+			}()
+			go func() {
+				if e := s.userDao.RedisDelUserTelIndex(context.Background(), req.NewTel); e != nil {
+					log.Error(ctx, "[UpdateTel] clean redis failed", map[string]interface{}{"tel": req.NewTel, "error": e})
 				}
 				s.stop.DoneOne()
 			}()
 		} else {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
+			s.stop.DoneOne()
 		}
 		return &api.UpdateTelResp{Step: "success"}, nil
 	} else if req.OldDynamicPassword != "" {
 		//step 2
+		if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.UpdateTelNewTel); e != nil {
+			if e != ecode.ErrCodeNotExist {
+				log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+			//if new tel's code not sended,we continue step 2
+		} else if rest == 0 {
+			//already failed on step 3,ban some time
+			log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
+			return nil, ecode.ErrBan
+		} else {
+			//if new tel's code already send,we jump to step 3
+			return &api.UpdateTelResp{Step: "newverify"}, nil
+		}
+
 		if req.OldReceiverType == "email" {
 			e = s.verifycode(ctx, "UpdateTel", md["Token-User"], util.UpdateTelOldEmail, req.OldDynamicPassword, "")
 		} else {
@@ -722,7 +781,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		//if new tel's code not sended,we continue step 1
 	} else if rest == 0 {
 		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "max_checktimes": userdao.DefaultCheckTimes, "ban_seconds": userdao.DefaultExpireSeconds})
+		log.Error(ctx, "[UpdateTel] all check times failed", map[string]interface{}{"operator": md["Token-User"], "ban_seconds": userdao.DefaultExpireSeconds})
 		return nil, ecode.ErrBan
 	} else {
 		//if new tel's code already send,we jump to step 3

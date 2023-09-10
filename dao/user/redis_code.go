@@ -4,10 +4,13 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"strconv"
 	"strings"
 
-	"github.com/chenjie199234/Corelib/redis"
 	"github.com/chenjie199234/account/ecode"
+
+	"github.com/chenjie199234/Corelib/redis"
+	"github.com/chenjie199234/Corelib/util/common"
 )
 
 const DefaultExpireSeconds = 300
@@ -120,7 +123,15 @@ func (d *Dao) RedisGetCode(ctx context.Context, target, action string) (string, 
 		}
 		return "", 0, e
 	}
-	return values[0].(string), values[1].(int), nil
+	if values[0] == nil || values[1] == nil {
+		return "", 0, ecode.ErrCodeNotExist
+	}
+	code := common.Byte2str(values[0].([]byte))
+	check, e := strconv.Atoi(common.Byte2str(values[1].([]byte)))
+	if e != nil {
+		e = ecode.ErrRedisDataBroken
+	}
+	return code, DefaultCheckTimes - check, e
 }
 
 func (d *Dao) RedisDelCode(ctx context.Context, target, action string) error {
@@ -129,6 +140,6 @@ func (d *Dao) RedisDelCode(ctx context.Context, target, action string) error {
 		return e
 	}
 	defer c.Close()
-	_, e = c.DoContext(ctx, "DEL", "code_{"+target+"}_"+action)
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "code_{"+target+"}_"+action))
 	return e
 }

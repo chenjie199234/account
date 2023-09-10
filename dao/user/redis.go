@@ -55,7 +55,7 @@ func (d *Dao) RedisDelUser(ctx context.Context, userid string) error {
 		return e
 	}
 	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "DEL", "user_{"+userid+"}_info"))
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "user_{"+userid+"}_info"))
 	return e
 }
 func (d *Dao) RedisSetUserTelIndex(ctx context.Context, tel string, userid string) error {
@@ -110,7 +110,7 @@ func (d *Dao) RedisDelUserTelIndex(ctx context.Context, tel string) error {
 		return e
 	}
 	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "DEL", "tel_{"+tel+"}_index"))
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "tel_{"+tel+"}_index"))
 	return e
 }
 func (d *Dao) RedisSetUserEmailIndex(ctx context.Context, email string, userid string) error {
@@ -165,7 +165,7 @@ func (d *Dao) RedisDelUserEmailIndex(ctx context.Context, email string) error {
 		return e
 	}
 	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "DEL", "email_{"+email+"}_index"))
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "email_{"+email+"}_index"))
 	return e
 }
 func (d *Dao) RedisSetUserIDCardIndex(ctx context.Context, idcard string, userid string) error {
@@ -220,7 +220,7 @@ func (d *Dao) RedisDelUserIDCardIndex(ctx context.Context, idcard string) error 
 		return e
 	}
 	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "DEL", "idcard_{"+idcard+"}_index"))
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "idcard_{"+idcard+"}_index"))
 	return e
 }
 func (d *Dao) RedisSetUserNickNameIndex(ctx context.Context, nickname string, userid string) error {
@@ -275,6 +275,6 @@ func (d *Dao) RedisDelUserNickNameIndex(ctx context.Context, nickname string) er
 		return e
 	}
 	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "DEL", "nickname_{"+nickname+"}_index"))
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", "nickname_{"+nickname+"}_index"))
 	return e
 }

@@ -368,8 +368,17 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 			return nil, e
 		}
 		userid := index.UserID.Hex()
+		//update redis
+		go func() {
+			if e := d.RedisSetUserTelIndex(context.Background(), tel, userid); e != nil {
+				log.Error(ctx, "[dao.GetUserTelIndex] update redis failed", map[string]interface{}{"tel": tel, "error": e})
+			}
+		}()
 		return unsafe.Pointer(&userid), nil
 	})
+	if e != nil {
+		return "", e
+	}
 	return *(*string)(unsafeUserid), e
 }
 
@@ -401,8 +410,17 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 			return nil, e
 		}
 		userid := index.UserID.Hex()
+		//update redis
+		go func() {
+			if e := d.RedisSetUserEmailIndex(context.Background(), email, userid); e != nil {
+				log.Error(ctx, "[dao.GetUserEmailIndex] update redis failed", map[string]interface{}{"email": email, "error": e})
+			}
+		}()
 		return unsafe.Pointer(&userid), nil
 	})
+	if e != nil {
+		return "", e
+	}
 	return *(*string)(unsafeUserid), e
 }
 
@@ -434,8 +452,17 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 			return nil, e
 		}
 		userid := index.UserID.Hex()
+		//update redis
+		go func() {
+			if e := d.RedisSetUserIDCardIndex(context.Background(), idcard, userid); e != nil {
+				log.Error(ctx, "[dao.GetUserIDCardIndex] update redis failed", map[string]interface{}{"idcard": idcard, "error": e})
+			}
+		}()
 		return unsafe.Pointer(&userid), nil
 	})
+	if e != nil {
+		return "", e
+	}
 	return *(*string)(unsafeUserid), e
 }
 
@@ -467,7 +494,16 @@ func (d *Dao) GetUserNickNameIndex(ctx context.Context, nickname string) (string
 			return nil, e
 		}
 		userid := index.UserID.Hex()
+		//update redis
+		go func() {
+			if e := d.RedisSetUserNickNameIndex(context.Background(), nickname, userid); e != nil {
+				log.Error(ctx, "[dao.GetUserNickNameIndex] update redis failed", map[string]interface{}{"nick_name": nickname, "error": e})
+			}
+		}()
 		return unsafe.Pointer(&userid), nil
 	})
+	if e != nil {
+		return "", e
+	}
 	return *(*string)(unsafeUserid), e
 }

@@ -102,7 +102,7 @@ collection: user_idcard_index
 //手动创建数据库
 use account;
 db.createCollection("user_idcard_index");
-db.user_tel_index.createIndex({idcard:1},{unique:true});
+db.user_idcard_index.createIndex({idcard:1},{unique:true});
 sh.shardCollection("account.user_idcard_index",{idcard:"hashed"});
 
 collection: user_nick_name_index

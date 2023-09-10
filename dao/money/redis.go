@@ -97,7 +97,7 @@ func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) er
 		return e
 	}
 	defer c.Close()
-	_, e = c.DoContext(ctx, "DEL", opaction+"_money_logs_{"+userid+"}")
+	_, e = redis.Int64(c.DoContext(ctx, "DEL", opaction+"_money_logs_{"+userid+"}"))
 	return e
 }
 
