@@ -3,8 +3,8 @@ module github.com/chenjie199234/account
 go 1.21
 
 require (
-	github.com/chenjie199234/Corelib v0.0.79
-	github.com/chenjie199234/admin v0.0.7
+	github.com/chenjie199234/Corelib v0.0.80
+	github.com/chenjie199234/admin v0.0.8
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/segmentio/kafka-go v0.4.42
