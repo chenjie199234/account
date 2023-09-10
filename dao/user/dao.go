@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	csql "database/sql"
+	"time"
 	"unsafe"
 
 	"github.com/chenjie199234/account/ecode"
@@ -89,6 +90,7 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 			if e != nil {
 				log.Error(nil, "[dao.GetUserByTel] db op failed", map[string]interface{}{"tel": tel, "error": e})
 				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
 					continue
 				}
 				if e == ecode.ErrUserNotExist {
@@ -118,6 +120,42 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 	})
 	return (*model.User)(unsafeUser), e
 }
+func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User, error) {
+	if user, e := d.RedisGetUserByTel(ctx, tel); e == nil {
+		return user, nil
+	} else if e != ecode.ErrUserNotExist && e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+		log.Error(ctx, "[dao.GetOrCreateUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+	}
+	unsafeUser, e := oneshot.Do("GetOrCreateUserByTel_"+tel, func() (unsafe.Pointer, error) {
+		var user *model.User
+		var e error
+		for {
+			user, e = d.MongoCreateUserByTel(ctx, tel)
+			if e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByTel] db op failed", map[string]interface{}{"tel": tel, "error": e})
+				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
+					continue
+				}
+				return nil, e
+			}
+			break
+		}
+		//update redis
+		go func() {
+			if e := d.RedisSetUser(context.Background(), user.UserID.Hex(), user); e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByTel] update redis failed", map[string]interface{}{"user_id": user.UserID.Hex(), "error": e})
+			}
+		}()
+		go func() {
+			if e := d.RedisSetUserTelIndex(context.Background(), user.Tel, user.UserID.Hex()); e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByTel] update redis failed", map[string]interface{}{"tel": user.Tel, "error": e})
+			}
+		}()
+		return unsafe.Pointer(user), nil
+	})
+	return (*model.User)(unsafeUser), e
+}
 func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	if user, e := d.RedisGetUserByEmail(ctx, email); e != nil {
 		if e == ecode.ErrUserNotExist {
@@ -137,6 +175,7 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 			if e != nil {
 				log.Error(nil, "[dao.GetUserByEmail] db op failed", map[string]interface{}{"email": email, "error": e})
 				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
 					continue
 				}
 				if e == ecode.ErrUserNotExist {
@@ -166,6 +205,42 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 	})
 	return (*model.User)(unsafeUser), e
 }
+func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	if user, e := d.RedisGetUserByEmail(ctx, email); e == nil {
+		return user, nil
+	} else if e != ecode.ErrUserNotExist && e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+		log.Error(ctx, "[dao.GetOrCreateUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+	}
+	unsafeUser, e := oneshot.Do("GetOrCreateUserByEmail_"+email, func() (unsafe.Pointer, error) {
+		var user *model.User
+		var e error
+		for {
+			user, e = d.MongoCreateUserByEmail(ctx, email)
+			if e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByEmail] db op failed", map[string]interface{}{"email": email, "error": e})
+				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
+					continue
+				}
+				return nil, e
+			}
+			break
+		}
+		//update redis
+		go func() {
+			if e := d.RedisSetUser(context.Background(), user.UserID.Hex(), user); e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByEmail] update redis failed", map[string]interface{}{"user_id": user.UserID.Hex(), "error": e})
+			}
+		}()
+		go func() {
+			if e := d.RedisSetUserTelIndex(context.Background(), user.Tel, user.UserID.Hex()); e != nil {
+				log.Error(nil, "[dao.GetOrCreateUserByEmail] update redis failed", map[string]interface{}{"email": user.Email, "error": e})
+			}
+		}()
+		return unsafe.Pointer(user), nil
+	})
+	return (*model.User)(unsafeUser), e
+}
 func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, error) {
 	if user, e := d.RedisGetUserByIDCard(ctx, idcard); e != nil {
 		if e == ecode.ErrUserNotExist {
@@ -185,6 +260,7 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 			if e != nil {
 				log.Error(nil, "[dao.GetUserByIDCard] db op failed", map[string]interface{}{"idcard": idcard, "error": e})
 				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
 					continue
 				}
 				if e == ecode.ErrUserNotExist {
@@ -233,6 +309,7 @@ func (d *Dao) GetUserByNickName(ctx context.Context, nickname string) (*model.Us
 			if e != nil {
 				log.Error(nil, "[dao.GetUserByNickName] db op failed", map[string]interface{}{"nick_name": nickname, "error": e})
 				if e == ecode.ErrDBConflict {
+					time.Sleep(time.Millisecond * 5)
 					continue
 				}
 				if e == ecode.ErrUserNotExist {

@@ -212,36 +212,35 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		}
 	case "tel":
 		if req.PasswordType == "static" {
+			if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"tel": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 		} else if req.Password == "" {
 			//redis lock
-			if e := s.userDao.RedisLockLoginTelDynamic(ctx, req.Src); e != nil {
+			if e = s.userDao.RedisLockLoginTelDynamic(ctx, req.Src); e != nil {
 				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"tel": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-			if e := s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginTel, ""); e != nil {
+			if e = s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginTel, ""); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			//verify code
-			if e := s.verifycode(ctx, "Login", req.Src, util.LoginTel, req.Password, ""); e != nil {
+			if e = s.verifycode(ctx, "Login", req.Src, util.LoginTel, req.Password, ""); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-		}
-		//static or dynamic's verify success
-		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"tel": req.Src, "error": e})
-			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-			//dynamic and user not exist,create now
-			if user, e = s.userDao.MongoCreateUserByTel(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] create new account failed", map[string]interface{}{"tel": req.Src, "error": e})
+			if user, e = s.userDao.GetOrCreateUserByTel(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"tel": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		}
 	case "email":
 		if req.PasswordType == "static" {
+			if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"email": req.Src, "error": e})
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 		} else if req.Password == "" {
 			//redis lock
 			if e := s.userDao.RedisLockLoginEmailDynamic(ctx, req.Src); e != nil {
@@ -253,20 +252,11 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			//verify code
-			if e := s.verifycode(ctx, "Login", req.Src, util.LoginEmail, req.Password, ""); e != nil {
+			if e = s.verifycode(ctx, "Login", req.Src, util.LoginEmail, req.Password, ""); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-		}
-		//static or dynamic's verify success
-		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"email": req.Src, "error": e})
-			if req.PasswordType == "static" || e != ecode.ErrUserNotExist {
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-			//dynamic and user not exist,create now
-			if user, e = s.userDao.MongoCreateUserByEmail(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] create new account failed", map[string]interface{}{"email": req.Src, "error": e})
+			if user, e = s.userDao.GetOrCreateUserByEmail(ctx, req.Src); e != nil {
+				log.Error(ctx, "[Login] dao op failed", map[string]interface{}{"email": req.Src, "error": e})
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		}

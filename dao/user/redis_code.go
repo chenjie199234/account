@@ -27,7 +27,7 @@ func init() {
 // return <=0 = already setted before and all check times failed,ban some time
 // return >0 = already setted before,data is the rest check times
 const setcode = `local used=redis.call("HGET",KEYS[1],"check")
-if(used~=nil)
+if(used)
 then
 	return ARGV[2]-used
 end
@@ -54,9 +54,9 @@ func (d *Dao) RedisSetCode(ctx context.Context, target, action, code string) (in
 	if e != nil {
 		return 0, e
 	}
-	if rest <= 0 {
+	e = ecode.ErrCodeAlreadySend
+	if rest < 0 {
 		rest = 0
-		e = ecode.ErrCodeAlreadySend
 	}
 	return rest, e
 }
@@ -69,7 +69,7 @@ func (d *Dao) RedisSetCode(ctx context.Context, target, action, code string) (in
 // -1 means code same,check success
 // 0 means all check times used,this key will be expired after expire time
 const checkcode = `local data=redis.call("HMGET",KEYS[1],"code","check")
-if(data[1]==nil or data[2]==nil)
+if(not data[1] or not data[2])
 then
 	return nil
 end

@@ -119,6 +119,9 @@ func (d *Dao) MongoGetUserByTel(ctx context.Context, tel string) (*model.User, e
 	//another thread may change the association between user and tel
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
+		if e == ecode.ErrUserNotExist {
+			e = ecode.ErrDBConflict
+		}
 		return nil, e
 	}
 	if user.Tel != tel {
@@ -135,6 +138,9 @@ func (d *Dao) MongoGetUserByEmail(ctx context.Context, email string) (*model.Use
 	//another thread may change the association between user and email
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
+		if e == ecode.ErrUserNotExist {
+			e = ecode.ErrDBConflict
+		}
 		return nil, e
 	}
 	if user.Email != email {
@@ -149,6 +155,9 @@ func (d *Dao) MongoGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 	}
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
+		if e == ecode.ErrUserNotExist {
+			e = ecode.ErrDBConflict
+		}
 		return nil, e
 	}
 	if user.IDCard != idcard {
@@ -163,6 +172,9 @@ func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*mod
 	}
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
+		if e == ecode.ErrUserNotExist {
+			e = ecode.ErrDBConflict
+		}
 		return nil, e
 	}
 	if user.NickName != nickname {
