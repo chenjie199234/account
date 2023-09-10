@@ -12,7 +12,6 @@ import (
 
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
-	// "github.com/chenjie199234/Corelib/log"
 	// "github.com/chenjie199234/Corelib/web"
 	"github.com/chenjie199234/Corelib/cerror"
 	"github.com/chenjie199234/Corelib/log"
@@ -77,7 +76,31 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target
 		}
 		return ecode.ErrBan
 	}
-	if srctype == "email" {
+	switch action {
+	case util.LoginTel:
+		e = s.userDao.RedisLockLoginTelDynamic(ctx, target)
+	case util.LoginEmail:
+		e = s.userDao.RedisLockLoginEmailDynamic(ctx, target)
+	case util.UpdateEmailOldTel:
+		fallthrough
+	case util.UpdateEmailOldEmail:
+		e = s.userDao.RedisLockUpdateEmail(ctx, target)
+	case util.UpdateEmailNewEmail:
+		//this rate is controled by the UpdateEmailOldTel and UpdateEmailOldEmail
+	case util.UpdateTelOldTel:
+		fallthrough
+	case util.UpdateTelOldEmail:
+		e = s.userDao.RedisLockUpdateTel(ctx, target)
+	case util.UpdateTelNewTel:
+		//this rate is controled by the UpdateTelOldTel and UpdateTelOldEmail
+	}
+	if e != nil {
+		if srctype == "email" {
+			log.Error(ctx, "["+callerName+"] rate check failed", map[string]interface{}{"operator": target, "email": src, "error": e})
+		} else {
+			log.Error(ctx, "["+callerName+"] rate check failed", map[string]interface{}{"operator": target, "tel": src, "error": e})
+		}
+	} else if srctype == "email" {
 		if e = util.SendEmailCode(ctx, src, code, action); e != nil {
 			log.Error(ctx, "["+callerName+"] send email failed", map[string]interface{}{"operator": target, "email": src, "error": e})
 		}
@@ -217,11 +240,6 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			//redis lock
-			if e = s.userDao.RedisLockLoginTelDynamic(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"tel": req.Src, "error": e})
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
 			if e = s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginTel, ""); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -242,11 +260,6 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			//redis lock
-			if e := s.userDao.RedisLockLoginEmailDynamic(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] redis op failed", map[string]interface{}{"email": req.Src, "error": e})
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
 			if e := s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginEmail, ""); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -533,7 +546,6 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		log.Error(ctx, "[UpdateEmail] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	//TODO add rate limit
 	if req.NewEmailDynamicPassword != "" {
 		//step 3
 		if e := s.verifycode(ctx, "UpdateEmail", md["Token-User"], util.UpdateEmailNewEmail, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
@@ -648,12 +660,6 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ErrReq
 	}
 
-	//redis lock
-	if e := s.userDao.RedisLockUpdateEmail(ctx, md["Token-User"]); e != nil {
-		log.Error(ctx, "[UpdateEmail] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-	}
-
 	if req.OldReceiverType == "email" {
 		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateEmailOldEmail, "")
 	} else {
@@ -690,7 +696,6 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		log.Error(ctx, "[UpdateTel] operator's token format wrong", map[string]interface{}{"operator": md["Token-User"], "error": e})
 		return nil, ecode.ErrToken
 	}
-	//TODO add rate limit
 	if req.NewTelDynamicPassword != "" {
 		//step 3
 		if e := s.verifycode(ctx, "UpdateTel", md["Token-User"], util.UpdateTelNewTel, req.NewTelDynamicPassword, req.NewTel); e != nil {
@@ -805,11 +810,6 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return nil, ecode.ErrReq
 	}
 
-	//redis lock
-	if e := s.userDao.RedisLockUpdateTel(ctx, md["Token-User"]); e != nil {
-		log.Error(ctx, "[UpdateTel] redis op failed", map[string]interface{}{"operator": md["Token-User"], "error": e})
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-	}
 	if req.OldReceiverType == "email" {
 		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateTelOldEmail, "")
 	} else {
