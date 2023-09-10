@@ -121,10 +121,10 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 	return (*model.User)(unsafeUser), e
 }
 func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User, error) {
-	if user, e := d.RedisGetUserByTel(ctx, tel); e == nil {
-		return user, nil
-	} else if e != ecode.ErrUserNotExist && e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+	if user, e := d.RedisGetUserByTel(ctx, tel); e != nil {
 		log.Error(ctx, "[dao.GetOrCreateUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+	} else if user != nil {
+		return user, nil
 	}
 	unsafeUser, e := oneshot.Do("GetOrCreateUserByTel_"+tel, func() (unsafe.Pointer, error) {
 		var user *model.User
@@ -206,10 +206,10 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 	return (*model.User)(unsafeUser), e
 }
 func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	if user, e := d.RedisGetUserByEmail(ctx, email); e == nil {
-		return user, nil
-	} else if e != ecode.ErrUserNotExist && e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+	if user, e := d.RedisGetUserByEmail(ctx, email); e != nil {
 		log.Error(ctx, "[dao.GetOrCreateUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+	} else if user != nil {
+		return user, nil
 	}
 	unsafeUser, e := oneshot.Do("GetOrCreateUserByEmail_"+email, func() (unsafe.Pointer, error) {
 		var user *model.User
