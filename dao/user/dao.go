@@ -233,7 +233,7 @@ func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserTelIndex(context.Background(), user.Tel, user.UserID.Hex()); e != nil {
+			if e := d.RedisSetUserEmailIndex(context.Background(), user.Email, user.UserID.Hex()); e != nil {
 				log.Error(nil, "[dao.GetOrCreateUserByEmail] update redis failed", map[string]interface{}{"email": user.Email, "error": e})
 			}
 		}()
