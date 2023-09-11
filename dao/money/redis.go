@@ -116,10 +116,10 @@ end
 local result={}
 local totalsize=0
 local curpage=0
-if(ARGV[3]==0)
+if(tonumber(ARGV[3])==0)
 then
 	local tmp=redis.call("ZRANGE",KEYS[1],ARGV[2],ARGV[1],"BYSCORE","REV")
-	if(tmp~=nil and #tmp>0)
+	if(tmp and #tmp>0)
 	then
 		result=tmp
 		totalsize=#result
@@ -128,7 +128,7 @@ else
 	totalsize=redis.call("ZCOUNT",KEYS[1],ARGV[1],ARGV[2])
 	if(totalsize~=0)
 	then
-		curpage=ARGV[3]
+		curpage=tonumber(ARGV[3])
 		local skip=(curpage-1)*ARGV[4]
 		if(skip>=totalsize)
 		then
@@ -168,18 +168,16 @@ func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, st
 		}
 		return nil, 0, 0, e
 	}
-	curpage := values[len(values)-1].(uint32)
-	totalsize := values[len(values)-2].(uint32)
-	r := make([]*model.MoneyLog, 0, len(values)-2)
+	curpage := values[len(values)-1].(int64)
+	totalsize := values[len(values)-2].(int64)
+	values = values[:len(values)-2]
+	r := make([]*model.MoneyLog, 0, len(values))
 	for i := range values {
-		if i == len(values)-2 {
-			break
-		}
 		tmp := &model.MoneyLog{}
 		if e := json.Unmarshal(values[i].([]byte), tmp); e != nil {
 			return nil, 0, 0, ecode.ErrRedisDataBroken
 		}
 		r = append(r, tmp)
 	}
-	return r, totalsize, curpage, nil
+	return r, uint32(totalsize), uint32(curpage), nil
 }

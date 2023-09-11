@@ -320,12 +320,12 @@ func (s *Service) SelfUserInfo(ctx context.Context, req *api.SelfUserInfoReq) (*
 	return &api.SelfUserInfoResp{
 		Info: &api.UserInfo{
 			UserId:   user.UserID.Hex(),
-			Idcard:   user.IDCard,
-			Tel:      user.Tel,
-			Email:    user.Email,
+			Idcard:   util.MaskIDCard(user.IDCard),
+			Tel:      util.MaskTel(user.Tel),
+			Email:    util.MaskEmail(user.Email),
 			NickName: user.NickName,
-			Money:    user.Money,
 			Ctime:    uint32(user.UserID.Timestamp().Unix()),
+			Money:    user.Money,
 		},
 	}, nil
 }

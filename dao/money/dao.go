@@ -13,7 +13,7 @@ import (
 	cmongo "go.mongodb.org/mongo-driver/mongo"
 )
 
-const DefaultMoneyLogsPageSize = 20
+const DefaultMoneyLogsPageSize = 10
 
 // Dao this is a data operation layer to operate money service's data
 type Dao struct {
@@ -64,11 +64,11 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 	end := len(all)
 	endfind := false
 	for i, moneylog := range all {
-		if moneylog.LogID.Timestamp().Unix() <= int64(endtime) && start == 0 {
+		if moneylog.LogID.Timestamp().Unix() <= int64(endtime) && !startfind {
 			start = i
 			startfind = true
 		}
-		if moneylog.LogID.Timestamp().Unix() < int64(starttime) && end == 0 {
+		if moneylog.LogID.Timestamp().Unix() < int64(starttime) && !endfind {
 			end = i
 			endfind = true
 		}
