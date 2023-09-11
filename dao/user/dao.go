@@ -42,7 +42,9 @@ func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.Us
 			//key exist but value is empty
 			return nil, e
 		}
-		log.Error(ctx, "[dao.GetUser] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetUser] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -77,7 +79,9 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 			//key exist but value is empty
 			return nil, e
 		}
-		log.Error(nil, "[dao.GetUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		if e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -122,7 +126,9 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 }
 func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User, error) {
 	if user, e := d.RedisGetUserByTel(ctx, tel); e != nil {
-		log.Error(ctx, "[dao.GetOrCreateUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		if e != ecode.ErrUserNotExist && e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetOrCreateUserByTel] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -162,7 +168,9 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 			//key exist but value is empty
 			return nil, e
 		}
-		log.Error(nil, "[dao.GetUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+		if e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -207,7 +215,9 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 }
 func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	if user, e := d.RedisGetUserByEmail(ctx, email); e != nil {
-		log.Error(ctx, "[dao.GetOrCreateUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+		if e != ecode.ErrRedisKeyMissing && e != ecode.ErrUserNotExist && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetOrCreateUserByEmail] redis op failed", map[string]interface{}{"email": email, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -247,7 +257,9 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 			//key exist but value is empty
 			return nil, e
 		}
-		log.Error(nil, "[dao.GetUserByIDCard] redis op failed", map[string]interface{}{"idcard": idcard, "error": e})
+		if e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetUserByIDCard] redis op failed", map[string]interface{}{"idcard": idcard, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -296,7 +308,9 @@ func (d *Dao) GetUserByNickName(ctx context.Context, nickname string) (*model.Us
 			//key exist but value is empty
 			return nil, e
 		}
-		log.Error(nil, "[dao.GetUserByNickName] redis op failed", map[string]interface{}{"nickname": nickname, "error": e})
+		if e != ecode.ErrRedisKeyMissing && e != ecode.ErrRedisConflict {
+			log.Error(ctx, "[dao.GetUserByNickName] redis op failed", map[string]interface{}{"nickname": nickname, "error": e})
+		}
 	} else if user != nil {
 		return user, nil
 	}
@@ -348,7 +362,9 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 			//key exist but value is empty
 			return userid, e
 		}
-		log.Error(nil, "[dao.GetUserTelIndex] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetUserTelIndex] redis op failed", map[string]interface{}{"tel": tel, "error": e})
+		}
 	} else if userid != "" {
 		return userid, nil
 	}
@@ -390,7 +406,9 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 			//key exist but value is empty
 			return userid, e
 		}
-		log.Error(nil, "[dao.GetUserEmailIndex] redis op failed", map[string]interface{}{"email": email, "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetUserEmailIndex] redis op failed", map[string]interface{}{"email": email, "error": e})
+		}
 	} else if userid != "" {
 		return userid, nil
 	}
@@ -432,7 +450,9 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 			//key exist but value is empty
 			return userid, e
 		}
-		log.Error(nil, "[dao.GetUserIDCardIndex] redis op failed", map[string]interface{}{"idcard": idcard, "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetUserIDCardIndex] redis op failed", map[string]interface{}{"idcard": idcard, "error": e})
+		}
 	} else if userid != "" {
 		return userid, nil
 	}
@@ -474,7 +494,9 @@ func (d *Dao) GetUserNickNameIndex(ctx context.Context, nickname string) (string
 			//key exist but value is empty
 			return userid, e
 		}
-		log.Error(nil, "[dao.GetUserNickNameIndex] redis op failed", map[string]interface{}{"nick_name": nickname, "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetUserNickNameIndex] redis op failed", map[string]interface{}{"nick_name": nickname, "error": e})
+		}
 	} else if userid != "" {
 		return userid, nil
 	}

@@ -5,10 +5,12 @@ import (
 	csql "database/sql"
 	"unsafe"
 
+	"github.com/chenjie199234/account/ecode"
+	"github.com/chenjie199234/account/model"
+
 	"github.com/chenjie199234/Corelib/log"
 	credis "github.com/chenjie199234/Corelib/redis"
 	"github.com/chenjie199234/Corelib/util/oneshot"
-	"github.com/chenjie199234/account/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	cmongo "go.mongodb.org/mongo-driver/mongo"
 )
@@ -35,7 +37,9 @@ func NewDao(sql *csql.DB, redis *credis.Pool, mongo *cmongo.Client) *Dao {
 
 func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	if moneylogs, totalsize, curpage, e := d.RedisGetMoneyLogs(ctx, userid.Hex(), opaction, starttime, endtime, pagesize, page); e != nil {
-		log.Error(nil, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
+		if e != ecode.ErrRedisKeyMissing {
+			log.Error(ctx, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
+		}
 	} else {
 		return moneylogs, totalsize, curpage, nil
 	}
