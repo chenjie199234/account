@@ -106,6 +106,17 @@
 			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
 			"dial_timeout":"250ms"
+		},
+		"account_redis":{
+			"tls":false,
+			"specific_ca_paths":[""],
+			"addrs":["127.0.0.1:6379"],
+			"user_name":"",
+			"password":"",
+			"max_open":256,
+			"max_conn_idletime":"5m",
+			"io_timeout":"500ms",
+			"dial_timeout":"250ms"
 		}
 	}
 }

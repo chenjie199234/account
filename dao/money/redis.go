@@ -8,6 +8,7 @@ import (
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
 
+	"github.com/chenjie199234/Corelib/util/common"
 	gredis "github.com/redis/go-redis/v9"
 )
 
@@ -129,7 +130,7 @@ func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, st
 	r := make([]*model.MoneyLog, 0, len(values))
 	for i := range values {
 		tmp := &model.MoneyLog{}
-		if e := json.Unmarshal(values[i].([]byte), tmp); e != nil {
+		if e := json.Unmarshal(common.Str2byte(values[i].(string)), tmp); e != nil {
 			return nil, 0, 0, ecode.ErrRedisDataBroken
 		}
 		r = append(r, tmp)

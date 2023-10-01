@@ -6,7 +6,6 @@ import (
 
 	"github.com/chenjie199234/account/ecode"
 
-	"github.com/chenjie199234/Corelib/util/common"
 	gredis "github.com/redis/go-redis/v9"
 )
 
@@ -99,11 +98,11 @@ func (d *Dao) RedisGetCode(ctx context.Context, target, action string) (string, 
 		}
 		return "", 0, e
 	}
-	if values[0] == nil || len(values[0].([]byte)) == 0 || values[1] == nil || len(values[1].([]byte)) == 0 {
+	if values[0] == nil || len(values[0].(string)) == 0 || values[1] == nil || len(values[1].(string)) == 0 {
 		return "", 0, ecode.ErrCodeNotExist
 	}
-	code := common.Byte2str(values[0].([]byte))
-	check, e := strconv.Atoi(common.Byte2str(values[1].([]byte)))
+	code := values[0].(string)
+	check, e := strconv.Atoi(values[1].(string))
 	if e != nil {
 		e = ecode.ErrRedisDataBroken
 	}
