@@ -16,6 +16,10 @@ import (
 	"github.com/chenjie199234/Corelib/log"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	_ "github.com/chenjie199234/Corelib/monitor"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/redis/go-redis/v9"
+	_ "go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
@@ -37,16 +41,16 @@ func main() {
 	if rateredis := config.GetRedis("rate_redis"); rateredis != nil {
 		publicmids.UpdateRateRedisInstance(rateredis)
 	} else {
-		log.Warning(nil, "[main] rate redis missing,all rate check will be failed", nil)
+		log.Warn(nil, "[main] rate redis missing,all rate check will be failed")
 	}
 	if sessionredis := config.GetRedis("session_redis"); sessionredis != nil {
 		publicmids.UpdateSessionRedisInstance(sessionredis)
 	} else {
-		log.Warning(nil, "[main] session redis missing,all session event will be failed", nil)
+		log.Warn(nil, "[main] session redis missing,all session event will be failed")
 	}
 	//start the whole business service
 	if e := service.StartService(); e != nil {
-		log.Error(nil, "[main] start service failed", map[string]interface{}{"error": e})
+		log.Error(nil, "[main] start service failed", log.CError(e))
 		return
 	}
 	//start low level net service

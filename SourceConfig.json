@@ -1,101 +1,111 @@
 {
 	"cgrpc_server":{
-		"connect_timeout":"200ms",
+		"connect_timeout":"500ms",
+		"idle_timeout":"0",
 		"global_timeout":"500ms",
 		"heart_probe":"10s",
 		"certs":{
 		}
 	},
 	"cgrpc_client":{
-		"connect_timeout":"200ms",
+		"connect_timeout":"500ms",
+		"idle_timeout":"0",
 		"global_timeout":"0",
 		"heart_probe":"10s"
 	},
 	"crpc_server":{
-		"connect_timeout":"200ms",
+		"connect_timeout":"500ms",
+		"idle_timeout":"0",
 		"global_timeout":"500ms",
-		"heart_probe":"3s",
+		"heart_probe":"10s",
 		"certs":{
 		}
 	},
 	"crpc_client":{
-		"connect_timeout":"200ms",
+		"connect_timeout":"500ms",
+		"idle_timeout":"0",
 		"global_timeout":"0",
-		"heart_probe":"3s"
+		"heart_probe":"10s"
 	},
 	"web_server":{
-		"close_mode":0,
-		"connect_timeout":"200ms",
+		"wait_close_mode":0,
+		"wait_close_time":"1s",
+		"connect_timeout":"500ms",
 		"global_timeout":"500ms",
-		"idle_timeout":"10s",
-		"heart_probe":"3s",
-		"src_root":"",
+		"idle_timeout":"5s",
+		"max_request_header":4096,
+		"cors_allowed_origins":["*"],
+		"cors_allowed_headers":["*"],
+		"cors_expose_headers":["*"],
+		"cors_allow_credentials":false,
+		"cors_max_age":"30m",
+		"src_root_path":"",
 		"certs":{
-		},
-		"web_cors":{
-			"cors_origin":["*"],
-			"cors_header":["*"],
-			"cors_expose":[]
 		}
 	},
 	"web_client":{
-		"connect_timeout":"200ms",
+		"connect_timeout":"500ms",
 		"global_timeout":"0",
-		"idle_timeout":"10s",
-		"heart_probe":"3s"
+		"idle_timeout":"5s",
+		"max_response_header":4096
 	},
 	"mongo":{
 		"example_mongo":{
-			"url":"[mongodb/mongodb+srv]://[username:password@]host1,...,hostN[/dbname][?param1=value1&...&paramN=valueN]",
+			"tls":false,
+			"specific_ca_paths":["./example.pem"],
+			"mongodb_srv":false,
+			"addrs":["127.0.0.1:27017"],
+			"user_name":"",
+			"password":"",
+			"auth_db":"",
+			"replica_set":"",
 			"max_open":256,
-			"max_idletime":"10m",
+			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
-			"conn_timeout":"250ms"
+			"dial_timeout":"250ms"
+		},
+		"account_mongo":{
+			"tls":false,
+			"specific_ca_paths":[""],
+			"mongodb_srv":false,
+			"addrs":["localhost:27017"],
+			"user_name":"",
+			"password":"",
+			"auth_db":"",
+			"replica_set":"rs",
+			"max_open":256,
+			"max_conn_idletime":"5m",
+			"io_timeout":"500ms",
+			"dial_timeout":"250ms"
 		}
 	},
-	"sql":{
-		"example_sql":{
-			"url":"[username:password@][protocol(address)]/[dbname][?param1=value1&...&paramN=valueN]",
+	"mysql":{
+		"example_mysql":{
+			"tls":false,
+			"specific_ca_paths":["./example.pem"],
+			"addr":"127.0.0.1:3306",
+			"user_name":"",
+			"password":"",
 			"max_open":256,
-			"max_idle":100,
-			"max_idletime":"10m",
+			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
-			"conn_timeout":"250ms"
+			"dial_timeout":"250ms",
+			"charset":"",
+			"collation":"",
+			"parse_time":true
 		}
 	},
 	"redis":{
 		"example_redis":{
-			"url":"[redis/rediss]://[[username:]password@]host[/dbindex]",
+			"tls":false,
+			"specific_ca_paths":["./example.pem"],
+			"addrs":["127.0.0.1:6379"],
+			"user_name":"",
+			"password":"",
 			"max_open":256,
-			"max_idle":100,
-			"max_idletime":"10m",
+			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
-			"conn_timeout":"250ms"
+			"dial_timeout":"250ms"
 		}
-	},
-	"kafka_pub":[
-		{
-			"addrs":["127.0.0.1:12345"],
-			"username":"example",
-			"password":"example",
-			"auth_method":3,
-			"compress_method":2,
-			"topic_name":"example_topic",
-			"io_timeout":"500ms",
-			"conn_timeout":"250ms"
-		}
-	],
-	"kafka_sub":[
-		{
-			"addrs":["127.0.0.1:12345"],
-			"username":"example",
-			"password":"example",
-			"auth_method":3,
-			"topic_name":"example_topic",
-			"group_name":"example_group",
-			"conn_timeout":"250ms",
-			"start_offset":-2,
-			"commit_interval":"0s"
-		}
-	]
+	}
 }

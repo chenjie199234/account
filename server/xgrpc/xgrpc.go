@@ -1,8 +1,7 @@
 package xgrpc
 
 import (
-	"strings"
-	"time"
+	"crypto/tls"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -20,15 +19,22 @@ var s *cgrpc.CGrpcServer
 // StartCGrpcServer -
 func StartCGrpcServer() {
 	c := config.GetCGrpcServerConfig()
-	cgrpcc := &cgrpc.ServerConfig{
-		ConnectTimeout: time.Duration(c.ConnectTimeout),
-		GlobalTimeout:  time.Duration(c.GlobalTimeout),
-		HeartPorbe:     time.Duration(c.HeartProbe),
-		Certs:          c.Certs,
+	var tlsc *tls.Config
+	if len(c.Certs) > 0 {
+		certificates := make([]tls.Certificate, 0, len(c.Certs))
+		for cert, key := range c.Certs {
+			temp, e := tls.LoadX509KeyPair(cert, key)
+			if e != nil {
+				log.Error(nil, "[xgrpc] load cert failed:", log.String("cert", cert), log.String("key", key), log.CError(e))
+				return
+			}
+			certificates = append(certificates, temp)
+		}
+		tlsc = &tls.Config{Certificates: certificates}
 	}
 	var e error
-	if s, e = cgrpc.NewCGrpcServer(cgrpcc, model.Project, model.Group, model.Name); e != nil {
-		log.Error(nil, "[xgrpc] new server failed", map[string]interface{}{"error": e})
+	if s, e = cgrpc.NewCGrpcServer(c.ServerConfig, model.Project, model.Group, model.Name, tlsc); e != nil {
+		log.Error(nil, "[xgrpc] new server failed", log.CError(e))
 		return
 	}
 	UpdateHandlerTimeout(config.AC.HandlerTimeout)
@@ -38,34 +44,25 @@ func StartCGrpcServer() {
 
 	//you just need to register your service here
 	api.RegisterStatusCGrpcServer(s, service.SvcStatus, mids.AllMids())
-	//example
-	//api.RegisterExampleCGrpcServer(s, service.SvcExample, mids.AllMids())
 	api.RegisterUserCGrpcServer(s, service.SvcUser, mids.AllMids())
 	api.RegisterMoneyCGrpcServer(s, service.SvcMoney, mids.AllMids())
 
+	//example
+	//api.RegisterExampleCGrpcServer(s, service.SvcExample, mids.AllMids())
+
 	if e = s.StartCGrpcServer(":10000"); e != nil && e != cgrpc.ErrServerClosed {
-		log.Error(nil, "[xgrpc] start server failed", map[string]interface{}{"error": e})
+		log.Error(nil, "[xgrpc] start server failed", log.CError(e))
 		return
 	}
-	log.Info(nil, "[xgrpc] server closed", nil)
+	log.Info(nil, "[xgrpc] server closed")
 }
 
 // UpdateHandlerTimeout -
 // first key path,second key method,value timeout duration
-func UpdateHandlerTimeout(hts map[string]map[string]ctime.Duration) {
-	if s == nil {
-		return
+func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
+	if s != nil {
+		s.UpdateHandlerTimeout(timeout)
 	}
-	cc := make(map[string]time.Duration)
-	for path, methods := range hts {
-		for method, timeout := range methods {
-			method = strings.ToUpper(method)
-			if method == "GRPC" {
-				cc[path] = timeout.StdDuration()
-			}
-		}
-	}
-	s.UpdateHandlerTimeout(cc)
 }
 
 // StopCGrpcServer force - false(graceful),true(not graceful)
@@ -74,4 +71,3 @@ func StopCGrpcServer(force bool) {
 		s.StopCGrpcServer(force)
 	}
 }
-

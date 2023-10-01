@@ -2,34 +2,34 @@ package money
 
 import (
 	"context"
-	csql "database/sql"
 	"unsafe"
 
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
 
 	"github.com/chenjie199234/Corelib/log"
+	cmongo "github.com/chenjie199234/Corelib/mongo"
+	cmysql "github.com/chenjie199234/Corelib/mysql"
 	credis "github.com/chenjie199234/Corelib/redis"
 	"github.com/chenjie199234/Corelib/util/oneshot"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	cmongo "go.mongodb.org/mongo-driver/mongo"
 )
 
 const DefaultMoneyLogsPageSize = 10
 
 // Dao this is a data operation layer to operate money service's data
 type Dao struct {
-	sql   *csql.DB
-	redis *credis.Pool
+	mysql *cmysql.Client
+	redis *credis.Client
 	mongo *cmongo.Client
 }
 
 // NewDao Dao is only a data operation layer
 // don't write business logic in this package
 // business logic should be written in service package
-func NewDao(sql *csql.DB, redis *credis.Pool, mongo *cmongo.Client) *Dao {
+func NewDao(mysql *cmysql.Client, redis *credis.Client, mongo *cmongo.Client) *Dao {
 	return &Dao{
-		sql:   sql,
+		mysql: mysql,
 		redis: redis,
 		mongo: mongo,
 	}

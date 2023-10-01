@@ -1,8 +1,7 @@
 package xcrpc
 
 import (
-	"strings"
-	"time"
+	"crypto/tls"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -20,15 +19,22 @@ var s *crpc.CrpcServer
 // StartCrpcServer -
 func StartCrpcServer() {
 	c := config.GetCrpcServerConfig()
-	crpcc := &crpc.ServerConfig{
-		ConnectTimeout: time.Duration(c.ConnectTimeout),
-		GlobalTimeout:  time.Duration(c.GlobalTimeout),
-		HeartPorbe:     time.Duration(c.HeartProbe),
-		Certs:          c.Certs,
+	var tlsc *tls.Config
+	if len(c.Certs) > 0 {
+		certificates := make([]tls.Certificate, 0, len(c.Certs))
+		for cert, key := range c.Certs {
+			temp, e := tls.LoadX509KeyPair(cert, key)
+			if e != nil {
+				log.Error(nil, "[xcrpc] load cert failed:", log.String("cert", cert), log.String("key", key), log.CError(e))
+				return
+			}
+			certificates = append(certificates, temp)
+		}
+		tlsc = &tls.Config{Certificates: certificates}
 	}
 	var e error
-	if s, e = crpc.NewCrpcServer(crpcc, model.Project, model.Group, model.Name); e != nil {
-		log.Error(nil, "[xcrpc] new server failed", map[string]interface{}{"error": e})
+	if s, e = crpc.NewCrpcServer(c.ServerConfig, model.Project, model.Group, model.Name, tlsc); e != nil {
+		log.Error(nil, "[xcrpc] new server failed", log.CError(e))
 		return
 	}
 	UpdateHandlerTimeout(config.AC.HandlerTimeout)
@@ -38,34 +44,25 @@ func StartCrpcServer() {
 
 	//you just need to register your service here
 	api.RegisterStatusCrpcServer(s, service.SvcStatus, mids.AllMids())
-	//example
-	//api.RegisterExampleCrpcServer(s, service.SvcExample,mids.AllMids())
 	api.RegisterUserCrpcServer(s, service.SvcUser, mids.AllMids())
 	api.RegisterMoneyCrpcServer(s, service.SvcMoney, mids.AllMids())
 
+	//example
+	//api.RegisterExampleCrpcServer(s, service.SvcExample,mids.AllMids())
+
 	if e = s.StartCrpcServer(":9000"); e != nil && e != crpc.ErrServerClosed {
-		log.Error(nil, "[xcrpc] start server failed", map[string]interface{}{"error": e})
+		log.Error(nil, "[xcrpc] start server failed", log.CError(e))
 		return
 	}
-	log.Info(nil, "[xcrpc] server closed", nil)
+	log.Info(nil, "[xcrpc] server closed")
 }
 
 // UpdateHandlerTimeout -
 // first key path,second key method,value timeout duration
-func UpdateHandlerTimeout(hts map[string]map[string]ctime.Duration) {
-	if s == nil {
-		return
+func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
+	if s != nil {
+		s.UpdateHandlerTimeout(timeout)
 	}
-	cc := make(map[string]time.Duration)
-	for path, methods := range hts {
-		for method, timeout := range methods {
-			method = strings.ToUpper(method)
-			if method == "CRPC" {
-				cc[path] = timeout.StdDuration()
-			}
-		}
-	}
-	s.UpdateHandlerTimeout(cc)
 }
 
 // StopCrpcServer force - false(graceful),true(not graceful)

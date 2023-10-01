@@ -2,10 +2,9 @@ package user
 
 import (
 	"context"
+	"time"
 
 	"github.com/chenjie199234/account/ecode"
-
-	"github.com/chenjie199234/Corelib/redis"
 )
 
 //send email or send tel rate limit
@@ -74,13 +73,8 @@ func (d *Dao) RedisLockUpdateNickName(ctx context.Context, userid string) error 
 
 // 1 times per second
 func (d *Dao) RedisLockDuplicateCheck(ctx context.Context, srctype, userid string) error {
-	c, e := d.redis.GetContext(ctx)
-	if e != nil {
-		return e
-	}
-	defer c.Close()
-	_, e = redis.String(c.DoContext(ctx, "SET", srctype+"_duplicate_check_lock_{"+userid+"}", 1, "EX", 1, "NX"))
-	if e == redis.ErrNil {
+	ok, e := d.redis.SetNX(ctx, srctype+"_duplicate_check_lock_{"+userid+"}", 1, time.Second).Result()
+	if e == nil && !ok {
 		e = ecode.ErrTooFast
 	}
 	return e

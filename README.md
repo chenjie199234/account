@@ -19,26 +19,21 @@ account是一个微服务.
 
 ## 环境变量
 ```
-LOG_LEVEL                               日志等级,debug,info(default),warning,error
+LOG_LEVEL                               日志等级,debug,info(default),warn,error
 LOG_TRACE                               是否开启链路追踪,1-开启,0-关闭(default)
-LOG_TARGET                              日志输出目标,std-输出到标准输出,file-输出到文件(可执行文件相同目录),both-两者都输出
+LOG_TARGET                              日志输出目标,std-输出到标准输出,file-输出到文件(当前工作目录的./log/目录下)
 PROJECT                                 该项目所属的项目,[a-z][0-9],第一个字符必须是[a-z]
 GROUP                                   该项目所属的项目组,[a-z][0-9],第一个字符必须是[a-z]
 RUN_ENV                                 当前运行环境,如:test,pre,prod
 DEPLOY_ENV                              部署环境,如:ali-kube-shanghai-1,ali-host-hangzhou-1
 MONITOR                                 是否开启系统监控采集,0关闭,1开启
 
-CONFIG_TYPE                             配置类型:0-使用本地配置.1-使用远程配置中心config服务
-REMOTE_CONFIG_SERVICE_PROJECT           当CONFIG_TYPE为1时,远程配置中心服务的项目,[a-z][0-9],第一个字符必须是[a-z]
-REMOTE_CONFIG_SERVICE_GROUP             当CONFIG_TYPE为1时,远程配置中心服务的项目组,[a-z][0-9],第一个字符必须是[a-z]
-REMOTE_CONFIG_SERVICE_WEB_HOST          当CONFIG_TYPE为1时,远程配置中心服务的host,不带scheme(是否启用tls取决于NewConfigSdk时是否传入tls.Config)
-REMOTE_CONFIG_SERVICE_WEB_PORT          当CONFIG_TYPE为1时,远程配置中心服务的端口,默认为80/443(取决于NewConfigSdk时是否使用tls)
-REMOTE_CONFIG_SECRET                    当CONFIG_TYPE为1时,远程配置中心配置的密钥
-
-PERMISSION_SERVICE_PROJECT              权限控制中心的项目(按需设置),[a-z][0-9],第一个字符必须是[a-z]
-PERMISSION_SERVICE_GROUP                权限控制中心的项目组(按需设置),[a-z][0-9],第一个字符必须是[a-z]
-PERMISSION_SERVICE_WEB_HOST             权限控制中心的host(按需设置),不带scheme(是否启用tls取决于NewConfigSdk时是否传入tls.Config)
-PERMISSION_SERVICE_WEB_PORT             权限控制中心的端口(按需设置),默认为80/443(取决于NewPermissionSdk时是否使用tls)
+CONFIG_TYPE                             配置类型:0-使用本地配置.1-使用admin服务的远程配置中心功能
+REMOTE_CONFIG_SECRET                    当CONFIG_TYPE为1时,admin服务中,该服务使用的配置加密密钥,最长31个字符
+ADMIN_SERVICE_PROJECT                   当使用admin服务的远程配置中心,服务发现,权限管理功能时,需要设置该环境变量,该变量为admin服务所属的项目,[a-z][0-9],第一个字符必须是[a-z]
+ADMIN_SERVICE_GROUP                     当使用admin服务的远程配置中心,服务发现,权限管理功能时,需要设置该环境变量,该变量为admin服务所属的项目下的小组,[a-z][0-9],第一个字符必须是[a-z]
+ADMIN_SERVICE_WEB_HOST                  当使用admin服务的远程配置中心,服务发现,权限管理功能时,需要设置该环境变量,该变量为admin服务的host,不带scheme(tls取决于NewSdk时是否传入tls.Config)
+ADMIN_SERVICE_WEB_PORT                  当使用admin服务的远程配置中心,服务发现,权限管理功能时,需要设置该环境变量,该变量为admin服务的web端口,默认为80/443(取决于NewSdk时是否使用tls)
 
 ```
 
