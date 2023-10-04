@@ -86,11 +86,11 @@ func initlocalapp(notice func(*AppConfig)) {
 					continue
 				}
 				validateAppConfig(c)
-				log.Info(nil, "[config.local.app] update success", log.Any("config", c))
-				if notice != nil {
-					notice(c)
-				}
 				AC = c
+				log.Info(nil, "[config.local.app] update success", log.Any("config", AC))
+				if notice != nil {
+					notice(AC)
+				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
@@ -113,11 +113,11 @@ func initremoteapp(notice func(*AppConfig), wait chan *struct{}) (stopwatch func
 			return
 		}
 		validateAppConfig(c)
-		log.Info(nil, "[config.remote.app] update success", log.Any("config", c))
-		if notice != nil {
-			notice(c)
-		}
 		AC = c
+		log.Info(nil, "[config.remote.app] update success", log.Any("config", AC))
+		if notice != nil {
+			notice(AC)
+		}
 		select {
 		case wait <- nil:
 		default:
