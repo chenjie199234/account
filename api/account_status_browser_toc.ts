@@ -292,11 +292,18 @@ export class StatusBrowserClientToC {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:Pingresp
 			try{
-				let obj:Pingresp=JsonToPingresp(response.data)
+				obj=JsonToPingresp(response.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})

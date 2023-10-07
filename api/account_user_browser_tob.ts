@@ -684,11 +684,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:GetUserInfoResp
 			try{
-				let obj:GetUserInfoResp=JsonToGetUserInfoResp(response.data.data)
+				let obj=JsonToGetUserInfoResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -733,11 +740,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:LoginResp
 			try{
-				let obj:LoginResp=JsonToLoginResp(response.data.data)
+				let obj=JsonToLoginResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -782,11 +796,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:SelfUserInfoResp
 			try{
-				let obj:SelfUserInfoResp=JsonToSelfUserInfoResp(response.data.data)
+				let obj=JsonToSelfUserInfoResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -831,11 +852,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:UpdateStaticPasswordResp
 			try{
-				let obj:UpdateStaticPasswordResp=JsonToUpdateStaticPasswordResp(response.data.data)
+				let obj=JsonToUpdateStaticPasswordResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -880,11 +908,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:IdcardDuplicateCheckResp
 			try{
-				let obj:IdcardDuplicateCheckResp=JsonToIdcardDuplicateCheckResp(response.data.data)
+				let obj=JsonToIdcardDuplicateCheckResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -929,11 +964,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:UpdateIdcardResp
 			try{
-				let obj:UpdateIdcardResp=JsonToUpdateIdcardResp(response.data.data)
+				let obj=JsonToUpdateIdcardResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -978,11 +1020,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:NickNameDuplicateCheckResp
 			try{
-				let obj:NickNameDuplicateCheckResp=JsonToNickNameDuplicateCheckResp(response.data.data)
+				let obj=JsonToNickNameDuplicateCheckResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -1027,11 +1076,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:UpdateNickNameResp
 			try{
-				let obj:UpdateNickNameResp=JsonToUpdateNickNameResp(response.data.data)
+				let obj=JsonToUpdateNickNameResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -1076,11 +1132,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:EmailDuplicateCheckResp
 			try{
-				let obj:EmailDuplicateCheckResp=JsonToEmailDuplicateCheckResp(response.data.data)
+				let obj=JsonToEmailDuplicateCheckResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -1125,11 +1188,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:UpdateEmailResp
 			try{
-				let obj:UpdateEmailResp=JsonToUpdateEmailResp(response.data.data)
+				let obj=JsonToUpdateEmailResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -1174,11 +1244,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:TelDuplicateCheckResp
 			try{
-				let obj:TelDuplicateCheckResp=JsonToTelDuplicateCheckResp(response.data.data)
+				let obj=JsonToTelDuplicateCheckResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -1223,11 +1300,18 @@ export class UserBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:UpdateTelResp
 			try{
-				let obj:UpdateTelResp=JsonToUpdateTelResp(response.data.data)
+				let obj=JsonToUpdateTelResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})

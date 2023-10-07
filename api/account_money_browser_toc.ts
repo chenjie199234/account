@@ -236,11 +236,18 @@ export class MoneyBrowserClientToC {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:SelfMoneyLogsResp
 			try{
-				let obj:SelfMoneyLogsResp=JsonToSelfMoneyLogsResp(response.data)
+				obj=JsonToSelfMoneyLogsResp(response.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})

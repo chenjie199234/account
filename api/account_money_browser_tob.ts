@@ -427,11 +427,18 @@ export class MoneyBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:GetUserMoneyLogsResp
 			try{
-				let obj:GetUserMoneyLogsResp=JsonToGetUserMoneyLogsResp(response.data.data)
+				let obj=JsonToGetUserMoneyLogsResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -476,11 +483,18 @@ export class MoneyBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:SelfMoneyLogsResp
 			try{
-				let obj:SelfMoneyLogsResp=JsonToSelfMoneyLogsResp(response.data.data)
+				let obj=JsonToSelfMoneyLogsResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -525,11 +539,18 @@ export class MoneyBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:RechargeMoneyResp
 			try{
-				let obj:RechargeMoneyResp=JsonToRechargeMoneyResp(response.data.data)
+				let obj=JsonToRechargeMoneyResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -574,11 +595,18 @@ export class MoneyBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:SpendMoneyResp
 			try{
-				let obj:SpendMoneyResp=JsonToSpendMoneyResp(response.data.data)
+				let obj=JsonToSpendMoneyResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
@@ -623,11 +651,18 @@ export class MoneyBrowserClientToB {
 		}
 		Axios.request(config)
 		.then(function(response){
+			let obj:RefundMoneyResp
 			try{
-				let obj:RefundMoneyResp=JsonToRefundMoneyResp(response.data.data)
+				let obj=JsonToRefundMoneyResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
 				successf(obj)
 			}catch(e){
-				let err:Error={code:-1,msg:'response error'}
+				let err:Error={code:-1,msg:'success callback run failed'}
 				errorf(err)
 			}
 		})
