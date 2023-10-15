@@ -83,9 +83,16 @@
 		"example_mysql":{
 			"tls":false,
 			"specific_ca_paths":["./example.pem"],
-			"addr":"127.0.0.1:3306",
-			"user_name":"",
-			"password":"",
+			"master":{
+				"addr":"127.0.0.1:3306",
+				"user_name":"root",
+				"password":""
+			},
+			"slaves":{
+				"addrs":[],
+				"user_name":"",
+				"password":""
+			},
 			"max_open":256,
 			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
@@ -99,9 +106,12 @@
 		"example_redis":{
 			"tls":false,
 			"specific_ca_paths":["./example.pem"],
+			"redis_mode":"direct",
 			"addrs":["127.0.0.1:6379"],
 			"user_name":"",
 			"password":"",
+			"sentinel_master_name":"",
+			"read_write_split":true,
 			"max_open":256,
 			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
@@ -110,9 +120,12 @@
 		"account_redis":{
 			"tls":false,
 			"specific_ca_paths":[""],
+			"redis_mode":"direct",
 			"addrs":["127.0.0.1:6379"],
 			"user_name":"",
 			"password":"",
+			"sentinel_master_name":"",
+			"read_write_split":true,
 			"max_open":256,
 			"max_conn_idletime":"5m",
 			"io_timeout":"500ms",
