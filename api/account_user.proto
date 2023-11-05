@@ -35,19 +35,19 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
-	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc update_idcard(update_idcard_req)returns(update_idcard_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
 	rpc nick_name_duplicate_check(nick_name_duplicate_check_req)returns(nick_name_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
 	rpc update_nick_name(update_nick_name_req)returns(update_nick_name_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc update_idcard(update_idcard_req)returns(update_idcard_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -87,18 +87,17 @@ message user_info{
 	map<string,int32> money=7;
 }
 message get_user_info_req{
-	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nick_name"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
 }
 message get_user_info_resp{
 	user_info info=1;
 }
 message login_req{
-	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
+	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nick_name"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
-	//when src_type is idcard or nickname,this can't be dynamic
+	//when src_type is idcard or nick_name,this can't be dynamic
 	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];
-	//when password_type is static this length must >=10
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
 	//when password_type is dynamic and this is not empty,means verify dynamic password.
 	string password=4;
@@ -123,17 +122,6 @@ message update_static_password_req{
 }
 message update_static_password_resp{
 }
-message idcard_duplicate_check_req{
-	string idcard=1[(pbex.string_bytes_len_gt)=0];
-}
-message idcard_duplicate_check_resp{
-	bool duplicate=1;
-}
-message update_idcard_req{
-	string new_idcard=1[(pbex.string_bytes_len_gt)=0];
-}
-message update_idcard_resp{
-}
 message nick_name_duplicate_check_req{
 	string nick_name=1[(pbex.string_bytes_len_gt)=0];
 }
@@ -141,9 +129,32 @@ message nick_name_duplicate_check_resp{
 	bool duplicate=1;
 }
 message update_nick_name_req{
-	string new_nick_name=1[(pbex.string_bytes_len_gt)=0];
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	string old_dynamic_password=2;
+	string new_nick_name=3[(pbex.string_bytes_len_gt)=0];
 }
 message update_nick_name_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+}
+message idcard_duplicate_check_req{
+	string idcard=1[(pbex.string_bytes_len_gt)=0];
+}
+message idcard_duplicate_check_resp{
+	bool duplicate=1;
+}
+message update_idcard_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+	string new_idcard=3[(pbex.string_bytes_len_gt)=0];
+}
+message update_idcard_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
 }
 message email_duplicate_check_req{
 	string email=1[(pbex.string_bytes_len_gt)=0];

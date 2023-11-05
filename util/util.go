@@ -5,6 +5,12 @@ const (
 	LoginEmail = "loginemail"
 	LoginTel   = "logintel"
 
+	UpdateIDCardOldEmail = "updateidcard_oldemail"
+	UpdateIDCardOldTel   = "updateidcard_oldtel"
+
+	UpdateNickNameOldEmail = "updatenickname_oldemail"
+	UpdateNickNameOldTel   = "updatenickname_oldtel"
+
 	UpdateEmailOldEmail = "updateemail_oldemail"
 	UpdateEmailOldTel   = "updateemail_oldtel"
 	UpdateEmailNewEmail = "updateemail_newemail"

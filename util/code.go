@@ -10,7 +10,7 @@ import (
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#*" //letters' length is 64 and 2^6=64
 
 func MakeRandCode() string {
-	b := make([]byte, 10)
+	b := make([]byte, 6)
 	r := rand.Uint64()
 	for i := range b {
 		b[i] = letters[(r<<(i*6))>>58]

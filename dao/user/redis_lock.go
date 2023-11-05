@@ -9,9 +9,9 @@ import (
 
 //send email or send tel rate limit
 
-// 5 times per 10 min
+// 3 times per 1 min
 func (d *Dao) RedisLockLoginTelDynamic(ctx context.Context, tel string) error {
-	rate := map[string][2]uint64{"dynamic_tel_login_lock_{" + tel + "}": {5, 600}}
+	rate := map[string][2]uint64{"dynamic_tel_login_lock_{" + tel + "}": {3, 60}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -19,9 +19,9 @@ func (d *Dao) RedisLockLoginTelDynamic(ctx context.Context, tel string) error {
 	return e
 }
 
-// 5 times per 10 min
+// 3 times per 1 min
 func (d *Dao) RedisLockLoginEmailDynamic(ctx context.Context, email string) error {
-	rate := map[string][2]uint64{"dynamic_email_login_lock_{" + email + "}": {5, 600}}
+	rate := map[string][2]uint64{"dynamic_email_login_lock_{" + email + "}": {3, 60}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -49,11 +49,9 @@ func (d *Dao) RedisLockUpdateEmail(ctx context.Context, userid string) error {
 	return e
 }
 
-//other rate limit
-
 // 5 times per hour
-func (d *Dao) RedisLockUpdatePassword(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"update_password_lock_{" + userid + "}": {5, 3600}}
+func (d *Dao) RedisLockUpdateIDCard(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"update_idcard_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -64,6 +62,18 @@ func (d *Dao) RedisLockUpdatePassword(ctx context.Context, userid string) error 
 // 5 times per hour
 func (d *Dao) RedisLockUpdateNickName(ctx context.Context, userid string) error {
 	rate := map[string][2]uint64{"update_nickname_lock_{" + userid + "}": {5, 3600}}
+	success, e := d.redis.RateLimit(ctx, rate)
+	if e == nil && !success {
+		e = ecode.ErrTooFast
+	}
+	return e
+}
+
+//other rate limit
+
+// 5 times per hour
+func (d *Dao) RedisLockUpdatePassword(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"update_password_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
