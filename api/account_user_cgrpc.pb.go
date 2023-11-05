@@ -20,12 +20,16 @@ var _CGrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CGrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
 var _CGrpcPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _CGrpcPathUserUpdateNickName = "/account.user/update_nick_name"
+var _CGrpcPathUserDelNickName = "/account.user/del_nick_name"
 var _CGrpcPathUserIdcardDuplicateCheck = "/account.user/idcard_duplicate_check"
 var _CGrpcPathUserUpdateIdcard = "/account.user/update_idcard"
+var _CGrpcPathUserDelIdcard = "/account.user/del_idcard"
 var _CGrpcPathUserEmailDuplicateCheck = "/account.user/email_duplicate_check"
 var _CGrpcPathUserUpdateEmail = "/account.user/update_email"
+var _CGrpcPathUserDelEmail = "/account.user/del_email"
 var _CGrpcPathUserTelDuplicateCheck = "/account.user/tel_duplicate_check"
 var _CGrpcPathUserUpdateTel = "/account.user/update_tel"
+var _CGrpcPathUserDelTel = "/account.user/del_tel"
 
 type UserCGrpcClient interface {
 	GetUserInfo(context.Context, *GetUserInfoReq, ...grpc.CallOption) (*GetUserInfoResp, error)
@@ -34,12 +38,16 @@ type UserCGrpcClient interface {
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, ...grpc.CallOption) (*UpdateStaticPasswordResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, ...grpc.CallOption) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq, ...grpc.CallOption) (*UpdateNickNameResp, error)
+	DelNickName(context.Context, *DelNickNameReq, ...grpc.CallOption) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, ...grpc.CallOption) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq, ...grpc.CallOption) (*UpdateIdcardResp, error)
+	DelIdcard(context.Context, *DelIdcardReq, ...grpc.CallOption) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq, ...grpc.CallOption) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq, ...grpc.CallOption) (*UpdateEmailResp, error)
+	DelEmail(context.Context, *DelEmailReq, ...grpc.CallOption) (*DelEmailResp, error)
 	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq, ...grpc.CallOption) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq, ...grpc.CallOption) (*UpdateTelResp, error)
+	DelTel(context.Context, *DelTelReq, ...grpc.CallOption) (*DelTelResp, error)
 }
 
 type userCGrpcClient struct {
@@ -110,6 +118,16 @@ func (c *userCGrpcClient) UpdateNickName(ctx context.Context, req *UpdateNickNam
 	}
 	return resp, nil
 }
+func (c *userCGrpcClient) DelNickName(ctx context.Context, req *DelNickNameReq, opts ...grpc.CallOption) (*DelNickNameResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(DelNickNameResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserDelNickName, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
 func (c *userCGrpcClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, opts ...grpc.CallOption) (*IdcardDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -126,6 +144,16 @@ func (c *userCGrpcClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq
 	}
 	resp := new(UpdateIdcardResp)
 	if e := c.cc.Invoke(ctx, _CGrpcPathUserUpdateIdcard, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *userCGrpcClient) DelIdcard(ctx context.Context, req *DelIdcardReq, opts ...grpc.CallOption) (*DelIdcardResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(DelIdcardResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserDelIdcard, req, resp, opts...); e != nil {
 		return nil, e
 	}
 	return resp, nil
@@ -150,6 +178,16 @@ func (c *userCGrpcClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, 
 	}
 	return resp, nil
 }
+func (c *userCGrpcClient) DelEmail(ctx context.Context, req *DelEmailReq, opts ...grpc.CallOption) (*DelEmailResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(DelEmailResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserDelEmail, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
 func (c *userCGrpcClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq, opts ...grpc.CallOption) (*TelDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -170,6 +208,16 @@ func (c *userCGrpcClient) UpdateTel(ctx context.Context, req *UpdateTelReq, opts
 	}
 	return resp, nil
 }
+func (c *userCGrpcClient) DelTel(ctx context.Context, req *DelTelReq, opts ...grpc.CallOption) (*DelTelResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(DelTelResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserDelTel, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
 
 type UserCGrpcServer interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
@@ -178,12 +226,16 @@ type UserCGrpcServer interface {
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
+	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
+	DelIdcard(context.Context, *DelIdcardReq) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
+	DelEmail(context.Context, *DelEmailReq) (*DelEmailResp, error)
 	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
+	DelTel(context.Context, *DelTelReq) (*DelTelResp, error)
 }
 
 func _User_GetUserInfo_CGrpcHandler(handler func(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)) cgrpc.OutsideHandler {
@@ -325,6 +377,30 @@ func _User_UpdateNickName_CGrpcHandler(handler func(context.Context, *UpdateNick
 		ctx.Write(resp)
 	}
 }
+func _User_DelNickName_CGrpcHandler(handler func(context.Context, *DelNickNameReq) (*DelNickNameResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(DelNickNameReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/del_nick_name] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_nick_name] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelNickNameResp)
+		}
+		ctx.Write(resp)
+	}
+}
 func _User_IdcardDuplicateCheck_CGrpcHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) cgrpc.OutsideHandler {
 	return func(ctx *cgrpc.Context) {
 		req := new(IdcardDuplicateCheckReq)
@@ -369,6 +445,30 @@ func _User_UpdateIdcard_CGrpcHandler(handler func(context.Context, *UpdateIdcard
 		}
 		if resp == nil {
 			resp = new(UpdateIdcardResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _User_DelIdcard_CGrpcHandler(handler func(context.Context, *DelIdcardReq) (*DelIdcardResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(DelIdcardReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/del_idcard] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_idcard] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelIdcardResp)
 		}
 		ctx.Write(resp)
 	}
@@ -421,6 +521,30 @@ func _User_UpdateEmail_CGrpcHandler(handler func(context.Context, *UpdateEmailRe
 		ctx.Write(resp)
 	}
 }
+func _User_DelEmail_CGrpcHandler(handler func(context.Context, *DelEmailReq) (*DelEmailResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(DelEmailReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/del_email] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_email] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelEmailResp)
+		}
+		ctx.Write(resp)
+	}
+}
 func _User_TelDuplicateCheck_CGrpcHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) cgrpc.OutsideHandler {
 	return func(ctx *cgrpc.Context) {
 		req := new(TelDuplicateCheckReq)
@@ -469,6 +593,30 @@ func _User_UpdateTel_CGrpcHandler(handler func(context.Context, *UpdateTelReq) (
 		ctx.Write(resp)
 	}
 }
+func _User_DelTel_CGrpcHandler(handler func(context.Context, *DelTelReq) (*DelTelResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(DelTelReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/del_tel] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_tel] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelTelResp)
+		}
+		ctx.Write(resp)
+	}
+}
 func RegisterUserCGrpcServer(engine *cgrpc.CGrpcServer, svc UserCGrpcServer, allmids map[string]cgrpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
@@ -478,10 +626,14 @@ func RegisterUserCGrpcServer(engine *cgrpc.CGrpcServer, svc UserCGrpcServer, all
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CGrpcHandler(svc.UpdateStaticPassword))
 	engine.RegisterHandler("account.user", "nick_name_duplicate_check", _User_NickNameDuplicateCheck_CGrpcHandler(svc.NickNameDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CGrpcHandler(svc.UpdateNickName))
+	engine.RegisterHandler("account.user", "del_nick_name", _User_DelNickName_CGrpcHandler(svc.DelNickName))
 	engine.RegisterHandler("account.user", "idcard_duplicate_check", _User_IdcardDuplicateCheck_CGrpcHandler(svc.IdcardDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_idcard", _User_UpdateIdcard_CGrpcHandler(svc.UpdateIdcard))
+	engine.RegisterHandler("account.user", "del_idcard", _User_DelIdcard_CGrpcHandler(svc.DelIdcard))
 	engine.RegisterHandler("account.user", "email_duplicate_check", _User_EmailDuplicateCheck_CGrpcHandler(svc.EmailDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_email", _User_UpdateEmail_CGrpcHandler(svc.UpdateEmail))
+	engine.RegisterHandler("account.user", "del_email", _User_DelEmail_CGrpcHandler(svc.DelEmail))
 	engine.RegisterHandler("account.user", "tel_duplicate_check", _User_TelDuplicateCheck_CGrpcHandler(svc.TelDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_tel", _User_UpdateTel_CGrpcHandler(svc.UpdateTel))
+	engine.RegisterHandler("account.user", "del_tel", _User_DelTel_CGrpcHandler(svc.DelTel))
 }

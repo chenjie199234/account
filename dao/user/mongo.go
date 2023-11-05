@@ -182,7 +182,7 @@ func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*mod
 	}
 	return user, nil
 }
-func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID, newTel string) (oldTel string, e error) {
+func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID, newTel string) (olduser *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -200,16 +200,17 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 			s.AbortTransaction(sctx)
 		}
 	}()
-	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"tel": newTel}}).Decode(user); e != nil {
+	olduser = &model.User{}
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"tel": newTel}}).Decode(olduser); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
 		return
 	}
-	if user.Tel == newTel {
+	if olduser.Tel == newTel {
 		return
 	}
+	oldTel := olduser.Tel
 	if newTel != "" {
 		if _, e = d.mongo.Database("account").Collection("user_tel_index").InsertOne(sctx, bson.M{"tel": newTel, "user_id": userid}); e != nil {
 			if mongo.IsDuplicateKeyError(e) {
@@ -218,14 +219,14 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 			return
 		}
 	}
-	oldTel = user.Tel
-	if user.Tel != "" {
-		if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid}); e != nil {
+	if olduser.Tel != "" {
+		if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": olduser.Tel, "user_id": userid}); e != nil {
 			return
 		}
 	}
-	user.Tel = newTel
-	e = d._MongoDelUselessUser(sctx, user)
+	olduser.Tel = newTel
+	e = d._MongoDelUselessUser(sctx, olduser)
+	olduser.Tel = oldTel
 	return
 }
 func (d *Dao) MongoGetUserTelIndex(ctx context.Context, tel string) (*model.UserTelIndex, error) {
@@ -238,7 +239,7 @@ func (d *Dao) MongoGetUserTelIndex(ctx context.Context, tel string) (*model.User
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (oldEmail string, e error) {
+func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (olduser *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -256,16 +257,17 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 			s.AbortTransaction(sctx)
 		}
 	}()
-	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"email": newEmail}}).Decode(user); e != nil {
+	olduser = &model.User{}
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"email": newEmail}}).Decode(olduser); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
 		return
 	}
-	if user.Email == newEmail {
+	if olduser.Email == newEmail {
 		return
 	}
+	oldEmail := olduser.Email
 	if newEmail != "" {
 		if _, e = d.mongo.Database("account").Collection("user_email_index").InsertOne(sctx, bson.M{"email": newEmail, "user_id": userid}); e != nil {
 			if mongo.IsDuplicateKeyError(e) {
@@ -274,14 +276,14 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 			return
 		}
 	}
-	oldEmail = user.Email
-	if user.Email != "" {
-		if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid}); e != nil {
+	if olduser.Email != "" {
+		if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": olduser.Email, "user_id": userid}); e != nil {
 			return
 		}
 	}
-	user.Email = newEmail
-	e = d._MongoDelUselessUser(sctx, user)
+	olduser.Email = newEmail
+	e = d._MongoDelUselessUser(sctx, olduser)
+	olduser.Email = oldEmail
 	return
 }
 func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.UserEmailIndex, error) {
@@ -294,7 +296,7 @@ func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (oldIDCard string, e error) {
+func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (olduser *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -312,14 +314,14 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 			s.AbortTransaction(sctx)
 		}
 	}()
-	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"idcard": newIDCard}}).Decode(user); e != nil {
+	olduser = &model.User{}
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"idcard": newIDCard}}).Decode(olduser); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
 		return
 	}
-	if user.IDCard == newIDCard {
+	if olduser.IDCard == newIDCard {
 		return
 	}
 	if newIDCard != "" {
@@ -330,14 +332,15 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 			return
 		}
 	}
-	oldIDCard = user.IDCard
-	if user.IDCard != "" {
-		if _, e = d.mongo.Database("account").Collection("user_idcard_index").DeleteOne(sctx, bson.M{"idcard": user.IDCard, "user_id": userid}); e != nil {
+	oldIDCard := olduser.IDCard
+	if olduser.IDCard != "" {
+		if _, e = d.mongo.Database("account").Collection("user_idcard_index").DeleteOne(sctx, bson.M{"idcard": olduser.IDCard, "user_id": userid}); e != nil {
 			return
 		}
 	}
-	user.IDCard = newIDCard
-	e = d._MongoDelUselessUser(sctx, user)
+	olduser.IDCard = newIDCard
+	e = d._MongoDelUselessUser(sctx, olduser)
+	olduser.IDCard = oldIDCard
 	return
 }
 func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*model.UserIDCardIndex, error) {
@@ -350,7 +353,7 @@ func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*mode
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (oldNickName string, e error) {
+func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (olduser *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -368,16 +371,17 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 			s.AbortTransaction(sctx)
 		}
 	}()
-	user := &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"nick_name": newNickName}}).Decode(user); e != nil {
+	olduser = &model.User{}
+	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"nick_name": newNickName}}).Decode(olduser); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
 		return
 	}
-	if user.NickName == newNickName {
+	if olduser.NickName == newNickName {
 		return
 	}
+	oldNickName := olduser.NickName
 	if newNickName != "" {
 		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").InsertOne(sctx, bson.M{"nick_name": newNickName, "user_id": userid}); e != nil {
 			if mongo.IsDuplicateKeyError(e) {
@@ -386,14 +390,14 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 			return
 		}
 	}
-	oldNickName = user.NickName
-	if user.NickName != "" {
-		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid}); e != nil {
+	if olduser.NickName != "" {
+		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": olduser.NickName, "user_id": userid}); e != nil {
 			return
 		}
 	}
-	user.NickName = newNickName
-	e = d._MongoDelUselessUser(sctx, user)
+	olduser.NickName = newNickName
+	e = d._MongoDelUselessUser(sctx, olduser)
+	olduser.NickName = oldNickName
 	return
 }
 func (d *Dao) MongoGetUserNickNameIndex(ctx context.Context, nickname string) (*model.UserNickNameIndex, error) {

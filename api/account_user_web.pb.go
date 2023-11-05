@@ -24,12 +24,16 @@ var _WebPathUserSelfUserInfo = "/account.user/self_user_info"
 var _WebPathUserUpdateStaticPassword = "/account.user/update_static_password"
 var _WebPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _WebPathUserUpdateNickName = "/account.user/update_nick_name"
+var _WebPathUserDelNickName = "/account.user/del_nick_name"
 var _WebPathUserIdcardDuplicateCheck = "/account.user/idcard_duplicate_check"
 var _WebPathUserUpdateIdcard = "/account.user/update_idcard"
+var _WebPathUserDelIdcard = "/account.user/del_idcard"
 var _WebPathUserEmailDuplicateCheck = "/account.user/email_duplicate_check"
 var _WebPathUserUpdateEmail = "/account.user/update_email"
+var _WebPathUserDelEmail = "/account.user/del_email"
 var _WebPathUserTelDuplicateCheck = "/account.user/tel_duplicate_check"
 var _WebPathUserUpdateTel = "/account.user/update_tel"
+var _WebPathUserDelTel = "/account.user/del_tel"
 
 type UserWebClient interface {
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
@@ -37,12 +41,16 @@ type UserWebClient interface {
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, http.Header) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq, http.Header) (*UpdateNickNameResp, error)
+	DelNickName(context.Context, *DelNickNameReq, http.Header) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq, http.Header) (*UpdateIdcardResp, error)
+	DelIdcard(context.Context, *DelIdcardReq, http.Header) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq, http.Header) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq, http.Header) (*UpdateEmailResp, error)
+	DelEmail(context.Context, *DelEmailReq, http.Header) (*DelEmailResp, error)
 	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq, http.Header) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq, http.Header) (*UpdateTelResp, error)
+	DelTel(context.Context, *DelTelReq, http.Header) (*DelTelResp, error)
 }
 
 type userWebClient struct {
@@ -213,6 +221,38 @@ func (c *userWebClient) UpdateNickName(ctx context.Context, req *UpdateNickNameR
 	}
 	return resp, nil
 }
+func (c *userWebClient) DelNickName(ctx context.Context, req *DelNickNameReq, header http.Header) (*DelNickNameResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserDelNickName, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(DelNickNameResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -265,6 +305,38 @@ func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, 
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(UpdateIdcardResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header http.Header) (*DelIdcardResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserDelIdcard, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(DelIdcardResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -341,6 +413,38 @@ func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, he
 	}
 	return resp, nil
 }
+func (c *userWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header http.Header) (*DelEmailResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserDelEmail, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(DelEmailResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *userWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq, header http.Header) (*TelDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -405,6 +509,38 @@ func (c *userWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header
 	}
 	return resp, nil
 }
+func (c *userWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.Header) (*DelTelResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserDelTel, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(DelTelResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 
 type UserWebServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
@@ -412,12 +548,16 @@ type UserWebServer interface {
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
+	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
+	DelIdcard(context.Context, *DelIdcardReq) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
+	DelEmail(context.Context, *DelEmailReq) (*DelEmailResp, error)
 	TelDuplicateCheck(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)
 	UpdateTel(context.Context, *UpdateTelReq) (*UpdateTelResp, error)
+	DelTel(context.Context, *DelTelReq) (*DelTelResp, error)
 }
 
 func _User_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp, error)) web.OutsideHandler {
@@ -710,6 +850,65 @@ func _User_UpdateNickName_WebHandler(handler func(context.Context, *UpdateNickNa
 		}
 	}
 }
+func _User_DelNickName_WebHandler(handler func(context.Context, *DelNickNameReq) (*DelNickNameResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(DelNickNameReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_nick_name] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_nick_name] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_nick_name] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_nick_name] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/del_nick_name] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_nick_name] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(DelNickNameResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(IdcardDuplicateCheckReq)
@@ -818,6 +1017,65 @@ func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardRe
 		}
 		if resp == nil {
 			resp = new(UpdateIdcardResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _User_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*DelIdcardResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(DelIdcardReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_idcard] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_idcard] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_idcard] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_idcard] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/del_idcard] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_idcard] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(DelIdcardResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -946,6 +1204,65 @@ func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq)
 		}
 	}
 }
+func _User_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*DelEmailResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(DelEmailReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_email] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_email] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_email] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_email] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/del_email] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_email] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(DelEmailResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(TelDuplicateCheckReq)
@@ -1064,6 +1381,65 @@ func _User_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*U
 		}
 	}
 }
+func _User_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(DelTelReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_tel] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_tel] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_tel] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_tel] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/del_tel] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_tel] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(DelTelResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[string]web.OutsideHandler) {
 	// avoid lint
 	_ = allmids
@@ -1130,6 +1506,19 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
+		mids = append(mids, _User_DelNickName_WebHandler(svc.DelNickName))
+		router.Post(_WebPathUserDelNickName, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
 		mids = append(mids, _User_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
 		router.Post(_WebPathUserIdcardDuplicateCheck, mids...)
 	}
@@ -1145,6 +1534,19 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 		}
 		mids = append(mids, _User_UpdateIdcard_WebHandler(svc.UpdateIdcard))
 		router.Post(_WebPathUserUpdateIdcard, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_DelIdcard_WebHandler(svc.DelIdcard))
+		router.Post(_WebPathUserDelIdcard, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1182,6 +1584,19 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
+		mids = append(mids, _User_DelEmail_WebHandler(svc.DelEmail))
+		router.Post(_WebPathUserDelEmail, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
 		mids = append(mids, _User_TelDuplicateCheck_WebHandler(svc.TelDuplicateCheck))
 		router.Post(_WebPathUserTelDuplicateCheck, mids...)
 	}
@@ -1197,5 +1612,18 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 		}
 		mids = append(mids, _User_UpdateTel_WebHandler(svc.UpdateTel))
 		router.Post(_WebPathUserUpdateTel, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_DelTel_WebHandler(svc.DelTel))
+		router.Post(_WebPathUserDelTel, mids...)
 	}
 }

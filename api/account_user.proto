@@ -43,11 +43,19 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc del_nick_name(del_nick_name_req)returns(del_nick_name_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
 	rpc update_idcard(update_idcard_req)returns(update_idcard_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc del_idcard(del_idcard_req)returns(del_idcard_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -59,11 +67,19 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc del_email(del_email_req)returns(del_email_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc tel_duplicate_check(tel_duplicate_check_req)returns(tel_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
 	rpc update_tel(update_tel_req)returns(update_tel_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc del_tel(del_tel_req)returns(del_tel_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -130,13 +146,29 @@ message nick_name_duplicate_check_resp{
 }
 message update_nick_name_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
 	string old_dynamic_password=2;
 	string new_nick_name=3[(pbex.string_bytes_len_gt)=0];
 }
 message update_nick_name_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+}
+message del_nick_name_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+}
+message del_nick_name_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	bool final=2;
 }
 message idcard_duplicate_check_req{
 	string idcard=1[(pbex.string_bytes_len_gt)=0];
@@ -155,6 +187,20 @@ message update_idcard_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+}
+message del_idcard_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+}
+message del_idcard_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	bool final=2;
 }
 message email_duplicate_check_req{
 	string email=1[(pbex.string_bytes_len_gt)=0];
@@ -178,6 +224,20 @@ message update_email_resp{
 	//success:nothing need to do
 	string step=1;
 }
+message del_email_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+}
+message del_email_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	bool final=2;
+}
 message tel_duplicate_check_req{
 	string tel=1[(pbex.string_bytes_len_gt)=0];
 }
@@ -199,4 +259,18 @@ message update_tel_resp{
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+}
+message del_tel_req{
+	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string old_dynamic_password=2;
+}
+message del_tel_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	bool final=2;
 }

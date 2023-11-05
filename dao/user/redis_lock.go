@@ -30,8 +30,8 @@ func (d *Dao) RedisLockLoginEmailDynamic(ctx context.Context, email string) erro
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockUpdateTel(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"update_tel_lock_{" + userid + "}": {5, 3600}}
+func (d *Dao) RedisLockTelOP(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"tel_op_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -40,8 +40,8 @@ func (d *Dao) RedisLockUpdateTel(ctx context.Context, userid string) error {
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockUpdateEmail(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"update_email_lock_{" + userid + "}": {5, 3600}}
+func (d *Dao) RedisLockEmailOP(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"email_op_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -50,8 +50,8 @@ func (d *Dao) RedisLockUpdateEmail(ctx context.Context, userid string) error {
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockUpdateIDCard(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"update_idcard_lock_{" + userid + "}": {5, 3600}}
+func (d *Dao) RedisLockIDCardOP(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"idcard_op_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
@@ -60,8 +60,8 @@ func (d *Dao) RedisLockUpdateIDCard(ctx context.Context, userid string) error {
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockUpdateNickName(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"update_nickname_lock_{" + userid + "}": {5, 3600}}
+func (d *Dao) RedisLockNickNameOP(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"nickname_op_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast

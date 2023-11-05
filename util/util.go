@@ -5,17 +5,17 @@ const (
 	LoginEmail = "loginemail"
 	LoginTel   = "logintel"
 
-	UpdateIDCardOldEmail = "updateidcard_oldemail"
-	UpdateIDCardOldTel   = "updateidcard_oldtel"
+	IDCardOldEmail = "idcard_oldemail"
+	IDCardOldTel   = "idcard_oldtel"
 
-	UpdateNickNameOldEmail = "updatenickname_oldemail"
-	UpdateNickNameOldTel   = "updatenickname_oldtel"
+	NickNameOldEmail = "nickname_oldemail"
+	NickNameOldTel   = "nickname_oldtel"
 
-	UpdateEmailOldEmail = "updateemail_oldemail"
-	UpdateEmailOldTel   = "updateemail_oldtel"
-	UpdateEmailNewEmail = "updateemail_newemail"
+	EmailOldEmail = "email_oldemail"
+	EmailOldTel   = "email_oldtel"
+	EmailNewEmail = "email_newemail"
 
-	UpdateTelOldEmail = "updatetel_oldemail"
-	UpdateTelOldTel   = "updatetel_oldtel"
-	UpdateTelNewTel   = "updatetel_newtel"
+	TelOldEmail = "tel_oldemail"
+	TelOldTel   = "tel_oldtel"
+	TelNewTel   = "tel_newtel"
 )

@@ -59,6 +59,14 @@ func (m *UpdateNickNameReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *DelNickNameReq) Validate() (errstr string) {
+	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
+		return "field: old_receiver_type in object: del_nick_name_req check value str in failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *IdcardDuplicateCheckReq) Validate() (errstr string) {
 	if len(m.GetIdcard()) <= 0 {
 		return "field: idcard in object: idcard_duplicate_check_req check value str len gt failed"
@@ -73,6 +81,14 @@ func (m *UpdateIdcardReq) Validate() (errstr string) {
 	}
 	if len(m.GetNewIdcard()) <= 0 {
 		return "field: new_idcard in object: update_idcard_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *DelIdcardReq) Validate() (errstr string) {
+	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
+		return "field: old_receiver_type in object: del_idcard_req check value str in failed"
 	}
 	return ""
 }
@@ -97,6 +113,14 @@ func (m *UpdateEmailReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *DelEmailReq) Validate() (errstr string) {
+	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
+		return "field: old_receiver_type in object: del_email_req check value str in failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *TelDuplicateCheckReq) Validate() (errstr string) {
 	if len(m.GetTel()) <= 0 {
 		return "field: tel in object: tel_duplicate_check_req check value str len gt failed"
@@ -111,6 +135,14 @@ func (m *UpdateTelReq) Validate() (errstr string) {
 	}
 	if len(m.GetNewTel()) <= 0 {
 		return "field: new_tel in object: update_tel_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *DelTelReq) Validate() (errstr string) {
+	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
+		return "field: old_receiver_type in object: del_tel_req check value str in failed"
 	}
 	return ""
 }

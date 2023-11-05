@@ -11,6 +11,246 @@ export interface Error{
 	msg: string;
 }
 
+export interface DelEmailReq{
+	old_receiver_type: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	old_dynamic_password: string;
+}
+function DelEmailReqToJson(msg: DelEmailReq): string{
+	let s: string="{"
+	//old_receiver_type
+	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
+		throw 'DelEmailReq.old_receiver_type must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_receiver_type)
+		s+='"old_receiver_type":'+vv+','
+	}
+	//old_dynamic_password
+	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
+		throw 'DelEmailReq.old_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_dynamic_password)
+		s+='"old_dynamic_password":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface DelEmailResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	step: string;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	final: boolean;
+}
+function JsonToDelEmailResp(jsonobj: { [k:string]:any }): DelEmailResp{
+	let obj: DelEmailResp={
+		step:'',
+		final:false,
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'DelEmailResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
+	}
+	//final
+	if(jsonobj['final']!=null&&jsonobj['final']!=undefined){
+		if(typeof jsonobj['final']!='boolean'){
+			throw 'DelEmailResp.final must be boolean'
+		}
+		obj['final']=jsonobj['final']
+	}
+	return obj
+}
+export interface DelIdcardReq{
+	old_receiver_type: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	old_dynamic_password: string;
+}
+function DelIdcardReqToJson(msg: DelIdcardReq): string{
+	let s: string="{"
+	//old_receiver_type
+	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
+		throw 'DelIdcardReq.old_receiver_type must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_receiver_type)
+		s+='"old_receiver_type":'+vv+','
+	}
+	//old_dynamic_password
+	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
+		throw 'DelIdcardReq.old_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_dynamic_password)
+		s+='"old_dynamic_password":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface DelIdcardResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	step: string;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	final: boolean;
+}
+function JsonToDelIdcardResp(jsonobj: { [k:string]:any }): DelIdcardResp{
+	let obj: DelIdcardResp={
+		step:'',
+		final:false,
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'DelIdcardResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
+	}
+	//final
+	if(jsonobj['final']!=null&&jsonobj['final']!=undefined){
+		if(typeof jsonobj['final']!='boolean'){
+			throw 'DelIdcardResp.final must be boolean'
+		}
+		obj['final']=jsonobj['final']
+	}
+	return obj
+}
+export interface DelNickNameReq{
+	old_receiver_type: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	old_dynamic_password: string;
+}
+function DelNickNameReqToJson(msg: DelNickNameReq): string{
+	let s: string="{"
+	//old_receiver_type
+	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
+		throw 'DelNickNameReq.old_receiver_type must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_receiver_type)
+		s+='"old_receiver_type":'+vv+','
+	}
+	//old_dynamic_password
+	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
+		throw 'DelNickNameReq.old_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_dynamic_password)
+		s+='"old_dynamic_password":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface DelNickNameResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	step: string;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	final: boolean;
+}
+function JsonToDelNickNameResp(jsonobj: { [k:string]:any }): DelNickNameResp{
+	let obj: DelNickNameResp={
+		step:'',
+		final:false,
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'DelNickNameResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
+	}
+	//final
+	if(jsonobj['final']!=null&&jsonobj['final']!=undefined){
+		if(typeof jsonobj['final']!='boolean'){
+			throw 'DelNickNameResp.final must be boolean'
+		}
+		obj['final']=jsonobj['final']
+	}
+	return obj
+}
+export interface DelTelReq{
+	old_receiver_type: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	old_dynamic_password: string;
+}
+function DelTelReqToJson(msg: DelTelReq): string{
+	let s: string="{"
+	//old_receiver_type
+	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
+		throw 'DelTelReq.old_receiver_type must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_receiver_type)
+		s+='"old_receiver_type":'+vv+','
+	}
+	//old_dynamic_password
+	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
+		throw 'DelTelReq.old_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.old_dynamic_password)
+		s+='"old_dynamic_password":'+vv+','
+	}
+	if(s.length==1){
+		s+="}"
+	}else{
+		s=s.substr(0,s.length-1)+'}'
+	}
+	return s
+}
+export interface DelTelResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	step: string;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	final: boolean;
+}
+function JsonToDelTelResp(jsonobj: { [k:string]:any }): DelTelResp{
+	let obj: DelTelResp={
+		step:'',
+		final:false,
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'DelTelResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
+	}
+	//final
+	if(jsonobj['final']!=null&&jsonobj['final']!=undefined){
+		if(typeof jsonobj['final']!='boolean'){
+			throw 'DelTelResp.final must be boolean'
+		}
+		obj['final']=jsonobj['final']
+	}
+	return obj
+}
 export interface EmailDuplicateCheckReq{
 	email: string;
 }
@@ -444,6 +684,8 @@ function JsonToUpdateIdcardResp(jsonobj: { [k:string]:any }): UpdateIdcardResp{
 }
 export interface UpdateNickNameReq{
 	old_receiver_type: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
 	old_dynamic_password: string;
 	new_nick_name: string;
 }
@@ -481,7 +723,7 @@ function UpdateNickNameReqToJson(msg: UpdateNickNameReq): string{
 	return s
 }
 export interface UpdateNickNameResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 }
@@ -698,12 +940,16 @@ const _WebPathUserSelfUserInfo: string ="/account.user/self_user_info";
 const _WebPathUserUpdateStaticPassword: string ="/account.user/update_static_password";
 const _WebPathUserNickNameDuplicateCheck: string ="/account.user/nick_name_duplicate_check";
 const _WebPathUserUpdateNickName: string ="/account.user/update_nick_name";
+const _WebPathUserDelNickName: string ="/account.user/del_nick_name";
 const _WebPathUserIdcardDuplicateCheck: string ="/account.user/idcard_duplicate_check";
 const _WebPathUserUpdateIdcard: string ="/account.user/update_idcard";
+const _WebPathUserDelIdcard: string ="/account.user/del_idcard";
 const _WebPathUserEmailDuplicateCheck: string ="/account.user/email_duplicate_check";
 const _WebPathUserUpdateEmail: string ="/account.user/update_email";
+const _WebPathUserDelEmail: string ="/account.user/del_email";
 const _WebPathUserTelDuplicateCheck: string ="/account.user/tel_duplicate_check";
 const _WebPathUserUpdateTel: string ="/account.user/update_tel";
+const _WebPathUserDelTel: string ="/account.user/del_tel";
 //ToB means this is used for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
 //If your are not using 'admin' as your tob request's proxy gate,don't use this
@@ -1056,6 +1302,62 @@ export class UserBrowserClientToB {
 	}
 	//timeout must be integer,timeout's unit is millisecond
 	//don't set Content-Type in header
+	del_nick_name(header: { [k: string]: string },req: DelNickNameReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: DelNickNameResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserDelNickName,
+				appname:'account',
+				groupname:this.group,
+				data:DelNickNameReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			let obj:DelNickNameResp
+			try{
+				let obj=JsonToDelNickNameResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'success callback run failed'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
 	idcard_duplicate_check(header: { [k: string]: string },req: IdcardDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: IdcardDuplicateCheckResp)=>void){
 		if(!Number.isInteger(timeout)){
 			throw 'timeout must be integer'
@@ -1138,6 +1440,62 @@ export class UserBrowserClientToB {
 			let obj:UpdateIdcardResp
 			try{
 				let obj=JsonToUpdateIdcardResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'success callback run failed'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	del_idcard(header: { [k: string]: string },req: DelIdcardReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: DelIdcardResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserDelIdcard,
+				appname:'account',
+				groupname:this.group,
+				data:DelIdcardReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			let obj:DelIdcardResp
+			try{
+				let obj=JsonToDelIdcardResp(response.data.data)
 			}catch(e){
 				let err:Error={code:-1,msg:'response body decode failed'}
 				errorf(err)
@@ -1280,6 +1638,62 @@ export class UserBrowserClientToB {
 	}
 	//timeout must be integer,timeout's unit is millisecond
 	//don't set Content-Type in header
+	del_email(header: { [k: string]: string },req: DelEmailReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: DelEmailResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserDelEmail,
+				appname:'account',
+				groupname:this.group,
+				data:DelEmailReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			let obj:DelEmailResp
+			try{
+				let obj=JsonToDelEmailResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'success callback run failed'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
 	tel_duplicate_check(header: { [k: string]: string },req: TelDuplicateCheckReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: TelDuplicateCheckResp)=>void){
 		if(!Number.isInteger(timeout)){
 			throw 'timeout must be integer'
@@ -1362,6 +1776,62 @@ export class UserBrowserClientToB {
 			let obj:UpdateTelResp
 			try{
 				let obj=JsonToUpdateTelResp(response.data.data)
+			}catch(e){
+				let err:Error={code:-1,msg:'response body decode failed'}
+				errorf(err)
+				return
+			}
+			try{
+				successf(obj)
+			}catch(e){
+				let err:Error={code:-1,msg:'success callback run failed'}
+				errorf(err)
+			}
+		})
+		.catch(function(error){
+			if(error.response==undefined){
+				errorf({code:-2,msg:error.message})
+				return
+			}
+			let respdata=error.response.data
+			let err:Error={code:-1,msg:''}
+			if(respdata.code==undefined||typeof respdata.code!='number'||!Number.isInteger(respdata.code)||respdata.msg==undefined||typeof respdata.msg!='string'){
+				err.msg=respdata
+			}else{
+				err.code=respdata.code
+				err.msg=respdata.msg
+			}
+			errorf(err)
+		})
+	}
+	//timeout must be integer,timeout's unit is millisecond
+	//don't set Content-Type in header
+	del_tel(header: { [k: string]: string },req: DelTelReq,timeout: number,errorf: (arg: Error)=>void,successf: (arg: DelTelResp)=>void){
+		if(!Number.isInteger(timeout)){
+			throw 'timeout must be integer'
+		}
+		if(header==null||header==undefined){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let config={
+			url:'/admin.app/proxy',
+			method: 'post',
+			baseURL: this.host,
+			headers: header,
+			data:{
+				path:_WebPathUserDelTel,
+				appname:'account',
+				groupname:this.group,
+				data:DelTelReqToJson(req),
+			},
+			timeout: timeout,
+		}
+		Axios.request(config)
+		.then(function(response){
+			let obj:DelTelResp
+			try{
+				let obj=JsonToDelTelResp(response.data.data)
 			}catch(e){
 				let err:Error={code:-1,msg:'response body decode failed'}
 				errorf(err)

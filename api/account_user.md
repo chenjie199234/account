@@ -162,6 +162,8 @@ Content-Type: application/json
 {
 	//value must in ["email","tel"]
 	"old_receiver_type":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
 	"old_dynamic_password":"str",
 	//value length must > 0
 	"new_nick_name":"str"
@@ -177,9 +179,44 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+### del_nick_name
+
+#### Req:
+```
+Path:         /account.user/del_nick_name
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel"]
+	"old_receiver_type":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"old_dynamic_password":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	"final":true
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -241,6 +278,41 @@ Success: httpcode:200
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+### del_idcard
+
+#### Req:
+```
+Path:         /account.user/del_idcard
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel"]
+	"old_receiver_type":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"old_dynamic_password":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	"final":true
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -309,6 +381,41 @@ Success: httpcode:200
 }
 ------------------------------------------------------------------------------------------------------------
 ```
+### del_email
+
+#### Req:
+```
+Path:         /account.user/del_email
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel"]
+	"old_receiver_type":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"old_dynamic_password":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	"final":true
+}
+------------------------------------------------------------------------------------------------------------
+```
 ### tel_duplicate_check
 
 #### Req:
@@ -371,6 +478,41 @@ Success: httpcode:200
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	"step":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+### del_tel
+
+#### Req:
+```
+Path:         /account.user/del_tel
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel"]
+	"old_receiver_type":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"old_dynamic_password":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	"final":true
 }
 ------------------------------------------------------------------------------------------------------------
 ```
