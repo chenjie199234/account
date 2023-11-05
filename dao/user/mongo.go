@@ -210,15 +210,22 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 	if user.Tel == newTel {
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_tel_index").InsertOne(sctx, bson.M{"tel": newTel, "user_id": userid}); e != nil {
-		if mongo.IsDuplicateKeyError(e) {
-			e = ecode.ErrTelAlreadyUsed
+	if newTel != "" {
+		if _, e = d.mongo.Database("account").Collection("user_tel_index").InsertOne(sctx, bson.M{"tel": newTel, "user_id": userid}); e != nil {
+			if mongo.IsDuplicateKeyError(e) {
+				e = ecode.ErrTelAlreadyUsed
+			}
+			return
 		}
-		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid}); e == nil {
-		oldTel = user.Tel
+	oldTel = user.Tel
+	if user.Tel != "" {
+		if _, e = d.mongo.Database("account").Collection("user_tel_index").DeleteOne(sctx, bson.M{"tel": user.Tel, "user_id": userid}); e != nil {
+			return
+		}
 	}
+	user.Tel = newTel
+	e = d._MongoDelUselessUser(sctx, user)
 	return
 }
 func (d *Dao) MongoGetUserTelIndex(ctx context.Context, tel string) (*model.UserTelIndex, error) {
@@ -259,15 +266,22 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 	if user.Email == newEmail {
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_email_index").InsertOne(sctx, bson.M{"email": newEmail, "user_id": userid}); e != nil {
-		if mongo.IsDuplicateKeyError(e) {
-			e = ecode.ErrEmailAlreadyUsed
+	if newEmail != "" {
+		if _, e = d.mongo.Database("account").Collection("user_email_index").InsertOne(sctx, bson.M{"email": newEmail, "user_id": userid}); e != nil {
+			if mongo.IsDuplicateKeyError(e) {
+				e = ecode.ErrEmailAlreadyUsed
+			}
+			return
 		}
-		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid}); e == nil {
-		oldEmail = user.Email
+	oldEmail = user.Email
+	if user.Email != "" {
+		if _, e = d.mongo.Database("account").Collection("user_email_index").DeleteOne(sctx, bson.M{"email": user.Email, "user_id": userid}); e != nil {
+			return
+		}
 	}
+	user.Email = newEmail
+	e = d._MongoDelUselessUser(sctx, user)
 	return
 }
 func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.UserEmailIndex, error) {
@@ -280,7 +294,7 @@ func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (update bool, e error) {
+func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (oldIDCard string, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -308,18 +322,22 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 	if user.IDCard == newIDCard {
 		return
 	}
-	//实名认证后无法更改
-	if user.IDCard != "" {
-		e = ecode.ErrIDCardAlreadySetted
-		return
-	}
-	if _, e = d.mongo.Database("account").Collection("user_idcard_index").InsertOne(sctx, bson.M{"idcard": newIDCard, "user_id": userid}); e != nil {
-		if mongo.IsDuplicateKeyError(e) {
-			e = ecode.ErrEmailAlreadyUsed
+	if newIDCard != "" {
+		if _, e = d.mongo.Database("account").Collection("user_idcard_index").InsertOne(sctx, bson.M{"idcard": newIDCard, "user_id": userid}); e != nil {
+			if mongo.IsDuplicateKeyError(e) {
+				e = ecode.ErrEmailAlreadyUsed
+			}
+			return
 		}
-		return
 	}
-	update = true
+	oldIDCard = user.IDCard
+	if user.IDCard != "" {
+		if _, e = d.mongo.Database("account").Collection("user_idcard_index").DeleteOne(sctx, bson.M{"idcard": user.IDCard, "user_id": userid}); e != nil {
+			return
+		}
+	}
+	user.IDCard = newIDCard
+	e = d._MongoDelUselessUser(sctx, user)
 	return
 }
 func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*model.UserIDCardIndex, error) {
@@ -360,15 +378,22 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 	if user.NickName == newNickName {
 		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_nick_name_index").InsertOne(sctx, bson.M{"nick_name": newNickName, "user_id": userid}); e != nil {
-		if mongo.IsDuplicateKeyError(e) {
-			e = ecode.ErrNickNameAlreadyUsed
+	if newNickName != "" {
+		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").InsertOne(sctx, bson.M{"nick_name": newNickName, "user_id": userid}); e != nil {
+			if mongo.IsDuplicateKeyError(e) {
+				e = ecode.ErrNickNameAlreadyUsed
+			}
+			return
 		}
-		return
 	}
-	if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid}); e == nil {
-		oldNickName = user.NickName
+	oldNickName = user.NickName
+	if user.NickName != "" {
+		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": user.NickName, "user_id": userid}); e != nil {
+			return
+		}
 	}
+	user.NickName = newNickName
+	e = d._MongoDelUselessUser(sctx, user)
 	return
 }
 func (d *Dao) MongoGetUserNickNameIndex(ctx context.Context, nickname string) (*model.UserNickNameIndex, error) {
@@ -415,4 +440,11 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 		e = ecode.ErrPasswordWrong
 	}
 	return
+}
+func (d *Dao) _MongoDelUselessUser(ctx context.Context, user *model.User) error {
+	if user.NickName != "" || user.IDCard != "" || user.Email != "" || user.Tel != "" || len(user.OAuths) != 0 {
+		return nil
+	}
+	_, e := d.mongo.Database("account").Collection("user").DeleteOne(ctx, bson.M{"_id": user.UserID})
+	return e
 }

@@ -32,12 +32,11 @@ var (
 	ErrUserNotExist        = cerror.MakeError(20003, http.StatusBadRequest, "user not exist")
 	ErrTelAlreadyUsed      = cerror.MakeError(20004, http.StatusBadRequest, "tel already used")
 	ErrEmailAlreadyUsed    = cerror.MakeError(20005, http.StatusBadRequest, "email already used")
-	ErrIDCardAlreadySetted = cerror.MakeError(20006, http.StatusBadRequest, "idcard already setted on this account")
-	ErrIDCardAlreadyUsed   = cerror.MakeError(20007, http.StatusBadRequest, "idcard already used")
-	ErrNickNameAlreadyUsed = cerror.MakeError(20008, http.StatusBadRequest, "nickname already used")
-	ErrPasswordWrong       = cerror.MakeError(20009, http.StatusBadRequest, "password wrong")
-	ErrDataBroken          = cerror.MakeError(20010, http.StatusBadRequest, "data broken")
-	ErrSignCheckFailed     = cerror.MakeError(20011, http.StatusBadRequest, "sign check failed")
+	ErrIDCardAlreadyUsed   = cerror.MakeError(20006, http.StatusBadRequest, "idcard already used")
+	ErrNickNameAlreadyUsed = cerror.MakeError(20007, http.StatusBadRequest, "nickname already used")
+	ErrPasswordWrong       = cerror.MakeError(20008, http.StatusBadRequest, "password wrong")
+	ErrDataBroken          = cerror.MakeError(20009, http.StatusBadRequest, "data broken")
+	ErrSignCheckFailed     = cerror.MakeError(20010, http.StatusBadRequest, "sign check failed")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

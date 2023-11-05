@@ -63,6 +63,10 @@ collection: user
     nick_name:"",
     tel:"",
     email:"",
+    oauths:{
+        "service_name_1":"unique id in this service",
+        "service_name_2":"unique id in this service",
+    },
     money:{
         "cny":100,
         "usd":100,
@@ -72,6 +76,17 @@ collection: user
 use account;
 db.createCollection("user");
 sh.shardCollection("account.user",{_id:"hashed"});
+
+collection: user_oauth_index
+{
+    service:"",//service_name+'|'+service_id
+    user_id:ObjectId("xxx"),//collection user's _id field
+}
+//手动创建数据库
+use account;
+db.createCollection("user_oauth_index");
+db.user_oauth_index.createIndex({service:1},{unique:true});
+sh.shardCollection("account.user_oauth_index",{service:"hashed"});
 
 collection: user_email_index
 {

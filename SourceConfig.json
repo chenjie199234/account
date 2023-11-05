@@ -50,20 +50,6 @@
 		"max_response_header":4096
 	},
 	"mongo":{
-		"example_mongo":{
-			"tls":false,
-			"specific_ca_paths":["./example.pem"],
-			"mongodb_srv":false,
-			"addrs":["127.0.0.1:27017"],
-			"user_name":"",
-			"password":"",
-			"auth_db":"",
-			"replica_set":"",
-			"max_open":256,
-			"max_conn_idletime":"5m",
-			"io_timeout":"500ms",
-			"dial_timeout":"250ms"
-		},
 		"account_mongo":{
 			"tls":false,
 			"specific_ca_paths":[""],
@@ -103,20 +89,6 @@
 		}
 	},
 	"redis":{
-		"example_redis":{
-			"tls":false,
-			"specific_ca_paths":["./example.pem"],
-			"redis_mode":"direct",
-			"addrs":["127.0.0.1:6379"],
-			"user_name":"",
-			"password":"",
-			"sentinel_master_name":"",
-			"read_write_split":true,
-			"max_open":256,
-			"max_conn_idletime":"5m",
-			"io_timeout":"500ms",
-			"dial_timeout":"250ms"
-		},
 		"account_redis":{
 			"tls":false,
 			"specific_ca_paths":[""],

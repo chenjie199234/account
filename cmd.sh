@@ -6,7 +6,7 @@ cd $(dirname $0)
 help() {
 	echo "cmd.sh — every thing you need"
 	echo "         please install git"
-	echo "         please install golang(1.18+)"
+	echo "         please install golang(1.21+)"
 	echo "         please install protoc           (github.com/protocolbuffers/protobuf)"
 	echo "         please install protoc-gen-go    (github.com/protocolbuffers/protobuf-go)"
 	echo "         please install codegen          (github.com/chenjie199234/Corelib)"
@@ -27,11 +27,8 @@ pb() {
 	rm ./api/*.md
 	rm ./api/*.ts
 	go mod tidy
+	codegen -update
 	corelib=$(go list -m -f "{{.Dir}}" github.com/chenjie199234/Corelib)
-	workdir=$(pwd)
-	cd $corelib
-	go install ./...
-	cd $workdir
 	protoc -I ./ -I $corelib --go_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I $corelib --go-pbex_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I $corelib --go-cgrpc_out=paths=source_relative:. ./api/*.proto
@@ -43,14 +40,20 @@ pb() {
 }
 
 sub() {
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -sub $1
 }
 
 kube() {
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -kube
 }
 
 html() {
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -html
 }
 

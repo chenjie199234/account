@@ -11,6 +11,7 @@ type User struct {
 	NickName string             `bson:"nick_name"`
 	Tel      string             `bson:"tel"`
 	Email    string             `bson:"email"`
+	OAuths   map[string]string  `bson:"oauths"` //key service name,value unique id in this service
 	Money    map[string]int32   `bson:"money"`
 }
 type UserTelIndex struct {
@@ -28,4 +29,8 @@ type UserIDCardIndex struct {
 type UserNickNameIndex struct {
 	NickName string             `bson:"nick_name"`
 	UserID   primitive.ObjectID `bson:"user_id"`
+}
+type UserOAuthIndex struct {
+	Service string             `bson:"service"` //service_name+'|'+service_id
+	UserID  primitive.ObjectID `bson:"user_id"`
 }

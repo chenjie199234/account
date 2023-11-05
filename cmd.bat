@@ -107,11 +107,8 @@ goto :help
 	del >nul 2>nul .\api\*.md
 	del >nul 2>nul .\api\*.ts
 	go mod tidy
-	for /F %%i in ('go list -m -f "{{.Dir}}" github.com/chenjie199234/Corelib') do ( set corelib=%%i )
-	set workdir=%cd%
-	cd %corelib%
-	go install ./...
-	cd %workdir%
+	codegen -update
+	for /f %%a in ('go list -m -f "{{.Dir}}" github.com/chenjie199234/Corelib') do set corelib=%%a
 	protoc -I ./ -I %corelib% --go_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I %corelib% --go-pbex_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I %corelib% --go-cgrpc_out=paths=source_relative:. ./api/*.proto
@@ -123,21 +120,27 @@ goto :help
 goto :end
 
 :kube
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -kube
 goto :end
 
 :html
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -html
 goto :end
 
 :sub
+	go mod tidy
+	codegen -update
 	codegen -n account -p github.com/chenjie199234/account -sub %2
 goto :end
 
 :help
 	echo cmd.bat - every thing you need
 	echo           please install git
-	echo           please install golang(1.18+)
+	echo           please install golang(1.21+)
 	echo           please install protoc           (github.com/protocolbuffers/protobuf)
 	echo           please install protoc-gen-go    (github.com/protocolbuffers/protobuf-go)
 	echo           please install codegen          (github.com/chenjie199234/Corelib)
