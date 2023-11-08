@@ -155,6 +155,9 @@ message update_nick_name_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=2;
 }
 message del_nick_name_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
@@ -169,6 +172,9 @@ message del_nick_name_resp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	bool final=2;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=3;
 }
 message idcard_duplicate_check_req{
 	string idcard=1[(pbex.string_bytes_len_gt)=0];
@@ -187,6 +193,9 @@ message update_idcard_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=2;
 }
 message del_idcard_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
@@ -201,6 +210,9 @@ message del_idcard_resp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	bool final=2;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=3;
 }
 message email_duplicate_check_req{
 	string email=1[(pbex.string_bytes_len_gt)=0];
@@ -223,6 +235,9 @@ message update_email_resp{
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=2;
 }
 message del_email_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
@@ -237,6 +252,9 @@ message del_email_resp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	bool final=2;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=3;
 }
 message tel_duplicate_check_req{
 	string tel=1[(pbex.string_bytes_len_gt)=0];
@@ -259,6 +277,9 @@ message update_tel_resp{
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=2;
 }
 message del_tel_req{
 	string old_receiver_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel"];
@@ -273,4 +294,7 @@ message del_tel_resp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	bool final=2;
+	//send code to where,this will be masked
+	//when step is success,ignore this
+	string code_to=3;
 }

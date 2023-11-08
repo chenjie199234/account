@@ -40,8 +40,7 @@ func Start() *Service {
 // srctype: email/tel
 // src: email addr/tel number
 // target & action: generate redis's unique key
-// extracode is used to help the verify
-func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target, action string, extracode string) error {
+func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target, action string) error {
 	//send code
 	//set redis and send is async
 	//if set redis success and send failed
@@ -53,62 +52,55 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target
 		}
 		return ecode.ErrBusy
 	}
-	code := util.MakeRandCode()
-	if rest, e := s.userDao.RedisSetCode(ctx, target, action, code+extracode); e != nil {
+	code, dup, e := s.userDao.RedisSetCode(ctx, target, action, src)
+	if e != nil {
 		s.stop.DoneOne()
-		if e != ecode.ErrCodeAlreadySend {
-			log.Error(ctx, "["+callerName+"] redis op failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
-			return e
-		}
-		if rest != 0 {
-			//if tel's or email's code already send,we jump to verify step
-			return nil
-		}
-		//already failed on verify step,ban some time
-		log.Error(ctx, "["+callerName+"] all check times failed", log.String("operator", target), log.String(srctype, src), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-		return ecode.ErrBan
+		log.Error(ctx, "["+callerName+"] redis op failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
+		return e
+	}
+	if dup {
+		//if tel's or email's code already send,we jump to verify step
+		return nil
 	}
 	switch action {
-	case util.LoginTel:
-		e = s.userDao.RedisLockLoginTelDynamic(ctx, target)
-	case util.LoginEmail:
-		e = s.userDao.RedisLockLoginEmailDynamic(ctx, target)
-	case util.EmailOldTel:
+	case util.Login:
+		e = s.userDao.RedisLockLoginDynamic(ctx, target)
+	case util.DelEmail:
 		fallthrough
-	case util.EmailOldEmail:
+	case util.UpdateEmailStep1:
 		e = s.userDao.RedisLockEmailOP(ctx, target)
-	case util.EmailNewEmail:
-		//this rate is controled by the EmailOldTel and EmailOldEmail
-	case util.TelOldTel:
+	case util.UpdateEmailStep2:
+		//this is controled by step1
+	case util.DelTel:
 		fallthrough
-	case util.TelOldEmail:
+	case util.UpdateTelStep1:
 		e = s.userDao.RedisLockTelOP(ctx, target)
-	case util.TelNewTel:
-		//this rate is controled by the TelOldTel and TelOldEmail
-	case util.IDCardOldTel:
+	case util.UpdateTelStep2:
+		//this is controled by step2
+	case util.DelIDCard:
 		fallthrough
-	case util.IDCardOldEmail:
+	case util.UpdateIDCard:
 		e = s.userDao.RedisLockIDCardOP(ctx, target)
-	case util.NickNameOldTel:
+	case util.DelNickName:
 		fallthrough
-	case util.NickNameOldEmail:
+	case util.UpdateNickName:
 		e = s.userDao.RedisLockNickNameOP(ctx, target)
 	}
 	if e != nil {
 		log.Error(ctx, "["+callerName+"] rate check failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
 	} else if srctype == "email" {
 		if e = util.SendEmailCode(ctx, src, code, action); e != nil {
-			log.Error(ctx, "["+callerName+"] send email failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
+			log.Error(ctx, "["+callerName+"] send dynamic password failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
 		}
 	} else if e = util.SendTelCode(ctx, src, code, action); e != nil {
-		log.Error(ctx, "["+callerName+"] send tel failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
+		log.Error(ctx, "["+callerName+"] send dynamic password failed", log.String("operator", target), log.String(srctype, src), log.CError(e))
 	}
 	if e == nil {
 		log.Info(ctx, "["+callerName+"] send dynamic password success", log.String("operator", target), log.String(srctype, src), log.String("code", code))
 		s.stop.DoneOne()
 		return nil
 	}
-	//clean redis code
+	//if rate check failed or send failed,clean redis code
 	if ee := s.userDao.RedisDelCode(ctx, target, action); ee != nil {
 		go func() {
 			if ee := s.userDao.RedisDelCode(context.Background(), target, action); ee != nil {
@@ -119,28 +111,11 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, target
 	} else {
 		s.stop.DoneOne()
 	}
-	//this e is SendEmailCode's or SendTelCode's
+	//this e is SendEmailCode's or SendTelCode's or RateCheck's
 	//not the RedisDelCode's
 	return e
 }
 
-// target & action: generate redis's unique key
-// extracode must same with the sendcode's extracode
-func (s *Service) verifycode(ctx context.Context, callerName, target, action, code, extracode string) error {
-	rest, e := s.userDao.RedisCheckCode(ctx, target, action, code+extracode)
-	if e != nil {
-		log.Error(ctx, "["+callerName+"] redis op failed", log.String("operator", target), log.String("code", code), log.CError(e))
-		return e
-	}
-	if rest > 0 {
-		log.Error(ctx, "["+callerName+"] code check failed", log.String("operator", target), log.String("code", code), log.Int("rest", rest))
-		return ecode.ErrPasswordWrong
-	} else if rest == 0 {
-		log.Error(ctx, "["+callerName+"] all check times failed", log.String("operator", target), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-		return ecode.ErrBan
-	}
-	return nil
-}
 func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*api.GetUserInfoResp, error) {
 	var user *model.User
 	switch req.SrcType {
@@ -226,12 +201,13 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			if e = s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginTel, ""); e != nil {
+			if e = s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.Login); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.verifycode(ctx, "Login", req.Src, util.LoginTel, req.Password, ""); e != nil {
+			if e = s.userDao.RedisCheckCode(ctx, req.Src, util.Login, req.Password, ""); e != nil {
+				log.Error(ctx, "[Login] redis op failed", log.String("tel", req.Src), log.String("code", req.Password), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if user, e = s.userDao.GetOrCreateUserByTel(ctx, req.Src); e != nil {
@@ -246,12 +222,13 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			if e := s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.LoginEmail, ""); e != nil {
+			if e := s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.Login); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.verifycode(ctx, "Login", req.Src, util.LoginEmail, req.Password, ""); e != nil {
+			if e = s.userDao.RedisCheckCode(ctx, req.Src, util.Login, req.Password, ""); e != nil {
+				log.Error(ctx, "[Login] redis op failed", log.String("email", req.Src), log.String("code", req.Password), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			if user, e = s.userDao.GetOrCreateUserByEmail(ctx, req.Src); e != nil {
@@ -380,12 +357,8 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 
 	if req.OldDynamicPassword != "" {
 		//step2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "UpdateNickName", md["Token-User"], util.NickNameOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "UpdateNickName", md["Token-User"], util.NickNameOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -460,9 +433,9 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	}
 
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Email, md["Token-User"], util.NickNameOldEmail, "")
+		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateNickName)
 	} else {
-		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.NickNameOldTel, "")
+		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -481,12 +454,8 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 	}
 	if req.OldDynamicPassword != "" {
 		//step2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "DelNickName", md["Token-User"], util.NickNameOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "DelNickName", md["Token-User"], util.NickNameOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -554,9 +523,9 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Email, md["Token-User"], util.NickNameOldEmail, "")
+		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Email, md["Token-User"], util.DelNickName)
 	} else {
-		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.NickNameOldTel, "")
+		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.DelNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -590,12 +559,8 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	}
 	if req.OldDynamicPassword != "" {
 		//step 2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "UpdateIdcard", md["Token-User"], util.IDCardOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "UpdateIdcard", md["Token-User"], util.IDCardOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -669,9 +634,9 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	}
 
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.IDCardOldEmail, "")
+		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateIDCard)
 	} else {
-		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.IDCardOldTel, "")
+		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -690,12 +655,8 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 	}
 	if req.OldDynamicPassword != "" {
 		//step2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "DelIdcard", md["Token-User"], util.IDCardOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "DelIdcard", md["Token-User"], util.IDCardOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -763,9 +724,9 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.IDCardOldEmail, "")
+		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.DelIDCard)
 	} else {
-		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.IDCardOldTel, "")
+		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.DelIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -800,7 +761,8 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 	if req.NewEmailDynamicPassword != "" {
 		//step 3
-		if e := s.verifycode(ctx, "UpdateEmail", md["Token-User"], util.EmailNewEmail, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
+			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewEmailDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -854,48 +816,30 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	} else if req.OldDynamicPassword != "" {
 		//step 2
-		if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.EmailNewEmail); e != nil {
-			if e != ecode.ErrCodeNotExist {
-				log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-			//if new tel's code not sended,we continue step 2
-		} else if rest == 0 {
-			//already failed on step 3,ban some time
-			log.Error(ctx, "[UpdateEmail] all check times failed", log.String("operator", md["Token-User"]), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-			return nil, ecode.ErrBan
-		} else {
-			//if new tel's code already send,we jump to step 3
+		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
+			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if e == nil {
+			//if new email's code already send,we jump to step 3
 			return &api.UpdateEmailResp{Step: "newverify"}, nil
 		}
 
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "UpdateEmail", md["Token-User"], util.EmailOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "UpdateEmail", md["Token-User"], util.EmailOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
-		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.EmailNewEmail, req.NewEmail); e != nil {
+		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.UpdateEmailStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.UpdateEmailResp{Step: "newverify"}, nil
 	}
 	//step 1
-	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.EmailNewEmail); e != nil {
-		if e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//if new tel's code not sended,we continue step 1
-	} else if rest == 0 {
-		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateEmail] all check times failed", log.String("operator", md["Token-User"]), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-		return nil, ecode.ErrBan
-	} else {
-		//if new tel's code already send,we jump to step 3
+	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
+		log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if e == nil {
+		//if new email's code already send,we jump to step 3
 		return &api.UpdateEmailResp{Step: "newverify"}, nil
 	}
 
@@ -917,9 +861,9 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Email, md["Token-User"], util.EmailOldEmail, "")
+		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateEmailStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.EmailOldTel, "")
+		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateEmailStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -938,12 +882,8 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 	}
 	if req.OldDynamicPassword != "" {
 		//step2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "DelEmail", md["Token-User"], util.EmailOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "DelEmail", md["Token-User"], util.EmailOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1011,9 +951,9 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Email, md["Token-User"], util.EmailOldEmail, "")
+		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Email, md["Token-User"], util.DelEmail)
 	} else {
-		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.EmailOldTel, "")
+		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.DelEmail)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1048,7 +988,8 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 	if req.NewTelDynamicPassword != "" {
 		//step 3
-		if e := s.verifycode(ctx, "UpdateTel", md["Token-User"], util.TelNewTel, req.NewTelDynamicPassword, req.NewTel); e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTelDynamicPassword, req.NewTel); e != nil {
+			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewTelDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1102,47 +1043,29 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return &api.UpdateTelResp{Step: "success"}, nil
 	} else if req.OldDynamicPassword != "" {
 		//step 2
-		if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.TelNewTel); e != nil {
-			if e != ecode.ErrCodeNotExist {
-				log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-			//if new tel's code not sended,we continue step 2
-		} else if rest == 0 {
-			//already failed on step 3,ban some time
-			log.Error(ctx, "[UpdateTel] all check times failed", log.String("operator", md["Token-User"]), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-			return nil, ecode.ErrBan
-		} else {
+		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
+			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if e == nil {
 			//if new tel's code already send,we jump to step 3
 			return &api.UpdateTelResp{Step: "newverify"}, nil
 		}
 
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "UpdateTel", md["Token-User"], util.TelOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "UpdateTel", md["Token-User"], util.TelOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
-		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.TelNewTel, req.NewTel); e != nil {
+		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.UpdateTelStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.UpdateTelResp{Step: "newverify"}, nil
 	}
 	//step 1
-	if _, rest, e := s.userDao.RedisGetCode(ctx, md["Token-User"], util.TelNewTel); e != nil {
-		if e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//if new tel's code not sended,we continue step 1
-	} else if rest == 0 {
-		//already failed on step 3,ban some time
-		log.Error(ctx, "[UpdateTel] all check times failed", log.String("operator", md["Token-User"]), log.Int64("ban_seconds", userdao.DefaultExpireSeconds))
-		return nil, ecode.ErrBan
-	} else {
+	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
+		log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if e == nil {
 		//if new tel's code already send,we jump to step 3
 		return &api.UpdateTelResp{Step: "newverify"}, nil
 	}
@@ -1165,9 +1088,9 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Email, md["Token-User"], util.TelOldEmail, "")
+		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateTelStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Tel, md["Token-User"], util.TelOldTel, "")
+		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateTelStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1186,12 +1109,8 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 	}
 	if req.OldDynamicPassword != "" {
 		//step2
-		if req.OldReceiverType == "email" {
-			e = s.verifycode(ctx, "DelTel", md["Token-User"], util.TelOldEmail, req.OldDynamicPassword, "")
-		} else {
-			e = s.verifycode(ctx, "DelTel", md["Token-User"], util.TelOldTel, req.OldDynamicPassword, "")
-		}
-		if e != nil {
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.OldDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1259,9 +1178,9 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		return nil, ecode.ErrReq
 	}
 	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Email, md["Token-User"], util.TelOldEmail, "")
+		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Email, md["Token-User"], util.DelTel)
 	} else {
-		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Tel, md["Token-User"], util.TelOldTel, "")
+		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Tel, md["Token-User"], util.DelTel)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)

@@ -2,20 +2,19 @@ package util
 
 // actions
 const (
-	LoginEmail = "loginemail"
-	LoginTel   = "logintel"
+	Login = "login"
 
-	IDCardOldEmail = "idcard_oldemail"
-	IDCardOldTel   = "idcard_oldtel"
+	UpdateIDCard = "update_idcard"
+	DelIDCard    = "del_idcard"
 
-	NickNameOldEmail = "nickname_oldemail"
-	NickNameOldTel   = "nickname_oldtel"
+	UpdateNickName = "update_nick_name"
+	DelNickName    = "del_nick_name"
 
-	EmailOldEmail = "email_oldemail"
-	EmailOldTel   = "email_oldtel"
-	EmailNewEmail = "email_newemail"
+	UpdateEmailStep1 = "update_email_1"
+	UpdateEmailStep2 = "update_email_2"
+	DelEmail         = "del_email"
 
-	TelOldEmail = "tel_oldemail"
-	TelOldTel   = "tel_oldtel"
-	TelNewTel   = "tel_newtel"
+	UpdateTelStep1 = "update_tel_1"
+	UpdateTelStep2 = "update_tel_2"
+	DelTel         = "del_tel"
 )

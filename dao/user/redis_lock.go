@@ -10,18 +10,8 @@ import (
 //send email or send tel rate limit
 
 // 3 times per 1 min
-func (d *Dao) RedisLockLoginTelDynamic(ctx context.Context, tel string) error {
-	rate := map[string][2]uint64{"dynamic_tel_login_lock_{" + tel + "}": {3, 60}}
-	success, e := d.redis.RateLimit(ctx, rate)
-	if e == nil && !success {
-		e = ecode.ErrTooFast
-	}
-	return e
-}
-
-// 3 times per 1 min
-func (d *Dao) RedisLockLoginEmailDynamic(ctx context.Context, email string) error {
-	rate := map[string][2]uint64{"dynamic_email_login_lock_{" + email + "}": {3, 60}}
+func (d *Dao) RedisLockLoginDynamic(ctx context.Context, src string) error {
+	rate := map[string][2]uint64{"dynamic_login_lock_{" + src + "}": {3, 60}}
 	success, e := d.redis.RateLimit(ctx, rate)
 	if e == nil && !success {
 		e = ecode.ErrTooFast
