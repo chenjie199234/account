@@ -182,9 +182,9 @@ Success: httpcode:200
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -220,9 +220,9 @@ Success: httpcode:200
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	"final":true,
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -284,9 +284,9 @@ Success: httpcode:200
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -322,9 +322,9 @@ Success: httpcode:200
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	"final":true,
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -390,9 +390,9 @@ Success: httpcode:200
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -428,9 +428,9 @@ Success: httpcode:200
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	"final":true,
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -496,9 +496,9 @@ Success: httpcode:200
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -534,9 +534,9 @@ Success: httpcode:200
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	"final":true,
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	"code_to":"str"
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

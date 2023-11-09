@@ -440,7 +440,10 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.UpdateNickNameResp{Step: "oldverify"}, nil
+	if req.OldReceiverType == "email" {
+		return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // DelNickName Step1:send dynamic password to email or tel
@@ -530,7 +533,10 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.DelNickNameResp{Step: "oldverify", Final: final}, nil
+	if req.OldReceiverType == "email" {
+		return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDuplicateCheckReq) (*api.IdcardDuplicateCheckResp, error) {
@@ -641,7 +647,10 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.UpdateIdcardResp{Step: "oldverify"}, nil
+	if req.OldReceiverType == "email" {
+		return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // DelIdcard Step1:send dynamic password to email or tel
@@ -731,7 +740,10 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.DelIdcardResp{Step: "oldverify", Final: final}, nil
+	if req.OldReceiverType == "email" {
+		return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplicateCheckReq) (*api.EmailDuplicateCheckResp, error) {
@@ -821,7 +833,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if e == nil {
 			//if new email's code already send,we jump to step 3
-			return &api.UpdateEmailResp{Step: "newverify"}, nil
+			return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 		}
 
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.OldDynamicPassword, ""); e != nil {
@@ -832,7 +844,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.UpdateEmailStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		return &api.UpdateEmailResp{Step: "newverify"}, nil
+		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
 	//step 1
 	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
@@ -840,7 +852,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if e == nil {
 		//if new email's code already send,we jump to step 3
-		return &api.UpdateEmailResp{Step: "newverify"}, nil
+		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
 
 	user, e := s.userDao.GetUser(ctx, operator)
@@ -868,7 +880,10 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.UpdateEmailResp{Step: "oldverify"}, nil
+	if req.OldReceiverType == "email" {
+		return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // DelEmail Step1:send dynamic password to email or tel
@@ -958,7 +973,10 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.DelEmailResp{Step: "oldverify", Final: final}, nil
+	if req.OldReceiverType == "email" {
+		return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCheckReq) (*api.TelDuplicateCheckResp, error) {
@@ -1048,7 +1066,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if e == nil {
 			//if new tel's code already send,we jump to step 3
-			return &api.UpdateTelResp{Step: "newverify"}, nil
+			return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 		}
 
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.OldDynamicPassword, ""); e != nil {
@@ -1059,7 +1077,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.UpdateTelStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		return &api.UpdateTelResp{Step: "newverify"}, nil
+		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
 	//step 1
 	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
@@ -1067,7 +1085,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if e == nil {
 		//if new tel's code already send,we jump to step 3
-		return &api.UpdateTelResp{Step: "newverify"}, nil
+		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
 
 	user, e := s.userDao.GetUser(ctx, operator)
@@ -1095,7 +1113,10 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.UpdateTelResp{Step: "oldverify"}, nil
+	if req.OldReceiverType == "email" {
+		return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // DelTel Step1:send dynamic password to email or tel
@@ -1185,7 +1206,10 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.DelTelResp{Step: "oldverify", Final: final}, nil
+	if req.OldReceiverType == "email" {
+		return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // Stop -

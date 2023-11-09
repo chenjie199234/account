@@ -49,15 +49,15 @@ export interface DelEmailResp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	final: boolean;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToDelEmailResp(jsonobj: { [k:string]:any }): DelEmailResp{
 	let obj: DelEmailResp={
 		step:'',
 		final:false,
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -73,12 +73,12 @@ function JsonToDelEmailResp(jsonobj: { [k:string]:any }): DelEmailResp{
 		}
 		obj['final']=jsonobj['final']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'DelEmailResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'DelEmailResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -120,15 +120,15 @@ export interface DelIdcardResp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	final: boolean;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToDelIdcardResp(jsonobj: { [k:string]:any }): DelIdcardResp{
 	let obj: DelIdcardResp={
 		step:'',
 		final:false,
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -144,12 +144,12 @@ function JsonToDelIdcardResp(jsonobj: { [k:string]:any }): DelIdcardResp{
 		}
 		obj['final']=jsonobj['final']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'DelIdcardResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'DelIdcardResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -191,15 +191,15 @@ export interface DelNickNameResp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	final: boolean;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToDelNickNameResp(jsonobj: { [k:string]:any }): DelNickNameResp{
 	let obj: DelNickNameResp={
 		step:'',
 		final:false,
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -215,12 +215,12 @@ function JsonToDelNickNameResp(jsonobj: { [k:string]:any }): DelNickNameResp{
 		}
 		obj['final']=jsonobj['final']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'DelNickNameResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'DelNickNameResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -262,15 +262,15 @@ export interface DelTelResp{
 	//if this is true,means this is the last way to login this account
 	//if del this,this account will be deleted completely
 	final: boolean;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToDelTelResp(jsonobj: { [k:string]:any }): DelTelResp{
 	let obj: DelTelResp={
 		step:'',
 		final:false,
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -286,12 +286,12 @@ function JsonToDelTelResp(jsonobj: { [k:string]:any }): DelTelResp{
 		}
 		obj['final']=jsonobj['final']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'DelTelResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'DelTelResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -654,14 +654,14 @@ export interface UpdateEmailResp{
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	step: string;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToUpdateEmailResp(jsonobj: { [k:string]:any }): UpdateEmailResp{
 	let obj: UpdateEmailResp={
 		step:'',
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -670,12 +670,12 @@ function JsonToUpdateEmailResp(jsonobj: { [k:string]:any }): UpdateEmailResp{
 		}
 		obj['step']=jsonobj['step']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'UpdateEmailResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'UpdateEmailResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -723,14 +723,14 @@ export interface UpdateIdcardResp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToUpdateIdcardResp(jsonobj: { [k:string]:any }): UpdateIdcardResp{
 	let obj: UpdateIdcardResp={
 		step:'',
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -739,12 +739,12 @@ function JsonToUpdateIdcardResp(jsonobj: { [k:string]:any }): UpdateIdcardResp{
 		}
 		obj['step']=jsonobj['step']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'UpdateIdcardResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'UpdateIdcardResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -792,14 +792,14 @@ export interface UpdateNickNameResp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToUpdateNickNameResp(jsonobj: { [k:string]:any }): UpdateNickNameResp{
 	let obj: UpdateNickNameResp={
 		step:'',
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -808,12 +808,12 @@ function JsonToUpdateNickNameResp(jsonobj: { [k:string]:any }): UpdateNickNameRe
 		}
 		obj['step']=jsonobj['step']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'UpdateNickNameResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'UpdateNickNameResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -910,14 +910,14 @@ export interface UpdateTelResp{
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	step: string;
-	//send code to where,this will be masked
+	//send dynamic password to where,this will be masked
 	//when step is success,ignore this
-	code_to: string;
+	receiver: string;
 }
 function JsonToUpdateTelResp(jsonobj: { [k:string]:any }): UpdateTelResp{
 	let obj: UpdateTelResp={
 		step:'',
-		code_to:'',
+		receiver:'',
 	}
 	//step
 	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
@@ -926,12 +926,12 @@ function JsonToUpdateTelResp(jsonobj: { [k:string]:any }): UpdateTelResp{
 		}
 		obj['step']=jsonobj['step']
 	}
-	//code_to
-	if(jsonobj['code_to']!=null&&jsonobj['code_to']!=undefined){
-		if(typeof jsonobj['code_to']!='string'){
-			throw 'UpdateTelResp.code_to must be string'
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'UpdateTelResp.receiver must be string'
 		}
-		obj['code_to']=jsonobj['code_to']
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
