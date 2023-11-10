@@ -355,10 +355,10 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		return nil, ecode.ErrToken
 	}
 
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -423,24 +423,24 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		return &api.UpdateNickNameResp{Step: "success"}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateNickName] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateNickName] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateNickName)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "UpdateNickName", req.SrcType, user.Email, md["Token-User"], util.UpdateNickName)
 	} else {
-		e = s.sendcode(ctx, "UpdateNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateNickName)
+		e = s.sendcode(ctx, "UpdateNickName", req.SrcType, user.Tel, md["Token-User"], util.UpdateNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -455,10 +455,10 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		log.Error(ctx, "[DelNickName] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -517,23 +517,23 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		return &api.DelNickNameResp{Step: "success", Final: final}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelNickName] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelNickName] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Email, md["Token-User"], util.DelNickName)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "DelNickName", req.SrcType, user.Email, md["Token-User"], util.DelNickName)
 	} else {
-		e = s.sendcode(ctx, "DelNickName", req.OldReceiverType, user.Tel, md["Token-User"], util.DelNickName)
+		e = s.sendcode(ctx, "DelNickName", req.SrcType, user.Tel, md["Token-User"], util.DelNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -563,10 +563,10 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step 2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -630,24 +630,24 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		return &api.UpdateIdcardResp{Step: "success"}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateIdcard] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateIdcard] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateIDCard)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "UpdateIdcard", req.SrcType, user.Email, md["Token-User"], util.UpdateIDCard)
 	} else {
-		e = s.sendcode(ctx, "UpdateIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateIDCard)
+		e = s.sendcode(ctx, "UpdateIdcard", req.SrcType, user.Tel, md["Token-User"], util.UpdateIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -662,10 +662,10 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		log.Error(ctx, "[DelIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -724,23 +724,23 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		return &api.DelIdcardResp{Step: "success", Final: final}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelIdcard] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelIdcard] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Email, md["Token-User"], util.DelIDCard)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "DelIdcard", req.SrcType, user.Email, md["Token-User"], util.DelIDCard)
 	} else {
-		e = s.sendcode(ctx, "DelIdcard", req.OldReceiverType, user.Tel, md["Token-User"], util.DelIDCard)
+		e = s.sendcode(ctx, "DelIdcard", req.SrcType, user.Tel, md["Token-User"], util.DelIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -826,7 +826,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			s.stop.DoneOne()
 		}
 		return &api.UpdateEmailResp{Step: "success"}, nil
-	} else if req.OldDynamicPassword != "" {
+	} else if req.DynamicPassword != "" {
 		//step 2
 		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
 			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -836,8 +836,8 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 		}
 
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -863,24 +863,24 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	if user.Email == req.NewEmail {
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	}
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateEmail] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateEmailStep1)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "UpdateEmail", req.SrcType, user.Email, md["Token-User"], util.UpdateEmailStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateEmailStep1)
+		e = s.sendcode(ctx, "UpdateEmail", req.SrcType, user.Tel, md["Token-User"], util.UpdateEmailStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -895,10 +895,10 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		log.Error(ctx, "[DelEmail] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -957,23 +957,23 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelEmail] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Email, md["Token-User"], util.DelEmail)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "DelEmail", req.SrcType, user.Email, md["Token-User"], util.DelEmail)
 	} else {
-		e = s.sendcode(ctx, "DelEmail", req.OldReceiverType, user.Tel, md["Token-User"], util.DelEmail)
+		e = s.sendcode(ctx, "DelEmail", req.SrcType, user.Tel, md["Token-User"], util.DelEmail)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -1059,7 +1059,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			s.stop.DoneOne()
 		}
 		return &api.UpdateTelResp{Step: "success"}, nil
-	} else if req.OldDynamicPassword != "" {
+	} else if req.DynamicPassword != "" {
 		//step 2
 		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
 			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -1069,8 +1069,8 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 		}
 
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1096,24 +1096,24 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	if user.Tel == req.NewTel {
 		return &api.UpdateTelResp{Step: "success"}, nil
 	}
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateTel] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Email, md["Token-User"], util.UpdateTelStep1)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "UpdateTel", req.SrcType, user.Email, md["Token-User"], util.UpdateTelStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateTel", req.OldReceiverType, user.Tel, md["Token-User"], util.UpdateTelStep1)
+		e = s.sendcode(ctx, "UpdateTel", req.SrcType, user.Tel, md["Token-User"], util.UpdateTelStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -1128,10 +1128,10 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		log.Error(ctx, "[DelTel] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	if req.OldDynamicPassword != "" {
+	if req.DynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.OldDynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.OldDynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1190,23 +1190,23 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
 
-	if req.OldReceiverType == "tel" && user.Tel == "" {
+	if req.SrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" && user.Email == "" {
+	if req.SrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelTel] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.OldReceiverType == "email" {
-		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Email, md["Token-User"], util.DelTel)
+	if req.SrcType == "email" {
+		e = s.sendcode(ctx, "DelTel", req.SrcType, user.Email, md["Token-User"], util.DelTel)
 	} else {
-		e = s.sendcode(ctx, "DelTel", req.OldReceiverType, user.Tel, md["Token-User"], util.DelTel)
+		e = s.sendcode(ctx, "DelTel", req.SrcType, user.Tel, md["Token-User"], util.DelTel)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.OldReceiverType == "email" {
+	if req.SrcType == "email" {
 		return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil

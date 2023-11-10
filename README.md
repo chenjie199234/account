@@ -64,8 +64,8 @@ collection: user
     tel:"",
     email:"",
     oauths:{
-        "service_name_1":"unique id in this service",
-        "service_name_2":"unique id in this service",
+        "service_name_1":"id in this service",
+        "service_name_2":"id in this service",
     },
     money:{
         "cny":100,
@@ -79,7 +79,7 @@ sh.shardCollection("account.user",{_id:"hashed"});
 
 collection: user_oauth_index
 {
-    service:"",//service_name+'|'+service_id
+    service:"",//service_name+'|'+id
     user_id:ObjectId("xxx"),//collection user's _id field
 }
 //手动创建数据库

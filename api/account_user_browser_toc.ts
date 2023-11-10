@@ -12,28 +12,38 @@ export interface Error{
 }
 
 export interface DelEmailReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 }
 function DelEmailReqToJson(msg: DelEmailReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'DelEmailReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'DelEmailReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'DelEmailReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'DelEmailReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'DelEmailReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"
@@ -83,28 +93,38 @@ function JsonToDelEmailResp(jsonobj: { [k:string]:any }): DelEmailResp{
 	return obj
 }
 export interface DelIdcardReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 }
 function DelIdcardReqToJson(msg: DelIdcardReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'DelIdcardReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'DelIdcardReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'DelIdcardReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'DelIdcardReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'DelIdcardReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"
@@ -154,28 +174,38 @@ function JsonToDelIdcardResp(jsonobj: { [k:string]:any }): DelIdcardResp{
 	return obj
 }
 export interface DelNickNameReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 }
 function DelNickNameReqToJson(msg: DelNickNameReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'DelNickNameReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'DelNickNameReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'DelNickNameReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'DelNickNameReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'DelNickNameReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"
@@ -225,28 +255,38 @@ function JsonToDelNickNameResp(jsonobj: { [k:string]:any }): DelNickNameResp{
 	return obj
 }
 export interface DelTelReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 }
 function DelTelReqToJson(msg: DelTelReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'DelTelReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'DelTelReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'DelTelReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'DelTelReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'DelTelReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	if(s.length==1){
 		s+="}"
@@ -369,6 +409,8 @@ function JsonToIdcardDuplicateCheckResp(jsonobj: { [k:string]:any }): IdcardDupl
 }
 export interface LoginReq{
 	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	src: string;
 	//when src_type is idcard or nick_name,this can't be dynamic
 	password_type: string;
@@ -385,6 +427,14 @@ function LoginReqToJson(msg: LoginReq): string{
 		//transfer the json escape
 		let vv=JSON.stringify(msg.src_type)
 		s+='"src_type":'+vv+','
+	}
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'LoginReq.src_type_extra must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
 	}
 	//src
 	if(msg.src==null||msg.src==undefined){
@@ -554,10 +604,12 @@ function JsonToTelDuplicateCheckResp(jsonobj: { [k:string]:any }): TelDuplicateC
 	return obj
 }
 export interface UpdateEmailReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 	new_email: string;
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
@@ -565,21 +617,29 @@ export interface UpdateEmailReq{
 }
 function UpdateEmailReqToJson(msg: UpdateEmailReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'UpdateEmailReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'UpdateEmailReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'UpdateEmailReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'UpdateEmailReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'UpdateEmailReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	//new_email
 	if(msg.new_email==null||msg.new_email==undefined){
@@ -635,29 +695,39 @@ function JsonToUpdateEmailResp(jsonobj: { [k:string]:any }): UpdateEmailResp{
 	return obj
 }
 export interface UpdateIdcardReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 	new_idcard: string;
 }
 function UpdateIdcardReqToJson(msg: UpdateIdcardReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'UpdateIdcardReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'UpdateIdcardReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'UpdateIdcardReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'UpdateIdcardReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'UpdateIdcardReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	//new_idcard
 	if(msg.new_idcard==null||msg.new_idcard==undefined){
@@ -704,29 +774,39 @@ function JsonToUpdateIdcardResp(jsonobj: { [k:string]:any }): UpdateIdcardResp{
 	return obj
 }
 export interface UpdateNickNameReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 	new_nick_name: string;
 }
 function UpdateNickNameReqToJson(msg: UpdateNickNameReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'UpdateNickNameReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'UpdateNickNameReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'UpdateNickNameReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'UpdateNickNameReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'UpdateNickNameReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	//new_nick_name
 	if(msg.new_nick_name==null||msg.new_nick_name==undefined){
@@ -810,10 +890,12 @@ function JsonToUpdateStaticPasswordResp(_jsonobj: { [k:string]:any }): UpdateSta
 	return obj
 }
 export interface UpdateTelReq{
-	old_receiver_type: string;
+	src_type: string;
+	//when src_type is oauth,this is the oauth service name
+	src_type_extra: string;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	old_dynamic_password: string;
+	dynamic_password: string;
 	new_tel: string;
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
@@ -821,21 +903,29 @@ export interface UpdateTelReq{
 }
 function UpdateTelReqToJson(msg: UpdateTelReq): string{
 	let s: string="{"
-	//old_receiver_type
-	if(msg.old_receiver_type==null||msg.old_receiver_type==undefined){
-		throw 'UpdateTelReq.old_receiver_type must be string'
+	//src_type
+	if(msg.src_type==null||msg.src_type==undefined){
+		throw 'UpdateTelReq.src_type must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_receiver_type)
-		s+='"old_receiver_type":'+vv+','
+		let vv=JSON.stringify(msg.src_type)
+		s+='"src_type":'+vv+','
 	}
-	//old_dynamic_password
-	if(msg.old_dynamic_password==null||msg.old_dynamic_password==undefined){
-		throw 'UpdateTelReq.old_dynamic_password must be string'
+	//src_type_extra
+	if(msg.src_type_extra==null||msg.src_type_extra==undefined){
+		throw 'UpdateTelReq.src_type_extra must be string'
 	}else{
 		//transfer the json escape
-		let vv=JSON.stringify(msg.old_dynamic_password)
-		s+='"old_dynamic_password":'+vv+','
+		let vv=JSON.stringify(msg.src_type_extra)
+		s+='"src_type_extra":'+vv+','
+	}
+	//dynamic_password
+	if(msg.dynamic_password==null||msg.dynamic_password==undefined){
+		throw 'UpdateTelReq.dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.dynamic_password)
+		s+='"dynamic_password":'+vv+','
 	}
 	//new_tel
 	if(msg.new_tel==null||msg.new_tel==undefined){

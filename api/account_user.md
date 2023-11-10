@@ -14,8 +14,10 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["tel","email","idcard","nick_name"]
+	//value must in ["tel","email","idcard","nick_name","oauth"]
 	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//value length must > 0
 	"src":"str",
 	//when src_type is idcard or nick_name,this can't be dynamic
@@ -160,11 +162,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str",
+	"dynamic_password":"str",
 	//value length must > 0
 	"new_nick_name":"str"
 }
@@ -197,11 +201,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str"
+	"dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -262,11 +268,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str",
+	"dynamic_password":"str",
 	//value length must > 0
 	"new_idcard":"str"
 }
@@ -299,11 +307,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str"
+	"dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -364,11 +374,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str",
+	"dynamic_password":"str",
 	//value length must > 0
 	"new_email":"str",
 	//if this is empty,means send dynamic password.
@@ -405,11 +417,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str"
+	"dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -470,11 +484,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str",
+	"dynamic_password":"str",
 	//value length must > 0
 	"new_tel":"str",
 	//if this is empty,means send dynamic password.
@@ -511,11 +527,13 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["email","tel"]
-	"old_receiver_type":"str",
+	//value must in ["email","tel","oauth"]
+	"src_type":"str",
+	//when src_type is oauth,this is the oauth service name
+	"src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"old_dynamic_password":"str"
+	"dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

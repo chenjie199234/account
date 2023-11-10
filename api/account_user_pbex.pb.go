@@ -19,7 +19,7 @@ func (m *GetUserInfoReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *LoginReq) Validate() (errstr string) {
-	if m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" && m.GetSrcType() != "nick_name" {
+	if m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" && m.GetSrcType() != "nick_name" && m.GetSrcType() != "oauth" {
 		return "field: src_type in object: login_req check value str in failed"
 	}
 	if len(m.GetSrc()) <= 0 {
@@ -49,8 +49,8 @@ func (m *NickNameDuplicateCheckReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *UpdateNickNameReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: update_nick_name_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: update_nick_name_req check value str in failed"
 	}
 	if len(m.GetNewNickName()) <= 0 {
 		return "field: new_nick_name in object: update_nick_name_req check value str len gt failed"
@@ -60,8 +60,8 @@ func (m *UpdateNickNameReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *DelNickNameReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: del_nick_name_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: del_nick_name_req check value str in failed"
 	}
 	return ""
 }
@@ -76,8 +76,8 @@ func (m *IdcardDuplicateCheckReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *UpdateIdcardReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: update_idcard_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: update_idcard_req check value str in failed"
 	}
 	if len(m.GetNewIdcard()) <= 0 {
 		return "field: new_idcard in object: update_idcard_req check value str len gt failed"
@@ -87,8 +87,8 @@ func (m *UpdateIdcardReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *DelIdcardReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: del_idcard_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: del_idcard_req check value str in failed"
 	}
 	return ""
 }
@@ -103,8 +103,8 @@ func (m *EmailDuplicateCheckReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *UpdateEmailReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: update_email_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: update_email_req check value str in failed"
 	}
 	if len(m.GetNewEmail()) <= 0 {
 		return "field: new_email in object: update_email_req check value str len gt failed"
@@ -114,8 +114,8 @@ func (m *UpdateEmailReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *DelEmailReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: del_email_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: del_email_req check value str in failed"
 	}
 	return ""
 }
@@ -130,8 +130,8 @@ func (m *TelDuplicateCheckReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *UpdateTelReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: update_tel_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: update_tel_req check value str in failed"
 	}
 	if len(m.GetNewTel()) <= 0 {
 		return "field: new_tel in object: update_tel_req check value str len gt failed"
@@ -141,8 +141,8 @@ func (m *UpdateTelReq) Validate() (errstr string) {
 
 // return empty means pass
 func (m *DelTelReq) Validate() (errstr string) {
-	if m.GetOldReceiverType() != "email" && m.GetOldReceiverType() != "tel" {
-		return "field: old_receiver_type in object: del_tel_req check value str in failed"
+	if m.GetSrcType() != "email" && m.GetSrcType() != "tel" && m.GetSrcType() != "oauth" {
+		return "field: src_type in object: del_tel_req check value str in failed"
 	}
 	return ""
 }
