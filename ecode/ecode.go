@@ -31,6 +31,7 @@ var (
 	ErrPasswordWrong     = cerror.ErrPasswordWrong     //10013 // http code 400
 	ErrPasswordLength    = cerror.ErrPasswordLength    //10014 // http code 400
 
+	ErrUnknownAction       = cerror.MakeError(20000, http.StatusInternalServerError, "unknown action")
 	ErrCodeNotExist        = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password not exist,please get it again")
 	ErrUserNotExist        = cerror.MakeError(20002, http.StatusBadRequest, "user not exist")
 	ErrTelAlreadyUsed      = cerror.MakeError(20003, http.StatusBadRequest, "tel already used")
