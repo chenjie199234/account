@@ -414,17 +414,17 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		oauthid, e := util.OauthVerifyCode(ctx, "UpdateNickName", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateNickName", req.SrcTypeExtra, req.DynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[UpdateNickName] dao op failed", log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[UpdateNickName] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[UpdateNickName] this is not the required oauth")
+			log.Error(ctx, "[UpdateNickName] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -495,30 +495,22 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		log.Error(ctx, "[DelNickName] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	//TODO oauth
-	if req.DynamicPassword != "" {
-		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() (bool, error) {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(2); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return false, cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
 		if olduser, e = s.userDao.MongoUpdateUserNickName(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[DelNickName] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return false, e
 		}
 		log.Info(ctx, "[DelNickName] success", log.String("operator", md["Token-User"]))
 		if olduser.NickName != "" {
@@ -541,6 +533,43 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		var final bool
 		if olduser.Email == "" && olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
 			final = true
+		}
+		return final, nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelNickName", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[DelNickName] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[DelNickName] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelNickNameResp{Step: "success", Final: final}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.DelNickNameResp{Step: "success", Final: final}, nil
 	}
@@ -610,23 +639,15 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	//TODO oauth
-	if req.DynamicPassword != "" {
-		//step 2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() error {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(3); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return ecode.ErrBusy
 		}
 
 		var olduser *model.User
@@ -635,7 +656,7 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[UpdateIdcard] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return e
 		}
 		log.Info(ctx, "[UpdateIdcard] success", log.String("operator", md["Token-User"]), log.String("new_idcard", req.NewIdcard))
 		if olduser.IDCard != req.NewIdcard {
@@ -665,6 +686,41 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
+		}
+		return nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateIdcard", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[UpdateIdcard] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[UpdateIdcard] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.UpdateIdcardResp{Step: "success"}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step 2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.UpdateIdcardResp{Step: "success"}, nil
 	}
@@ -716,30 +772,22 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		log.Error(ctx, "[DelIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	//TODO oauth
-	if req.DynamicPassword != "" {
-		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() (bool, error) {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(2); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return false, cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
 		if olduser, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[DelIdcard] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return false, e
 		}
 		log.Info(ctx, "[DelIdcard] success", log.String("operator", md["Token-User"]))
 		if olduser.IDCard != "" {
@@ -762,6 +810,43 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		var final bool
 		if olduser.Email == "" && olduser.NickName == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
 			final = true
+		}
+		return final, nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelIdcard", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[DelIdcard] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[DelIdcard] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelIdcardResp{Step: "success", Final: final}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.DelIdcardResp{Step: "success", Final: final}, nil
 	}
@@ -957,30 +1042,22 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		log.Error(ctx, "[DelEmail] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	//TODO oauth
-	if req.DynamicPassword != "" {
-		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() (bool, error) {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(2); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return false, cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
 		if olduser, e = s.userDao.MongoUpdateUserEmail(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[DelEmail] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return false, e
 		}
 		log.Info(ctx, "[DelEmail] success", log.String("operator", md["Token-User"]))
 		if olduser.Email != "" {
@@ -1003,6 +1080,43 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		var final bool
 		if olduser.IDCard == "" && olduser.NickName == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
 			final = true
+		}
+		return final, nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelEmail", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[DelEmail] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[DelEmail] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelEmailResp{Step: "success", Final: final}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
@@ -1198,30 +1312,22 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		log.Error(ctx, "[DelTel] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-	//TODO oauth
-	if req.DynamicPassword != "" {
-		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() (bool, error) {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(2); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return false, cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
 		if olduser, e = s.userDao.MongoUpdateUserTel(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[DelTel] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return false, e
 		}
 		log.Info(ctx, "[DelTel] success", log.String("operator", md["Token-User"]))
 		if olduser.Tel != "" {
@@ -1244,6 +1350,43 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		var final bool
 		if olduser.IDCard == "" && olduser.NickName == "" && olduser.Email == "" && len(olduser.OAuths) == 0 {
 			final = true
+		}
+		return final, nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelTel", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[DelTel] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[DelTel] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelTelResp{Step: "success", Final: final}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
