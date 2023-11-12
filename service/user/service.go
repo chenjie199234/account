@@ -345,8 +345,14 @@ func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameD
 	return &api.NickNameDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
-// UpdateNickName Step1:send dynamic password to email or tel
-// UpdateNickName Step2:verify email's or tel's dynamic password
+// UpdateNickName By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// UpdateNickName By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -354,23 +360,15 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		log.Error(ctx, "[UpdateNickName] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
-
-	if req.DynamicPassword != "" {
-		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		//verify success
-
+	update := func() error {
 		//update db and clean redis is async
 		//the service's rolling update may happened between update db and clean redis
 		//so we need to make this not happened
 		if e := s.stop.Add(3); e != nil {
 			if e == graceful.ErrClosing {
-				return nil, cerror.ErrServerClosing
+				return cerror.ErrServerClosing
 			}
-			return nil, ecode.ErrBusy
+			return ecode.ErrBusy
 		}
 
 		var olduser *model.User
@@ -379,7 +377,7 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			log.Error(ctx, "[UpdateNickName] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			return e
 		}
 		log.Info(ctx, "[UpdateNickName] success", log.String("operator", md["Token-User"]), log.String("new_nick_name", req.NewNickName))
 		if olduser.NickName != req.NewNickName {
@@ -409,6 +407,42 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
+		}
+		return nil
+	}
+	if req.SrcType == "oauth" {
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OauthVerifyCode(ctx, "UpdateNickName", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[UpdateNickName] dao op failed", log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[UpdateNickName] this is not the required oauth")
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.UpdateNickNameResp{Step: "success"}, nil
+	}
+
+	if req.DynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.DynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		return &api.UpdateNickNameResp{Step: "success"}, nil
 	}
@@ -446,8 +480,14 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 	return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
-// DelNickName Step1:send dynamic password to email or tel
-// DelNickName Step2:verify email's or tel's dynamic password
+// DelNickName By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// DelNickName By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*api.DelNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -455,6 +495,7 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		log.Error(ctx, "[DelNickName] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
+	//TODO oauth
 	if req.DynamicPassword != "" {
 		//step2
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.DynamicPassword, ""); e != nil {
@@ -554,8 +595,14 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 	return &api.IdcardDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
-// UpdateIdCard Step1:send dynamic password to email or tel
-// UpdateIdCard Step2:verify email's or tel's dynamic password
+// UpdateIdcard By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// UpdateIdCard By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*api.UpdateIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -563,6 +610,7 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Error(ctx, "[UpdateIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
+	//TODO oauth
 	if req.DynamicPassword != "" {
 		//step 2
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.DynamicPassword, ""); e != nil {
@@ -653,8 +701,14 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
-// DelIdcard Step1:send dynamic password to email or tel
-// DelIdcard Step2:verify email's or tel's dynamic password
+// DelIdcard By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// DelIdcard By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.DelIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -662,6 +716,7 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		log.Error(ctx, "[DelIdcard] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
+	//TODO oauth
 	if req.DynamicPassword != "" {
 		//step2
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.DynamicPassword, ""); e != nil {
@@ -761,6 +816,7 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 	return &api.EmailDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
+// TODO oauth
 // UpdateTel Step 1:send dynamic password to old email or tel
 // UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new email
 // UpdateTel Step 3:verify new email's dynamic and update
@@ -886,8 +942,14 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
-// DelEmail Step1:send dynamic password to email or tel
-// DelEmail Step2:verify email's or tel's dynamic password
+// DelEmail By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// DelEmail By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -895,6 +957,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		log.Error(ctx, "[DelEmail] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
+	//TODO oauth
 	if req.DynamicPassword != "" {
 		//step2
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.DynamicPassword, ""); e != nil {
@@ -994,6 +1057,7 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 	return &api.TelDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
+// TODO oauth
 // UpdateTel Step 1:send dynamic password to old email or tel
 // UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new tel
 // UpdateTel Step 3:verify new tel's dynamic and update
@@ -1119,8 +1183,14 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
-// DelTel Step1:send dynamic password to email or tel
-// DelTel Step2:verify email's or tel's dynamic password
+// DelTel By OAuth
+//
+//	Step1:verify oauth belong to this account
+//
+// DelTel By Dynamic Password
+//
+//	Step1:send dynamic password to email or tel
+//	Step2:verify email's or tel's dynamic password
 func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -1128,6 +1198,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		log.Error(ctx, "[DelTel] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
+	//TODO oauth
 	if req.DynamicPassword != "" {
 		//step2
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.DynamicPassword, ""); e != nil {

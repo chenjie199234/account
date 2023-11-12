@@ -103,9 +103,6 @@ func (d *Dao) RedisSetMoneyLogs(ctx context.Context, userid, opaction string, lo
 func (d *Dao) RedisAddMoneyLogs(ctx context.Context, userid, opaction string, log *model.MoneyLog) error {
 	data, _ := json.Marshal(log)
 	_, e := addMoneyLogsScript.Run(ctx, d.redis, []string{opaction + "_money_logs_{" + userid + "}"}, int64(30*24*time.Hour.Seconds()), log.LogID.Timestamp().Unix(), data).Result()
-	if e == gredis.Nil {
-		e = ecode.ErrRedisKeyMissing
-	}
 	return e
 }
 func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) error {
@@ -119,9 +116,6 @@ func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) er
 func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	values, e := getMoneyLogsScript.Run(ctx, d.redis, []string{opaction + "_money_logs_{" + userid + "}"}, starttime, endtime, page, pagesize).Slice()
 	if e != nil {
-		if e == gredis.Nil {
-			e = ecode.ErrRedisKeyMissing
-		}
 		return nil, 0, 0, e
 	}
 	curpage := values[len(values)-1].(int64)
@@ -131,7 +125,7 @@ func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, st
 	for i := range values {
 		tmp := &model.MoneyLog{}
 		if e := json.Unmarshal(common.Str2byte(values[i].(string)), tmp); e != nil {
-			return nil, 0, 0, ecode.ErrRedisDataBroken
+			return nil, 0, 0, ecode.ErrCacheDataBroken
 		}
 		r = append(r, tmp)
 	}

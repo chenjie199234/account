@@ -41,7 +41,7 @@ func (d *Dao) MongoInsertMoneyLogs(ctx context.Context, log *model.MoneyLog) err
 		return e
 	}
 	if dblog.SrcDst != log.SrcDst || dblog.MoneyType != log.MoneyType || dblog.MoneyAmount != log.MoneyAmount {
-		e = ecode.ErrDBConflict
+		e = ecode.ErrDBDataConflict
 	} else {
 		log.LogID = dblog.LogID
 	}

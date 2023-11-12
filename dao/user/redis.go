@@ -7,8 +7,6 @@ import (
 
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
-
-	gredis "github.com/redis/go-redis/v9"
 )
 
 func (d *Dao) RedisSetUser(ctx context.Context, userid string, user *model.User) error {
@@ -25,9 +23,6 @@ func (d *Dao) RedisSetUser(ctx context.Context, userid string, user *model.User)
 func (d *Dao) RedisGetUser(ctx context.Context, userid string) (*model.User, error) {
 	data, e := d.redis.GetEx(ctx, "user_{"+userid+"}_info", 7*24*time.Hour).Bytes()
 	if e != nil {
-		if e == gredis.Nil {
-			e = ecode.ErrRedisKeyMissing
-		}
 		return nil, e
 	}
 	if len(data) == 0 {
@@ -44,6 +39,44 @@ func (d *Dao) RedisDelUser(ctx context.Context, userid string) error {
 	_, e := d.redis.Del(ctx, "user_{"+userid+"}_info").Result()
 	return e
 }
+
+// oauth
+func (d *Dao) RedisSetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid, userid string) error {
+	_, e := d.redis.SetEx(ctx, "oauth_{"+oauthservicename+"|"+oauthid+"}_index", userid, 7*24*time.Hour).Result()
+	return e
+}
+func (d *Dao) RedisGetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid string) (string, error) {
+	userid, e := d.redis.GetEx(ctx, "oauth_{"+oauthservicename+"|"+oauthid+"}_index", 7*24*time.Hour).Result()
+	if e != nil {
+		return "", e
+	}
+	if userid == "" {
+		//key exist but value is empty
+		return "", ecode.ErrUserNotExist
+	}
+	return userid, nil
+}
+func (d *Dao) RedisGetUserByOAuth(ctx context.Context, oauthservicename, oauthid string) (*model.User, error) {
+	//oauth -> userid -> user
+	if userid, e := d.RedisGetUserOAuthIndex(ctx, oauthservicename, oauthid); e != nil {
+		return nil, e
+	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
+		if e == ecode.ErrUserNotExist {
+			e = ecode.ErrCacheDataConflict
+		}
+		return nil, e
+	} else if user.OAuths[oauthservicename] != oauthid {
+		return nil, ecode.ErrCacheDataConflict
+	} else {
+		return user, nil
+	}
+}
+func (d *Dao) RedisDelUserOAuthIndex(ctx context.Context, oauthservicename, oauthid string) error {
+	_, e := d.redis.Del(ctx, "oauth_{"+oauthservicename+"|"+oauthid+"}_index").Result()
+	return e
+}
+
+// tel
 func (d *Dao) RedisSetUserTelIndex(ctx context.Context, tel string, userid string) error {
 	_, e := d.redis.SetEx(ctx, "tel_{"+tel+"}_index", userid, 7*24*time.Hour).Result()
 	return e
@@ -51,10 +84,6 @@ func (d *Dao) RedisSetUserTelIndex(ctx context.Context, tel string, userid strin
 func (d *Dao) RedisGetUserTelIndex(ctx context.Context, tel string) (string, error) {
 	userid, e := d.redis.GetEx(ctx, "tel_{"+tel+"}_index", 7*24*time.Hour).Result()
 	if e != nil {
-		if e == gredis.Nil {
-			//key not exist
-			e = ecode.ErrRedisKeyMissing
-		}
 		return "", e
 	}
 	if userid == "" {
@@ -69,11 +98,11 @@ func (d *Dao) RedisGetUserByTel(ctx context.Context, tel string) (*model.User, e
 		return nil, e
 	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrRedisConflict
+			e = ecode.ErrCacheDataConflict
 		}
 		return nil, e
 	} else if user.Tel != tel {
-		return nil, ecode.ErrRedisConflict
+		return nil, ecode.ErrCacheDataConflict
 	} else {
 		return user, nil
 	}
@@ -82,6 +111,8 @@ func (d *Dao) RedisDelUserTelIndex(ctx context.Context, tel string) error {
 	_, e := d.redis.Del(ctx, "tel_{"+tel+"}_index").Result()
 	return e
 }
+
+// email
 func (d *Dao) RedisSetUserEmailIndex(ctx context.Context, email string, userid string) error {
 	_, e := d.redis.SetEx(ctx, "email_{"+email+"}_index", userid, 7*24*time.Hour).Result()
 	return e
@@ -89,10 +120,6 @@ func (d *Dao) RedisSetUserEmailIndex(ctx context.Context, email string, userid s
 func (d *Dao) RedisGetUserEmailIndex(ctx context.Context, email string) (string, error) {
 	userid, e := d.redis.GetEx(ctx, "email_{"+email+"}_index", 7*24*time.Hour).Result()
 	if e != nil {
-		if e == gredis.Nil {
-			//key not exist
-			e = ecode.ErrRedisKeyMissing
-		}
 		return "", e
 	}
 	if userid == "" {
@@ -107,11 +134,11 @@ func (d *Dao) RedisGetUserByEmail(ctx context.Context, email string) (*model.Use
 		return nil, e
 	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrRedisConflict
+			e = ecode.ErrCacheDataConflict
 		}
 		return nil, e
 	} else if user.Email != email {
-		return nil, ecode.ErrRedisConflict
+		return nil, ecode.ErrCacheDataConflict
 	} else {
 		return user, nil
 	}
@@ -120,6 +147,8 @@ func (d *Dao) RedisDelUserEmailIndex(ctx context.Context, email string) error {
 	_, e := d.redis.Del(ctx, "email_{"+email+"}_index").Result()
 	return e
 }
+
+// idcard
 func (d *Dao) RedisSetUserIDCardIndex(ctx context.Context, idcard string, userid string) error {
 	_, e := d.redis.SetEx(ctx, "idcard_{"+idcard+"}_index", userid, 7*24*time.Hour).Result()
 	return e
@@ -127,10 +156,6 @@ func (d *Dao) RedisSetUserIDCardIndex(ctx context.Context, idcard string, userid
 func (d *Dao) RedisGetUserIDCardIndex(ctx context.Context, idcard string) (string, error) {
 	userid, e := d.redis.GetEx(ctx, "idcard_{"+idcard+"}_index", 7*24*time.Hour).Result()
 	if e != nil {
-		if e == gredis.Nil {
-			//key not exist
-			e = ecode.ErrRedisKeyMissing
-		}
 		return "", e
 	}
 	if userid == "" {
@@ -145,11 +170,11 @@ func (d *Dao) RedisGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 		return nil, e
 	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrRedisConflict
+			e = ecode.ErrCacheDataConflict
 		}
 		return nil, e
 	} else if user.IDCard != idcard {
-		return nil, ecode.ErrRedisConflict
+		return nil, ecode.ErrCacheDataConflict
 	} else {
 		return user, nil
 	}
@@ -158,6 +183,8 @@ func (d *Dao) RedisDelUserIDCardIndex(ctx context.Context, idcard string) error 
 	_, e := d.redis.Del(ctx, "idcard_{"+idcard+"}_index").Result()
 	return e
 }
+
+// nickname
 func (d *Dao) RedisSetUserNickNameIndex(ctx context.Context, nickname string, userid string) error {
 	_, e := d.redis.SetEx(ctx, "nickname_{"+nickname+"}_index", userid, 7*24*time.Hour).Result()
 	return e
@@ -165,10 +192,6 @@ func (d *Dao) RedisSetUserNickNameIndex(ctx context.Context, nickname string, us
 func (d *Dao) RedisGetUserNickNameIndex(ctx context.Context, nickname string) (string, error) {
 	userid, e := d.redis.GetEx(ctx, "nickname_{"+nickname+"}_index", 7*24*time.Hour).Result()
 	if e != nil {
-		if e == gredis.Nil {
-			//key not exist
-			e = ecode.ErrRedisKeyMissing
-		}
 		return "", e
 	}
 	if userid == "" {
@@ -183,11 +206,11 @@ func (d *Dao) RedisGetUserByNickName(ctx context.Context, nickname string) (*mod
 		return nil, e
 	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrRedisConflict
+			e = ecode.ErrCacheDataConflict
 		}
 		return nil, e
 	} else if user.NickName != nickname {
-		return nil, ecode.ErrRedisConflict
+		return nil, ecode.ErrCacheDataConflict
 	} else {
 		return user, nil
 	}

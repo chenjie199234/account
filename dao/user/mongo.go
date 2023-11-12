@@ -102,7 +102,7 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 	})
 	return
 }
-func (d *Dao) MongoCreateUserByOauth(ctx context.Context, oauthservicename, oauthid string) (user *model.User, e error) {
+func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oauthid string) (user *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
@@ -165,12 +165,12 @@ func (d *Dao) MongoGetUserByTel(ctx context.Context, tel string) (*model.User, e
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBConflict
+			e = ecode.ErrDBDataConflict
 		}
 		return nil, e
 	}
 	if user.Tel != tel {
-		return nil, ecode.ErrDBConflict
+		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
 }
@@ -184,12 +184,12 @@ func (d *Dao) MongoGetUserByEmail(ctx context.Context, email string) (*model.Use
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBConflict
+			e = ecode.ErrDBDataConflict
 		}
 		return nil, e
 	}
 	if user.Email != email {
-		return nil, ecode.ErrDBConflict
+		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
 }
@@ -203,12 +203,12 @@ func (d *Dao) MongoGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBConflict
+			e = ecode.ErrDBDataConflict
 		}
 		return nil, e
 	}
 	if user.IDCard != idcard {
-		return nil, ecode.ErrDBConflict
+		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
 }
@@ -222,12 +222,12 @@ func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*mod
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBConflict
+			e = ecode.ErrDBDataConflict
 		}
 		return nil, e
 	}
 	if user.NickName != nickname {
-		return nil, ecode.ErrDBConflict
+		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
 }
@@ -241,16 +241,16 @@ func (d *Dao) MongoGetUserByOAuth(ctx context.Context, oauthservicename, oauthid
 	user, e := d.MongoGetUser(ctx, index.UserID)
 	if e != nil {
 		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBConflict
+			e = ecode.ErrDBDataConflict
 		}
 		return nil, e
 	}
 	if user.OAuths[oauthservicename] != oauthid {
-		return nil, ecode.ErrDBConflict
+		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
 }
-func (d *Dao) MongoUpdateUserOauth(ctx context.Context, userid primitive.ObjectID, oauthservicename, newoauthid string) (olduser *model.User, e error) {
+func (d *Dao) MongoUpdateUserOAuth(ctx context.Context, userid primitive.ObjectID, oauthservicename, newoauthid string) (olduser *model.User, e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
 	if e != nil {
