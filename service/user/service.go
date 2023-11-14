@@ -348,12 +348,12 @@ func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameD
 
 // UpdateNickName By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // UpdateNickName By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq) (*api.UpdateNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -487,12 +487,12 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 
 // DelNickName By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // DelNickName By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*api.DelNickNameResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -635,12 +635,12 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 
 // UpdateIdcard By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // UpdateIdCard By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*api.UpdateIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -772,12 +772,12 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 
 // DelIdcard By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // DelIdcard By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.DelIdcardResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -918,10 +918,16 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 	return &api.EmailDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
-// TODO oauth
-// UpdateTel Step 1:send dynamic password to old email or tel
-// UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new email
-// UpdateTel Step 3:verify new email's dynamic and update
+// UpdateEmail By OAuth
+//
+//	Step 1:verify oauth belong to this account and send dynamic password to new email
+//	Step final:verify new email's dynamic password and update
+//
+// UpdateEmail By Dynamic Password
+//
+//	Step 1:send dynamic password to old email or tel
+//	Step 2:verify old email's or tel's dynamic password and send dynamic password to new email
+//	Step final:verify new email's dynamic password and update
 func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*api.UpdateEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -930,7 +936,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ErrToken
 	}
 	if req.NewEmailDynamicPassword != "" {
-		//step 3
+		//step final
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
 			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewEmailDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -984,16 +990,44 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			s.stop.DoneOne()
 		}
 		return &api.UpdateEmailResp{Step: "success"}, nil
-	} else if req.DynamicPassword != "" {
-		//step 2
-		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		} else if e == nil {
-			//if new email's code already send,we jump to step 3
-			return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
+	}
+	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
+		log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if e == nil {
+		//if new email's code already send,we jump to step final
+		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
+	}
+	if req.SrcType == "oauth" {
+		//step 1 when update by oauth
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
 		}
-
+		if e := s.userDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
+			log.Error(ctx, "[UpdateEmail] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateEmail", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[UpdateEmail] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[UpdateEmail] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.UpdateEmailStep2); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step 2 when update by dynamic password
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.DynamicPassword, ""); e != nil {
 			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1004,15 +1038,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		}
 		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
-	//step 1
-	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
-		log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-	} else if e == nil {
-		//if new email's code already send,we jump to step 3
-		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
-	}
-
+	//step 1 when update by dynamic password
 	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
 		log.Error(ctx, "[UpdateEmail] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -1046,12 +1072,12 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 
 // DelEmail By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // DelEmail By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -1192,10 +1218,16 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 	return &api.TelDuplicateCheckResp{Duplicate: userid != ""}, nil
 }
 
-// TODO oauth
-// UpdateTel Step 1:send dynamic password to old email or tel
-// UpdateTel Step 2:verify old email's or tel's dynamic password and send dynamic password to new tel
-// UpdateTel Step 3:verify new tel's dynamic and update
+// UpdateTel By OAuth
+//
+//	Step 1:verify oauth belong to this account and send dynamic password to new tel
+//	Step final:verify new tel's dynamic password and update
+//
+// UpdateTel By Dynamic Password
+//
+//	Step 1:send dynamic password to old email or tel
+//	Step 2:verify old email's or tel's dynamic password and send dynamic password to new tel
+//	Step final:verify new tel's dynamic password and update
 func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.UpdateTelResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
@@ -1204,7 +1236,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return nil, ecode.ErrToken
 	}
 	if req.NewTelDynamicPassword != "" {
-		//step 3
+		//step final
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTelDynamicPassword, req.NewTel); e != nil {
 			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewTelDynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1258,16 +1290,44 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			s.stop.DoneOne()
 		}
 		return &api.UpdateTelResp{Step: "success"}, nil
-	} else if req.DynamicPassword != "" {
-		//step 2
-		if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
-			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		} else if e == nil {
-			//if new tel's code already send,we jump to step 3
-			return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
+	}
+	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
+		log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if e == nil {
+		//if new tel's code already send,we jump to step final
+		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
+	}
+	if req.SrcType == "oauth" {
+		//step 1 when update by oauth
+		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+			return nil, ecode.ErrReq
 		}
-
+		if e := s.userDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
+			log.Error(ctx, "[UpdateTel] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateTel", req.SrcTypeExtra, req.DynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[UpdateTel] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[UpdateTel] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.UpdateTelStep2); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
+	}
+	if req.DynamicPassword != "" {
+		//step 2 when update by dynamic password
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.DynamicPassword, ""); e != nil {
 			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1278,15 +1338,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		}
 		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
-	//step 1
-	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
-		log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
-		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-	} else if e == nil {
-		//if new tel's code already send,we jump to step 3
-		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
-	}
-
+	//step 1 when update by dynamic password
 	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
 		log.Error(ctx, "[UpdateTel] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -1320,12 +1372,12 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 
 // DelTel By OAuth
 //
-//	Step1:verify oauth belong to this account
+//	Step 1:verify oauth belong to this account
 //
 // DelTel By Dynamic Password
 //
-//	Step1:send dynamic password to email or tel
-//	Step2:verify email's or tel's dynamic password
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
