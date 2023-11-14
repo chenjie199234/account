@@ -75,7 +75,13 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	case util.UpdateTelStep1:
 		e = s.userDao.RedisLockTelOP(ctx, operator)
 	case util.UpdateTelStep2:
-		//this is controled by step2
+		//this is controled by step1
+	case util.DelOAuth:
+		fallthrough
+	case util.UpdateOAuthStep1:
+		e = s.userDao.RedisLockOAuthOP(ctx, operator)
+	case util.UpdateOAuthStep2:
+		//this is controled by step1
 	case util.DelIDCard:
 		fallthrough
 	case util.UpdateIDCard:
@@ -169,7 +175,7 @@ func (s *Service) GetUserInfo(ctx context.Context, req *api.GetUserInfoReq) (*ap
 }
 func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp, error) {
 	if req.PasswordType == "static" && req.Password == "" {
-		log.Error(ctx, "[Login] empty static password", log.String(req.SrcType, req.Src))
+		log.Error(ctx, "[Login] empty static password", log.String(req.SrcType, req.SrcTypeExtra))
 		return nil, ecode.ErrReq
 	}
 	var user *model.User
@@ -181,8 +187,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] dao op failed", log.String("idcard", req.Src), log.CError(e))
+		if user, e = s.userDao.GetUserByIDCard(ctx, req.SrcTypeExtra); e != nil {
+			log.Error(ctx, "[Login] dao op failed", log.String("idcard", req.SrcTypeExtra), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "nick_name":
@@ -191,51 +197,67 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.GetUserByNickName(ctx, req.Src); e != nil {
-			log.Error(ctx, "[Login] dao op failed", log.String("nick_name", req.Src), log.CError(e))
+		if user, e = s.userDao.GetUserByNickName(ctx, req.SrcTypeExtra); e != nil {
+			log.Error(ctx, "[Login] dao op failed", log.String("nick_name", req.SrcTypeExtra), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
 		if req.PasswordType == "static" {
-			if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] dao op failed", log.String("tel", req.Src), log.CError(e))
+			if user, e = s.userDao.GetUserByTel(ctx, req.SrcTypeExtra); e != nil {
+				log.Error(ctx, "[Login] dao op failed", log.String("tel", req.SrcTypeExtra), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			if e = s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.Login); e != nil {
+			if e = s.sendcode(ctx, "Login", req.SrcType, req.SrcTypeExtra, req.SrcTypeExtra, util.Login); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.userDao.RedisCheckCode(ctx, req.Src, util.Login, req.Password, ""); e != nil {
-				log.Error(ctx, "[Login] redis op failed", log.String("tel", req.Src), log.String("code", req.Password), log.CError(e))
+			if e = s.userDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
+				log.Error(ctx, "[Login] redis op failed", log.String("tel", req.SrcTypeExtra), log.String("code", req.Password), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-			if user, e = s.userDao.GetOrCreateUserByTel(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] dao op failed", log.String("tel", req.Src), log.CError(e))
+			if user, e = s.userDao.GetOrCreateUserByTel(ctx, req.SrcTypeExtra); e != nil {
+				log.Error(ctx, "[Login] dao op failed", log.String("tel", req.SrcTypeExtra), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		}
 	case "email":
 		if req.PasswordType == "static" {
-			if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] dao op failed", log.String("email", req.Src), log.CError(e))
+			if user, e = s.userDao.GetUserByEmail(ctx, req.SrcTypeExtra); e != nil {
+				log.Error(ctx, "[Login] dao op failed", log.String("email", req.SrcTypeExtra), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 		} else if req.Password == "" {
-			if e := s.sendcode(ctx, "Login", req.SrcType, req.Src, req.Src, util.Login); e != nil {
+			if e := s.sendcode(ctx, "Login", req.SrcType, req.SrcTypeExtra, req.SrcTypeExtra, util.Login); e != nil {
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.userDao.RedisCheckCode(ctx, req.Src, util.Login, req.Password, ""); e != nil {
-				log.Error(ctx, "[Login] redis op failed", log.String("email", req.Src), log.String("code", req.Password), log.CError(e))
+			if e = s.userDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
+				log.Error(ctx, "[Login] redis op failed", log.String("email", req.SrcTypeExtra), log.String("code", req.Password), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-			if user, e = s.userDao.GetOrCreateUserByEmail(ctx, req.Src); e != nil {
-				log.Error(ctx, "[Login] dao op failed", log.String("email", req.Src), log.CError(e))
+			if user, e = s.userDao.GetOrCreateUserByEmail(ctx, req.SrcTypeExtra); e != nil {
+				log.Error(ctx, "[Login] dao op failed", log.String("email", req.SrcTypeExtra), log.CError(e))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
+		}
+	case "oauth":
+		if req.PasswordType == "static" {
+			log.Error(ctx, "[Login] oauth can't use static password")
+			return nil, ecode.ErrReq
+		}
+		if req.Password == "" {
+			return nil, ecode.ErrReq
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "Login", req.SrcTypeExtra, req.Password)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user, e = s.userDao.GetOrCreateUserByOAuth(ctx, req.SrcTypeExtra, oauthid); e != nil {
+			log.Error(ctx, "[Login] dao op failed", log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	}
 	if req.PasswordType == "static" {
@@ -243,7 +265,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			if e == ecode.ErrSignCheckFailed {
 				e = ecode.ErrPasswordWrong
 			}
-			log.Error(ctx, "[Login] sign check failed", log.String(req.SrcType, req.Src), log.CError(e))
+			log.Error(ctx, "[Login] sign check failed", log.String(req.SrcType, req.SrcTypeExtra), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	}
@@ -331,6 +353,154 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	return &api.UpdateStaticPasswordResp{}, nil
 }
 
+func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*api.UpdateOauthResp, error) {
+
+}
+
+// DelOauth By OAuth
+//
+//	Step 1:verify oauth belong to this account
+//
+// DelOauth By Dynamic Password
+//
+//	Step 1:send dynamic password to email or tel
+//	Step 2:verify email's or tel's dynamic password
+func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelOauthResp, error) {
+	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	if e != nil {
+		log.Error(ctx, "[DelOauth] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ErrToken
+	}
+	update := func() (bool, error) {
+		//update db and clean redis is async
+		//the service's rolling update may happened between update db and clean redis
+		//so we need to make this not happened
+		if e := s.stop.Add(2); e != nil {
+			if e == graceful.ErrClosing {
+				return false, cerror.ErrServerClosing
+			}
+			return false, ecode.ErrBusy
+		}
+		var olduser *model.User
+		if olduser, e = s.userDao.MongoUpdateUserOAuth(ctx, operator, req.DelOauthServiceName, ""); e != nil {
+			s.stop.DoneOne()
+			s.stop.DoneOne()
+			log.Error(ctx, "[DelOauth] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			return false, e
+		}
+		log.Info(ctx, "[DelOauth] success", log.String("operator", md["Token-User"]), log.String("oauth", req.DelOauthServiceName))
+		if oauthid := olduser.OAuths[req.DelOauthServiceName]; oauthid != "" {
+			go func() {
+				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+					log.Error(ctx, "[DelOauth] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
+				}
+				s.stop.DoneOne()
+			}()
+			go func() {
+				if e := s.userDao.RedisDelUserOAuthIndex(context.Background(), req.DelOauthServiceName, oauthid); e != nil {
+					log.Error(ctx, "[DelOauth] clean redis failed", log.String(req.DelOauthServiceName, oauthid), log.CError(e))
+				}
+				s.stop.DoneOne()
+			}()
+		} else {
+			s.stop.DoneOne()
+			s.stop.DoneOne()
+		}
+		var final bool
+		if olduser.Email == "" && olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
+			final = true
+		}
+		return final, nil
+	}
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		if e := s.userDao.RedisLockOAuthOP(ctx, md["Token-User"]); e != nil {
+			log.Error(ctx, "[DelOauth] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelOauth", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[DelOauth] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[DelOauth] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelOauthResp{Step: "success", Final: final}, nil
+	}
+	if req.VerifyDynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelOAuth, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelOauth] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		final, e := update()
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.DelOauthResp{Step: "success", Final: final}, nil
+	}
+	//step1
+	user, e := s.userDao.GetUser(ctx, operator)
+	if e != nil {
+		log.Error(ctx, "[DelOauth] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	var final bool
+	if user.Email == "" && user.IDCard == "" && user.Tel == "" && len(user.OAuths) == 0 {
+		final = true
+	}
+	if user.OAuths[req.DelOauthServiceName] == "" {
+		return &api.DelOauthResp{Step: "success", Final: final}, nil
+	}
+
+	if req.VerifySrcType == "tel" && user.Tel == "" {
+		log.Error(ctx, "[DelOauth] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
+		return nil, ecode.ErrReq
+	}
+	if req.VerifySrcType == "email" && user.Email == "" {
+		log.Error(ctx, "[DelOauth] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
+		return nil, ecode.ErrReq
+	}
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "DelOauth", "email", user.Email, md["Token-User"], util.DelOAuth)
+	} else {
+		e = s.sendcode(ctx, "DelOauth", "tel", user.Tel, md["Token-User"], util.DelOAuth)
+	}
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if req.VerifySrcType == "email" {
+		return &api.DelOauthResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.DelOauthResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
+}
+
 func (s *Service) NickNameDuplicateCheck(ctx context.Context, req *api.NickNameDuplicateCheckReq) (*api.NickNameDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
 	//redis lock
@@ -411,25 +581,33 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		}
 		return nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockNickNameOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[UpdateNickName] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateNickName] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateNickName", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateNickName", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[UpdateNickName] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[UpdateNickName] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[UpdateNickName] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[UpdateNickName] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -439,10 +617,13 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		return &api.UpdateNickNameResp{Step: "success"}, nil
 	}
 
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateNickName, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateNickName] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -462,24 +643,24 @@ func (s *Service) UpdateNickName(ctx context.Context, req *api.UpdateNickNameReq
 		return &api.UpdateNickNameResp{Step: "success"}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateNickName] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateNickName] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "UpdateNickName", req.SrcType, user.Email, md["Token-User"], util.UpdateNickName)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "UpdateNickName", "email", user.Email, md["Token-User"], util.UpdateNickName)
 	} else {
-		e = s.sendcode(ctx, "UpdateNickName", req.SrcType, user.Tel, md["Token-User"], util.UpdateNickName)
+		e = s.sendcode(ctx, "UpdateNickName", "tel", user.Tel, md["Token-User"], util.UpdateNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateNickNameResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -541,25 +722,33 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		}
 		return final, nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockNickNameOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[DelNickName] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[DelNickName] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "DelNickName", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelNickName", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[DelNickName] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[DelNickName] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[DelNickName] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[DelNickName] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -569,10 +758,13 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		}
 		return &api.DelNickNameResp{Step: "success", Final: final}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelNickName] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelNickName, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelNickName] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -596,23 +788,23 @@ func (s *Service) DelNickName(ctx context.Context, req *api.DelNickNameReq) (*ap
 		return &api.DelNickNameResp{Step: "success", Final: final}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelNickName] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelNickName] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "DelNickName", req.SrcType, user.Email, md["Token-User"], util.DelNickName)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "DelNickName", "email", user.Email, md["Token-User"], util.DelNickName)
 	} else {
-		e = s.sendcode(ctx, "DelNickName", req.SrcType, user.Tel, md["Token-User"], util.DelNickName)
+		e = s.sendcode(ctx, "DelNickName", "tel", user.Tel, md["Token-User"], util.DelNickName)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelNickNameResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -698,25 +890,33 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		}
 		return nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockIDCardOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[UpdateIdcard] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateIdcard] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateIdcard", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateIdcard", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[UpdateIdcard] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[UpdateIdcard] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[UpdateIdcard] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[UpdateIdcard] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -725,10 +925,13 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		}
 		return &api.UpdateIdcardResp{Step: "success"}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step 2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateIDCard, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateIdcard] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -747,24 +950,24 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		return &api.UpdateIdcardResp{Step: "success"}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateIdcard] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateIdcard] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "UpdateIdcard", req.SrcType, user.Email, md["Token-User"], util.UpdateIDCard)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "UpdateIdcard", "email", user.Email, md["Token-User"], util.UpdateIDCard)
 	} else {
-		e = s.sendcode(ctx, "UpdateIdcard", req.SrcType, user.Tel, md["Token-User"], util.UpdateIDCard)
+		e = s.sendcode(ctx, "UpdateIdcard", "tel", user.Tel, md["Token-User"], util.UpdateIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateIdcardResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -826,25 +1029,33 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		}
 		return final, nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockIDCardOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[DelIDCard] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[DelIDCard] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "DelIdcard", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelIdcard", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[DelIdcard] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[DelIdcard] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[DelIdcard] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[DelIdcard] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -854,10 +1065,13 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		}
 		return &api.DelIdcardResp{Step: "success", Final: final}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelIdcard] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelIDCard, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelIdcard] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -881,23 +1095,23 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		return &api.DelIdcardResp{Step: "success", Final: final}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelIdcard] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelIdcard] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "DelIdcard", req.SrcType, user.Email, md["Token-User"], util.DelIDCard)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "DelIdcard", "email", user.Email, md["Token-User"], util.DelIDCard)
 	} else {
-		e = s.sendcode(ctx, "DelIdcard", req.SrcType, user.Tel, md["Token-User"], util.DelIDCard)
+		e = s.sendcode(ctx, "DelIdcard", "tel", user.Tel, md["Token-User"], util.DelIDCard)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelIdcardResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -938,7 +1152,10 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	if req.NewEmailDynamicPassword != "" {
 		//step final
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
-			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewEmailDynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateEmail] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.NewEmailDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -998,26 +1215,34 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		//if new email's code already send,we jump to step final
 		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
-	if req.SrcType == "oauth" {
+	if req.VerifySrcType == "oauth" {
 		//step 1 when update by oauth
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[UpdateEmail] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateEmail] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateEmail", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateEmail", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[UpdateEmail] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[UpdateEmail] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[UpdateEmail] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[UpdateEmail] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -1026,10 +1251,13 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		}
 		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step 2 when update by dynamic password
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateEmail] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1047,24 +1275,24 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	if user.Email == req.NewEmail {
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	}
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateEmail] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "UpdateEmail", req.SrcType, user.Email, md["Token-User"], util.UpdateEmailStep1)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "UpdateEmail", "email", user.Email, md["Token-User"], util.UpdateEmailStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateEmail", req.SrcType, user.Tel, md["Token-User"], util.UpdateEmailStep1)
+		e = s.sendcode(ctx, "UpdateEmail", "tel", user.Tel, md["Token-User"], util.UpdateEmailStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateEmailResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -1126,25 +1354,33 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		}
 		return final, nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[DelEmail] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[DelEmail] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "DelEmail", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelEmail", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[DelEmail] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[DelEmail] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[DelEmail] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[DelEmail] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -1154,10 +1390,13 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		}
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelEmail] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelEmail] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1181,23 +1420,23 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelEmail] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "DelEmail", req.SrcType, user.Email, md["Token-User"], util.DelEmail)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "DelEmail", "email", user.Email, md["Token-User"], util.DelEmail)
 	} else {
-		e = s.sendcode(ctx, "DelEmail", req.SrcType, user.Tel, md["Token-User"], util.DelEmail)
+		e = s.sendcode(ctx, "DelEmail", "tel", user.Tel, md["Token-User"], util.DelEmail)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelEmailResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil
@@ -1238,7 +1477,10 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	if req.NewTelDynamicPassword != "" {
 		//step final
 		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTelDynamicPassword, req.NewTel); e != nil {
-			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.NewTelDynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateTel] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.NewTelDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1298,26 +1540,34 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		//if new tel's code already send,we jump to step final
 		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
-	if req.SrcType == "oauth" {
+	if req.VerifySrcType == "oauth" {
 		//step 1 when update by oauth
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[UpdateTel] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[UpdateTel] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateTel", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "UpdateTel", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[UpdateTel] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[UpdateTel] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[UpdateTel] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[UpdateTel] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -1326,10 +1576,13 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		}
 		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step 2 when update by dynamic password
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[UpdateTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[UpdateTel] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1347,24 +1600,24 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	if user.Tel == req.NewTel {
 		return &api.UpdateTelResp{Step: "success"}, nil
 	}
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateTel] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
 
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "UpdateTel", req.SrcType, user.Email, md["Token-User"], util.UpdateTelStep1)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "UpdateTel", "email", user.Email, md["Token-User"], util.UpdateTelStep1)
 	} else {
-		e = s.sendcode(ctx, "UpdateTel", req.SrcType, user.Tel, md["Token-User"], util.UpdateTelStep1)
+		e = s.sendcode(ctx, "UpdateTel", "tel", user.Tel, md["Token-User"], util.UpdateTelStep1)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.UpdateTelResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
@@ -1426,25 +1679,33 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		}
 		return final, nil
 	}
-	if req.SrcType == "oauth" {
-		if req.SrcTypeExtra == "" || req.DynamicPassword == "" {
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
 		if e := s.userDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
-			log.Error(ctx, "[DelTel] rate check failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, req.DynamicPassword), log.CError(e))
+			log.Error(ctx, "[DelTel] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		oauthid, e := util.OAuthVerifyCode(ctx, "DelTel", req.SrcTypeExtra, req.DynamicPassword)
+		oauthid, e := util.OAuthVerifyCode(ctx, "DelTel", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.SrcTypeExtra, oauthid)
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
-			log.Error(ctx, "[DelTel] dao op failed", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid), log.CError(e))
+			log.Error(ctx, "[DelTel] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if user.UserID.Hex() != md["Token-User"] {
-			log.Error(ctx, "[DelTel] this is not the required oauth", log.String("operator", md["Token-User"]), log.String(req.SrcTypeExtra, oauthid))
+			log.Error(ctx, "[DelTel] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
 		//verify success
@@ -1454,10 +1715,13 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		}
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
-	if req.DynamicPassword != "" {
+	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.DynamicPassword, ""); e != nil {
-			log.Error(ctx, "[DelTel] redis op failed", log.String("operator", md["Token-User"]), log.String("code", req.DynamicPassword), log.CError(e))
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[DelTel] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		//verify success
@@ -1481,23 +1745,23 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
 
-	if req.SrcType == "tel" && user.Tel == "" {
+	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" && user.Email == "" {
+	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[DelTel] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
-	if req.SrcType == "email" {
-		e = s.sendcode(ctx, "DelTel", req.SrcType, user.Email, md["Token-User"], util.DelTel)
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "DelTel", "email", user.Email, md["Token-User"], util.DelTel)
 	} else {
-		e = s.sendcode(ctx, "DelTel", req.SrcType, user.Tel, md["Token-User"], util.DelTel)
+		e = s.sendcode(ctx, "DelTel", "tel", user.Tel, md["Token-User"], util.DelTel)
 	}
 	if e != nil {
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if req.SrcType == "email" {
+	if req.VerifySrcType == "email" {
 		return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskEmail(user.Email)}, nil
 	}
 	return &api.DelTelResp{Step: "oldverify", Final: final, Receiver: util.MaskTel(user.Tel)}, nil

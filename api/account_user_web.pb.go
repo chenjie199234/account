@@ -22,6 +22,8 @@ import (
 var _WebPathUserLogin = "/account.user/login"
 var _WebPathUserSelfUserInfo = "/account.user/self_user_info"
 var _WebPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _WebPathUserUpdateOauth = "/account.user/update_oauth"
+var _WebPathUserDelOauth = "/account.user/del_oauth"
 var _WebPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _WebPathUserUpdateNickName = "/account.user/update_nick_name"
 var _WebPathUserDelNickName = "/account.user/del_nick_name"
@@ -39,6 +41,8 @@ type UserWebClient interface {
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq, http.Header) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq, http.Header) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, http.Header) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq, http.Header) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq, http.Header) (*DelNickNameResp, error)
@@ -145,6 +149,70 @@ func (c *userWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(UpdateStaticPasswordResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, header http.Header) (*UpdateOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserUpdateOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(UpdateOauthResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header http.Header) (*DelOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathUserDelOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(DelOauthResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -546,6 +614,8 @@ type UserWebServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
@@ -722,6 +792,119 @@ func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 		}
 		if resp == nil {
 			resp = new(UpdateStaticPasswordResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _User_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(UpdateOauthReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/update_oauth] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/update_oauth] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/update_oauth] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/update_oauth] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/update_oauth] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(UpdateOauthResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _User_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*DelOauthResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(DelOauthReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_oauth] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_oauth] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.user/del_oauth] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.user/del_oauth] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			log.Error(ctx, "[/account.user/del_oauth] Content-Type unknown,must be application/json or application/x-protobuf")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_oauth] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(DelOauthResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -1469,6 +1652,32 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 		}
 		mids = append(mids, _User_UpdateStaticPassword_WebHandler(svc.UpdateStaticPassword))
 		router.Post(_WebPathUserUpdateStaticPassword, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_UpdateOauth_WebHandler(svc.UpdateOauth))
+		router.Post(_WebPathUserUpdateOauth, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _User_DelOauth_WebHandler(svc.DelOauth))
+		router.Post(_WebPathUserDelOauth, mids...)
 	}
 	{
 		requiredMids := []string{"token"}

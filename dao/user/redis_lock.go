@@ -7,8 +7,6 @@ import (
 	"github.com/chenjie199234/account/ecode"
 )
 
-//send email or send tel rate limit
-
 // 3 times per 1 min
 func (d *Dao) RedisLockLoginDynamic(ctx context.Context, src string) error {
 	rate := map[string][2]uint64{"dynamic_login_lock_{" + src + "}": {3, 60}}
@@ -59,7 +57,15 @@ func (d *Dao) RedisLockNickNameOP(ctx context.Context, userid string) error {
 	return e
 }
 
-//other rate limit
+// 5 times per hour
+func (d *Dao) RedisLockOAuthOP(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"oauth_op_lock_{" + userid + "}": {5, 3600}}
+	success, e := d.redis.RateLimit(ctx, rate)
+	if e == nil && !success {
+		e = ecode.ErrTooFast
+	}
+	return e
+}
 
 // 5 times per hour
 func (d *Dao) RedisLockUpdatePassword(ctx context.Context, userid string) error {

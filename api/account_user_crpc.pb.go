@@ -19,6 +19,8 @@ var _CrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CrpcPathUserLogin = "/account.user/login"
 var _CrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _CrpcPathUserUpdateOauth = "/account.user/update_oauth"
+var _CrpcPathUserDelOauth = "/account.user/del_oauth"
 var _CrpcPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _CrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CrpcPathUserDelNickName = "/account.user/del_nick_name"
@@ -37,6 +39,8 @@ type UserCrpcClient interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
@@ -135,6 +139,50 @@ func (c *userCrpcClient) UpdateStaticPassword(ctx context.Context, req *UpdateSt
 		return nil, e
 	}
 	resp := new(UpdateStaticPasswordResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userCrpcClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq) (*UpdateOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserUpdateOauth, reqd)
+	if e != nil {
+		return nil, e
+	}
+	resp := new(UpdateOauthResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *userCrpcClient) DelOauth(ctx context.Context, req *DelOauthReq) (*DelOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathUserDelOauth, reqd)
+	if e != nil {
+		return nil, e
+	}
+	resp := new(DelOauthResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -417,6 +465,8 @@ type UserCrpcServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
@@ -608,6 +658,97 @@ func _User_UpdateStaticPassword_CrpcHandler(handler func(context.Context, *Updat
 		}
 		if resp == nil {
 			resp = new(UpdateStaticPasswordResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _User_UpdateOauth_CrpcHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(UpdateOauthReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/update_oauth] json and proto format decode both failed")
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/update_oauth] json and proto format decode both failed")
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UpdateOauthResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _User_DelOauth_CrpcHandler(handler func(context.Context, *DelOauthReq) (*DelOauthResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(DelOauthReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.user/del_oauth] json and proto format decode both failed")
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.user/del_oauth] json and proto format decode both failed")
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_oauth] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelOauthResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -1201,6 +1342,8 @@ func RegisterUserCrpcServer(engine *crpc.CrpcServer, svc UserCrpcServer, allmids
 	engine.RegisterHandler("account.user", "login", _User_Login_CrpcHandler(svc.Login))
 	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CrpcHandler(svc.UpdateStaticPassword))
+	engine.RegisterHandler("account.user", "update_oauth", _User_UpdateOauth_CrpcHandler(svc.UpdateOauth))
+	engine.RegisterHandler("account.user", "del_oauth", _User_DelOauth_CrpcHandler(svc.DelOauth))
 	engine.RegisterHandler("account.user", "nick_name_duplicate_check", _User_NickNameDuplicateCheck_CrpcHandler(svc.NickNameDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "del_nick_name", _User_DelNickName_CrpcHandler(svc.DelNickName))

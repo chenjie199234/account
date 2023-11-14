@@ -17,10 +17,10 @@ Content-Type: application/json
 	//value must in ["tel","email","idcard","nick_name","oauth"]
 	"src_type":"str",
 	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
 	//value length must > 0
-	"src":"str",
+	"src_type_extra":"str",
 	//when src_type is idcard or nick_name,this can't be dynamic
+	//when src_type is oauth,this can't be static
 	//value must in ["static","dynamic"]
 	"password_type":"str",
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
@@ -42,7 +42,7 @@ Success: httpcode:200
 	//object user_info
 	"info":{},
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
-	//password:login success,but this account must finish the static password set
+	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
 	"step":"str"
 }
@@ -126,6 +126,72 @@ Success: httpcode:200
 }
 ------------------------------------------------------------------------------------------------------------
 ```
+### update_oauth
+
+#### Req:
+```
+Path:         /account.user/update_oauth
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+}
+------------------------------------------------------------------------------------------------------------
+```
+### del_oauth
+
+#### Req:
+```
+Path:         /account.user/del_oauth
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel","oauth"]
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"verify_dynamic_password":"str",
+	//value length must > 0
+	"del_oauth_service_name":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	"final":true,
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	"receiver":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
 ### nick_name_duplicate_check
 
 #### Req:
@@ -163,12 +229,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str",
+	"verify_dynamic_password":"str",
 	//value length must > 0
 	"new_nick_name":"str"
 }
@@ -202,12 +268,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str"
+	"verify_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -269,12 +335,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str",
+	"verify_dynamic_password":"str",
 	//value length must > 0
 	"new_idcard":"str"
 }
@@ -308,12 +374,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str"
+	"verify_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -375,12 +441,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str",
+	"verify_dynamic_password":"str",
 	//value length must > 0
 	"new_email":"str",
 	//if this is empty,means send dynamic password.
@@ -418,12 +484,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str"
+	"verify_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -485,12 +551,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str",
+	"verify_dynamic_password":"str",
 	//value length must > 0
 	"new_tel":"str",
 	//if this is empty,means send dynamic password.
@@ -528,12 +594,12 @@ Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
 	//value must in ["email","tel","oauth"]
-	"src_type":"str",
-	//when src_type is oauth,this is the oauth service name
-	"src_type_extra":"str",
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	"dynamic_password":"str"
+	"verify_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

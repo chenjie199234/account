@@ -35,6 +35,14 @@ service user{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc update_oauth(update_oauth_req)returns(update_oauth_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc del_oauth(del_oauth_req)returns(del_oauth_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc nick_name_duplicate_check(nick_name_duplicate_check_req)returns(nick_name_duplicate_check_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
@@ -112,19 +120,19 @@ message get_user_info_resp{
 message login_req{
 	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nick_name",(pbex.string_bytes_in)="oauth"];
 	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
-	string src=3[(pbex.string_bytes_len_gt)=0];
+	string src_type_extra=2[(pbex.string_bytes_len_gt)=0];
 	//when src_type is idcard or nick_name,this can't be dynamic
-	string password_type=4[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];
+	//when src_type is oauth,this can't be static
+	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
 	//when password_type is dynamic and this is not empty,means verify dynamic password.
-	string password=5;
+	string password=4;
 }
 message login_resp{
 	string token=1;
 	user_info info=2;
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
-	//password:login success,but this account must finish the static password set
+	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
 	string step=3;
 }
@@ -140,6 +148,32 @@ message update_static_password_req{
 }
 message update_static_password_resp{
 }
+message update_oauth_req{
+
+}
+message update_oauth_resp{
+
+}
+message del_oauth_req{
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string verify_dynamic_password=3;
+	string del_oauth_service_name=4[(pbex.string_bytes_len_gt)=0];
+}
+message del_oauth_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//if this is true,means this is the last way to login this account
+	//if del this,this account will be deleted completely
+	bool final=2;
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	string receiver=3;
+}
 message nick_name_duplicate_check_req{
 	string nick_name=1[(pbex.string_bytes_len_gt)=0];
 }
@@ -147,12 +181,12 @@ message nick_name_duplicate_check_resp{
 	bool duplicate=1;
 }
 message update_nick_name_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 	string new_nick_name=4[(pbex.string_bytes_len_gt)=0];
 }
 message update_nick_name_resp{
@@ -164,12 +198,12 @@ message update_nick_name_resp{
 	string receiver=2;
 }
 message del_nick_name_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 }
 message del_nick_name_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
@@ -189,12 +223,12 @@ message idcard_duplicate_check_resp{
 	bool duplicate=1;
 }
 message update_idcard_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 	string new_idcard=4[(pbex.string_bytes_len_gt)=0];
 }
 message update_idcard_resp{
@@ -206,12 +240,12 @@ message update_idcard_resp{
 	string receiver=2;
 }
 message del_idcard_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 }
 message del_idcard_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
@@ -231,12 +265,12 @@ message email_duplicate_check_resp{
 	bool duplicate=1;
 }
 message update_email_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 	string new_email=4[(pbex.string_bytes_len_gt)=0];
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
@@ -252,12 +286,12 @@ message update_email_resp{
 	string receiver=2;
 }
 message del_email_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 }
 message del_email_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
@@ -277,12 +311,12 @@ message tel_duplicate_check_resp{
 	bool duplicate=1;
 }
 message update_tel_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 	string new_tel=4[(pbex.string_bytes_len_gt)=0];
 	//if this is empty,means send dynamic password.
 	//if this is not empty,means verify dynamic password.
@@ -298,12 +332,12 @@ message update_tel_resp{
 	string receiver=2;
 }
 message del_tel_req{
-	string src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2;
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
 	//if this is empty,means send dynamic password
 	//if this is not empty,means verify dynamic password
-	string dynamic_password=3;
+	string verify_dynamic_password=3;
 }
 message del_tel_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify

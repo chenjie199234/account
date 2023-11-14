@@ -18,6 +18,8 @@ var _CGrpcPathUserGetUserInfo = "/account.user/get_user_info"
 var _CGrpcPathUserLogin = "/account.user/login"
 var _CGrpcPathUserSelfUserInfo = "/account.user/self_user_info"
 var _CGrpcPathUserUpdateStaticPassword = "/account.user/update_static_password"
+var _CGrpcPathUserUpdateOauth = "/account.user/update_oauth"
+var _CGrpcPathUserDelOauth = "/account.user/del_oauth"
 var _CGrpcPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
 var _CGrpcPathUserUpdateNickName = "/account.user/update_nick_name"
 var _CGrpcPathUserDelNickName = "/account.user/del_nick_name"
@@ -36,6 +38,8 @@ type UserCGrpcClient interface {
 	Login(context.Context, *LoginReq, ...grpc.CallOption) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq, ...grpc.CallOption) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, ...grpc.CallOption) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq, ...grpc.CallOption) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq, ...grpc.CallOption) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, ...grpc.CallOption) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq, ...grpc.CallOption) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq, ...grpc.CallOption) (*DelNickNameResp, error)
@@ -94,6 +98,26 @@ func (c *userCGrpcClient) UpdateStaticPassword(ctx context.Context, req *UpdateS
 	}
 	resp := new(UpdateStaticPasswordResp)
 	if e := c.cc.Invoke(ctx, _CGrpcPathUserUpdateStaticPassword, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *userCGrpcClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, opts ...grpc.CallOption) (*UpdateOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(UpdateOauthResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserUpdateOauth, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *userCGrpcClient) DelOauth(ctx context.Context, req *DelOauthReq, opts ...grpc.CallOption) (*DelOauthResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(DelOauthResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathUserDelOauth, req, resp, opts...); e != nil {
 		return nil, e
 	}
 	return resp, nil
@@ -224,6 +248,8 @@ type UserCGrpcServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
 	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
+	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
 	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
 	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
 	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
@@ -325,6 +351,49 @@ func _User_UpdateStaticPassword_CGrpcHandler(handler func(context.Context, *Upda
 		}
 		if resp == nil {
 			resp = new(UpdateStaticPasswordResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _User_UpdateOauth_CGrpcHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(UpdateOauthReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/update_oauth] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UpdateOauthResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _User_DelOauth_CGrpcHandler(handler func(context.Context, *DelOauthReq) (*DelOauthResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(DelOauthReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.user/del_oauth] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/del_oauth] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(DelOauthResp)
 		}
 		ctx.Write(resp)
 	}
@@ -624,6 +693,8 @@ func RegisterUserCGrpcServer(engine *cgrpc.CGrpcServer, svc UserCGrpcServer, all
 	engine.RegisterHandler("account.user", "login", _User_Login_CGrpcHandler(svc.Login))
 	engine.RegisterHandler("account.user", "self_user_info", _User_SelfUserInfo_CGrpcHandler(svc.SelfUserInfo))
 	engine.RegisterHandler("account.user", "update_static_password", _User_UpdateStaticPassword_CGrpcHandler(svc.UpdateStaticPassword))
+	engine.RegisterHandler("account.user", "update_oauth", _User_UpdateOauth_CGrpcHandler(svc.UpdateOauth))
+	engine.RegisterHandler("account.user", "del_oauth", _User_DelOauth_CGrpcHandler(svc.DelOauth))
 	engine.RegisterHandler("account.user", "nick_name_duplicate_check", _User_NickNameDuplicateCheck_CGrpcHandler(svc.NickNameDuplicateCheck))
 	engine.RegisterHandler("account.user", "update_nick_name", _User_UpdateNickName_CGrpcHandler(svc.UpdateNickName))
 	engine.RegisterHandler("account.user", "del_nick_name", _User_DelNickName_CGrpcHandler(svc.DelNickName))
