@@ -135,6 +135,17 @@ Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
+	//value must in ["email","tel","oauth"]
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"verify_dynamic_password":"str",
+	//if verify_dynamic_password is not empty,this should not be empty too
+	"new_oauth_service_name":"str",
+	//if verify_dynamic_password is not empty,this should not be empty too
+	"new_oauth_dynamic_password":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -147,6 +158,12 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	"receiver":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
@@ -180,7 +197,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_oauth_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//if this is true,means this is the last way to login this account
@@ -249,7 +266,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//send dynamic password to where,this will be masked
@@ -286,7 +303,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//if this is true,means this is the last way to login this account
@@ -355,7 +372,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//send dynamic password to where,this will be masked
@@ -392,7 +409,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//if this is true,means this is the last way to login this account
@@ -464,7 +481,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
@@ -502,7 +519,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//if this is true,means this is the last way to login this account
@@ -574,7 +591,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
@@ -612,7 +629,7 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	"step":"str",
 	//if this is true,means this is the last way to login this account

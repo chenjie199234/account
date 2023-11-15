@@ -363,6 +363,11 @@ func _User_UpdateOauth_CGrpcHandler(handler func(context.Context, *UpdateOauthRe
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.user/update_oauth] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
 		resp, e := handler(ctx, req)
 		if e != nil {
 			ctx.Abort(e)

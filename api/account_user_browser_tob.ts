@@ -53,7 +53,7 @@ function DelEmailReqToJson(msg: DelEmailReq): string{
 	return s
 }
 export interface DelEmailResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//if this is true,means this is the last way to login this account
@@ -134,7 +134,7 @@ function DelIdcardReqToJson(msg: DelIdcardReq): string{
 	return s
 }
 export interface DelIdcardResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//if this is true,means this is the last way to login this account
@@ -215,7 +215,7 @@ function DelNickNameReqToJson(msg: DelNickNameReq): string{
 	return s
 }
 export interface DelNickNameResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//if this is true,means this is the last way to login this account
@@ -305,7 +305,7 @@ function DelOauthReqToJson(msg: DelOauthReq): string{
 	return s
 }
 export interface DelOauthResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_oauth_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//if this is true,means this is the last way to login this account
@@ -386,7 +386,7 @@ function DelTelReqToJson(msg: DelTelReq): string{
 	return s
 }
 export interface DelTelResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//if this is true,means this is the last way to login this account
@@ -792,7 +792,7 @@ function UpdateEmailReqToJson(msg: UpdateEmailReq): string{
 	return s
 }
 export interface UpdateEmailResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	step: string;
@@ -872,7 +872,7 @@ function UpdateIdcardReqToJson(msg: UpdateIdcardReq): string{
 	return s
 }
 export interface UpdateIdcardResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//send dynamic password to where,this will be masked
@@ -951,7 +951,7 @@ function UpdateNickNameReqToJson(msg: UpdateNickNameReq): string{
 	return s
 }
 export interface UpdateNickNameResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string;
 	//send dynamic password to where,this will be masked
@@ -980,9 +980,59 @@ function JsonToUpdateNickNameResp(jsonobj: { [k:string]:any }): UpdateNickNameRe
 	return obj
 }
 export interface UpdateOauthReq{
+	verify_src_type: string;
+	//when verify_src_type is oauth,this is the oauth service name
+	verify_src_type_extra: string;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	verify_dynamic_password: string;
+	//if verify_dynamic_password is not empty,this should not be empty too
+	new_oauth_service_name: string;
+	//if verify_dynamic_password is not empty,this should not be empty too
+	new_oauth_dynamic_password: string;
 }
-function UpdateOauthReqToJson(_msg: UpdateOauthReq): string{
+function UpdateOauthReqToJson(msg: UpdateOauthReq): string{
 	let s: string="{"
+	//verify_src_type
+	if(msg.verify_src_type==null||msg.verify_src_type==undefined){
+		throw 'UpdateOauthReq.verify_src_type must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.verify_src_type)
+		s+='"verify_src_type":'+vv+','
+	}
+	//verify_src_type_extra
+	if(msg.verify_src_type_extra==null||msg.verify_src_type_extra==undefined){
+		throw 'UpdateOauthReq.verify_src_type_extra must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.verify_src_type_extra)
+		s+='"verify_src_type_extra":'+vv+','
+	}
+	//verify_dynamic_password
+	if(msg.verify_dynamic_password==null||msg.verify_dynamic_password==undefined){
+		throw 'UpdateOauthReq.verify_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.verify_dynamic_password)
+		s+='"verify_dynamic_password":'+vv+','
+	}
+	//new_oauth_service_name
+	if(msg.new_oauth_service_name==null||msg.new_oauth_service_name==undefined){
+		throw 'UpdateOauthReq.new_oauth_service_name must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.new_oauth_service_name)
+		s+='"new_oauth_service_name":'+vv+','
+	}
+	//new_oauth_dynamic_password
+	if(msg.new_oauth_dynamic_password==null||msg.new_oauth_dynamic_password==undefined){
+		throw 'UpdateOauthReq.new_oauth_dynamic_password must be string'
+	}else{
+		//transfer the json escape
+		let vv=JSON.stringify(msg.new_oauth_dynamic_password)
+		s+='"new_oauth_dynamic_password":'+vv+','
+	}
 	if(s.length==1){
 		s+="}"
 	}else{
@@ -991,9 +1041,31 @@ function UpdateOauthReqToJson(_msg: UpdateOauthReq): string{
 	return s
 }
 export interface UpdateOauthResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	step: string;
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	receiver: string;
 }
-function JsonToUpdateOauthResp(_jsonobj: { [k:string]:any }): UpdateOauthResp{
+function JsonToUpdateOauthResp(jsonobj: { [k:string]:any }): UpdateOauthResp{
 	let obj: UpdateOauthResp={
+		step:'',
+		receiver:'',
+	}
+	//step
+	if(jsonobj['step']!=null&&jsonobj['step']!=undefined){
+		if(typeof jsonobj['step']!='string'){
+			throw 'UpdateOauthResp.step must be string'
+		}
+		obj['step']=jsonobj['step']
+	}
+	//receiver
+	if(jsonobj['receiver']!=null&&jsonobj['receiver']!=undefined){
+		if(typeof jsonobj['receiver']!='string'){
+			throw 'UpdateOauthResp.receiver must be string'
+		}
+		obj['receiver']=jsonobj['receiver']
 	}
 	return obj
 }
@@ -1096,7 +1168,7 @@ function UpdateTelReqToJson(msg: UpdateTelReq): string{
 	return s
 }
 export interface UpdateTelResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	step: string;

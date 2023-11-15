@@ -40,6 +40,7 @@ var (
 	ErrNickNameAlreadyUsed = cerror.MakeError(20006, http.StatusBadRequest, "nickname already used")
 	ErrSignCheckFailed     = cerror.MakeError(20007, http.StatusBadRequest, "sign check failed")
 	ErrOAuthWrong          = cerror.MakeError(20008, http.StatusBadRequest, "oauth wrong")
+	ErrOAuthUnknown        = cerror.MakeError(20009, http.StatusBadRequest, "oauth unknown")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

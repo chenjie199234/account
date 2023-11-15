@@ -40,6 +40,14 @@ func (m *UpdateStaticPasswordReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *UpdateOauthReq) Validate() (errstr string) {
+	if m.GetVerifySrcType() != "email" && m.GetVerifySrcType() != "tel" && m.GetVerifySrcType() != "oauth" {
+		return "field: verify_src_type in object: update_oauth_req check value str in failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *DelOauthReq) Validate() (errstr string) {
 	if m.GetVerifySrcType() != "email" && m.GetVerifySrcType() != "tel" && m.GetVerifySrcType() != "oauth" {
 		return "field: verify_src_type in object: del_oauth_req check value str in failed"

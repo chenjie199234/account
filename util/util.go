@@ -18,7 +18,6 @@ const (
 	UpdateTelStep2 = "update_tel_2"
 	DelTel         = "del_tel"
 
-	UpdateOAuthStep1 = "update_oauth_1"
-	UpdateOAuthStep2 = "update_oauth_2"
-	DelOAuth         = "del_oauth"
+	UpdateOAuth = "update_oauth"
+	DelOAuth    = "del_oauth"
 )

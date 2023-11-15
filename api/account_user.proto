@@ -149,10 +149,24 @@ message update_static_password_req{
 message update_static_password_resp{
 }
 message update_oauth_req{
-
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string verify_dynamic_password=3;
+	//if verify_dynamic_password is not empty,this should not be empty too
+	string new_oauth_service_name=4;
+	//if verify_dynamic_password is not empty,this should not be empty too
+	string new_oauth_dynamic_password=5;
 }
 message update_oauth_resp{
-
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	string receiver=2;
 }
 message del_oauth_req{
 	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
@@ -164,7 +178,7 @@ message del_oauth_req{
 	string del_oauth_service_name=4[(pbex.string_bytes_len_gt)=0];
 }
 message del_oauth_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_oauth_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
@@ -190,7 +204,7 @@ message update_nick_name_req{
 	string new_nick_name=4[(pbex.string_bytes_len_gt)=0];
 }
 message update_nick_name_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//send dynamic password to where,this will be masked
@@ -206,7 +220,7 @@ message del_nick_name_req{
 	string verify_dynamic_password=3;
 }
 message del_nick_name_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
@@ -232,7 +246,7 @@ message update_idcard_req{
 	string new_idcard=4[(pbex.string_bytes_len_gt)=0];
 }
 message update_idcard_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//send dynamic password to where,this will be masked
@@ -248,7 +262,7 @@ message del_idcard_req{
 	string verify_dynamic_password=3;
 }
 message del_idcard_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
@@ -277,7 +291,7 @@ message update_email_req{
 	string new_email_dynamic_password=5;
 }
 message update_email_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
@@ -294,7 +308,7 @@ message del_email_req{
 	string verify_dynamic_password=3;
 }
 message del_email_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_email_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
@@ -323,7 +337,7 @@ message update_tel_req{
 	string new_tel_dynamic_password=5;
 }
 message update_tel_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_tel_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new tel(depend on the update_tel_req's new_tel) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
@@ -340,7 +354,7 @@ message del_tel_req{
 	string verify_dynamic_password=3;
 }
 message del_tel_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's old_receiver_type) and is waiting for verify
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_tel_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
