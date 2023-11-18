@@ -124,7 +124,7 @@ func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, st
 	r := make([]*model.MoneyLog, 0, len(values))
 	for i := range values {
 		tmp := &model.MoneyLog{}
-		if e := json.Unmarshal(common.Str2byte(values[i].(string)), tmp); e != nil {
+		if e := json.Unmarshal(common.STB(values[i].(string)), tmp); e != nil {
 			return nil, 0, 0, ecode.ErrCacheDataBroken
 		}
 		r = append(r, tmp)

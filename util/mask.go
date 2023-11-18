@@ -16,7 +16,7 @@ func MaskTel(origin string) string {
 			tmp[i] = '*'
 		}
 	}
-	return common.Byte2str(tmp)
+	return common.BTS(tmp)
 }
 func MaskEmail(origin string) string {
 	if len(origin) == 0 {
@@ -41,7 +41,7 @@ func MaskEmail(origin string) string {
 	for i := index; i < len(origin); i++ {
 		tmp[i] = origin[i]
 	}
-	return common.Byte2str(tmp)
+	return common.BTS(tmp)
 }
 func MaskIDCard(origin string) string {
 	if len(origin) == 0 {
@@ -55,5 +55,5 @@ func MaskIDCard(origin string) string {
 			tmp[i] = '*'
 		}
 	}
-	return common.Byte2str(tmp)
+	return common.BTS(tmp)
 }
