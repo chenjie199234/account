@@ -557,7 +557,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 			s.stop.DoneOne()
 		}
 		var final bool
-		if olduser.Email == "" && olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
+		if olduser.Email == "" && olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 1 && olduser.OAuths[req.DelOauthServiceName] != "" {
 			final = true
 		}
 		return final, nil
