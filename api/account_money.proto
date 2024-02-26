@@ -10,7 +10,9 @@ import "pbex/pbex.proto";
 //this is the proto file for money service
 service money{
 	//rpc example(examplereq)returns(exampleresp){
-	//	option (pbex.method)="get";//can be set to get,delete,post,put,patch
+	//	option (pbex.method)="get";
+	//	option (pbex.method)="crpc";
+	//	option (pbex.method)="grpc";//can be set to one of (get,delete,post,put,patch) or crpc or grpc
 	//	option (pbex.web_midwares)="b";
 	//	option (pbex.web_midwares)="c";
 	//	option (pbex.web_midwares)="a";//this function on web protocol has 3 midwares,it's order is b,c,a
@@ -22,7 +24,10 @@ service money{
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
 
-	rpc get_user_money_logs(get_user_money_logs_req)returns(get_user_money_logs_resp);
+	rpc get_user_money_logs(get_user_money_logs_req)returns(get_user_money_logs_resp){
+		option (pbex.method)="crpc";
+		option (pbex.method)="grpc";
+	}
 
 	rpc self_money_logs(self_money_logs_req)returns(self_money_logs_resp){
 		option (pbex.method)="post";
