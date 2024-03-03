@@ -33,7 +33,7 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 			if mongo.IsDuplicateKeyError(e) {
 				user, e = d.MongoGetUserByTel(ctx, tel)
 			}
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -76,7 +76,7 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 			if mongo.IsDuplicateKeyError(e) {
 				user, e = d.MongoGetUserByEmail(ctx, email)
 			}
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -119,7 +119,7 @@ func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 			if mongo.IsDuplicateKeyError(e) {
 				user, e = d.MongoGetUserByOAuth(ctx, oauthservicename, oauthid)
 			}
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -264,7 +264,7 @@ func (d *Dao) MongoUpdateUserOAuth(ctx context.Context, userid primitive.ObjectI
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -338,7 +338,7 @@ func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID,
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -397,7 +397,7 @@ func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectI
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -456,7 +456,7 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -515,7 +515,7 @@ func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.Obje
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
@@ -574,7 +574,7 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 	defer func() {
 		if e != nil {
 			s.AbortTransaction(sctx)
-		} else if e = sctx.CommitTransaction(sctx); e != nil {
+		} else if e = s.CommitTransaction(sctx); e != nil {
 			s.AbortTransaction(sctx)
 		}
 	}()
