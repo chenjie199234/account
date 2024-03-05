@@ -15,10 +15,10 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-var _CrpcPathMoneyGetUserMoneyLogs = "/account.money/get_user_money_logs"
+var _CrpcPathMoneyGetMoneyLogs = "/account.money/get_money_logs"
 
 type MoneyCrpcClient interface {
-	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
 }
 
 type moneyCrpcClient struct {
@@ -29,16 +29,16 @@ func NewMoneyCrpcClient(c *crpc.CrpcClient) MoneyCrpcClient {
 	return &moneyCrpcClient{cc: c}
 }
 
-func (c *moneyCrpcClient) GetUserMoneyLogs(ctx context.Context, req *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error) {
+func (c *moneyCrpcClient) GetMoneyLogs(ctx context.Context, req *GetMoneyLogsReq) (*GetMoneyLogsResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	reqd, _ := proto.Marshal(req)
-	respd, e := c.cc.Call(ctx, _CrpcPathMoneyGetUserMoneyLogs, reqd)
+	respd, e := c.cc.Call(ctx, _CrpcPathMoneyGetMoneyLogs, reqd)
 	if e != nil {
 		return nil, e
 	}
-	resp := new(GetUserMoneyLogsResp)
+	resp := new(GetMoneyLogsResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -53,19 +53,19 @@ func (c *moneyCrpcClient) GetUserMoneyLogs(ctx context.Context, req *GetUserMone
 }
 
 type MoneyCrpcServer interface {
-	GetUserMoneyLogs(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)
+	GetMoneyLogs(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)
 }
 
-func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserMoneyLogsReq) (*GetUserMoneyLogsResp, error)) crpc.OutsideHandler {
+func _Money_GetMoneyLogs_CrpcHandler(handler func(context.Context, *GetMoneyLogsReq) (*GetMoneyLogsResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
-		req := new(GetUserMoneyLogsReq)
+		req := new(GetMoneyLogsReq)
 		reqbody := ctx.GetBody()
 		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
 				req.Reset()
 				if e := proto.Unmarshal(reqbody, req); e != nil {
-					log.Error(ctx, "[/account.money/get_user_money_logs] json and proto format decode both failed")
+					log.Error(ctx, "[/account.money/get_money_logs] json and proto format decode both failed")
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -75,7 +75,7 @@ func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserM
 		} else if e := proto.Unmarshal(reqbody, req); e != nil {
 			req.Reset()
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
-				log.Error(ctx, "[/account.money/get_user_money_logs] json and proto format decode both failed")
+				log.Error(ctx, "[/account.money/get_money_logs] json and proto format decode both failed")
 				ctx.Abort(cerror.ErrReq)
 				return
 			} else {
@@ -83,7 +83,7 @@ func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserM
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.money/get_user_money_logs] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.money/get_money_logs] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -93,7 +93,7 @@ func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserM
 			return
 		}
 		if resp == nil {
-			resp = new(GetUserMoneyLogsResp)
+			resp = new(GetMoneyLogsResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -107,5 +107,5 @@ func _Money_GetUserMoneyLogs_CrpcHandler(handler func(context.Context, *GetUserM
 func RegisterMoneyCrpcServer(engine *crpc.CrpcServer, svc MoneyCrpcServer, allmids map[string]crpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.money", "get_user_money_logs", _Money_GetUserMoneyLogs_CrpcHandler(svc.GetUserMoneyLogs))
+	engine.RegisterHandler("account.money", "get_money_logs", _Money_GetMoneyLogs_CrpcHandler(svc.GetMoneyLogs))
 }

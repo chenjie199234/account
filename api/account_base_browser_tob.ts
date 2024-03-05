@@ -2,42 +2,18 @@
 // version:
 // 	protoc-gen-browser v0.0.103<br />
 // 	protoc             v4.25.3<br />
-// source: api/account_user.proto<br />
+// source: api/account_base.proto<br />
 
 export interface LogicError{
 	code: number;
 	msg: string;
 }
 
-export class GetUserInfoReq{
-	src_type: string = ''
-	src: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.src_type){
-			tmp["src_type"]=this.src_type
-		}
-		if(this.src){
-			tmp["src"]=this.src
-		}
-		return tmp
-	}
-}
-export class GetUserInfoResp{
-	info: UserInfo|null = null
-	fromOBJ(obj:Object){
-		if(obj["info"]){
-			this.info=new UserInfo()
-			this.info.fromOBJ(obj["info"])
-		}
-	}
-}
-export class UserInfo{
+export class BaseInfo{
 	user_id: string = ''
 	idcard: string = ''
 	tel: string = ''
 	email: string = ''
-	nick_name: string = ''
 	//Warning!!!Type is uint32,be careful of sign(+) and overflow
 	ctime: number = 0
 	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
@@ -55,9 +31,6 @@ export class UserInfo{
 		if(obj["email"]){
 			this.email=obj["email"]
 		}
-		if(obj["nick_name"]){
-			this.nick_name=obj["nick_name"]
-		}
 		if(obj["ctime"]){
 			this.ctime=obj["ctime"]
 		}
@@ -66,6 +39,29 @@ export class UserInfo{
 			for(let key of Object.keys(obj["money"])){
 				this.money.set(key,obj["money"][key])
 			}
+		}
+	}
+}
+export class GetBaseInfoReq{
+	src_type: string = ''
+	src: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.src_type){
+			tmp["src_type"]=this.src_type
+		}
+		if(this.src){
+			tmp["src"]=this.src
+		}
+		return tmp
+	}
+}
+export class GetBaseInfoResp{
+	info: BaseInfo|null = null
+	fromOBJ(obj:Object){
+		if(obj["info"]){
+			this.info=new BaseInfo()
+			this.info.fromOBJ(obj["info"])
 		}
 	}
 }
@@ -107,27 +103,27 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 		}
 	})
 }
-const _WebPathUserGetUserInfo: string ="/account.user/get_user_info";
+const _WebPathBaseGetBaseInfo: string ="/account.base/get_base_info";
 //ToB means this is for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
 //If your are not using 'admin' as your tob request's proxy gate,don't use this
-export class UserBrowserClientToB {
+export class BaseBrowserClientToB {
 	constructor(proxyhost: string,serverprojectid: Array<number>,servergroup: string){
 		if(!proxyhost || proxyhost.length==0){
-			throw "UserBrowserClientToB's proxyhost missing"
+			throw "BaseBrowserClientToB's proxyhost missing"
 		}
 		if(!serverprojectid || serverprojectid.length!=2){
-			throw "UserBrowserClientToB's serverprojectid missing or wrong"
+			throw "BaseBrowserClientToB's serverprojectid missing or wrong"
 		}
 		if(!servergroup || servergroup.length==0){
-			throw "UserBrowserClientToB's servergroup missing"
+			throw "BaseBrowserClientToB's servergroup missing"
 		}
 		this.host=proxyhost
 		this.projectid=serverprojectid
 		this.group=servergroup
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	get_user_info(header: Object,req: GetUserInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetUserInfoResp)=>void){
+	get_base_info(header: Object,req: GetBaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetBaseInfoResp)=>void){
 		if(!header){
 			header={}
 		}
@@ -136,11 +132,11 @@ export class UserBrowserClientToB {
 			project_id:this.projectid,
 			g_name:this.group,
 			a_name:"account",
-			path:_WebPathUserGetUserInfo,
+			path:_WebPathBaseGetBaseInfo,
 			data:JSON.stringify(req),
 		}
 		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
-			let r=new GetUserInfoResp()
+			let r=new GetBaseInfoResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

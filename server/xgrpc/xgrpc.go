@@ -44,7 +44,7 @@ func StartCGrpcServer() {
 
 	//you just need to register your service here
 	api.RegisterStatusCGrpcServer(s, service.SvcStatus, mids.AllMids())
-	api.RegisterUserCGrpcServer(s, service.SvcUser, mids.AllMids())
+	api.RegisterBaseCGrpcServer(s, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyCGrpcServer(s, service.SvcMoney, mids.AllMids())
 
 	//example

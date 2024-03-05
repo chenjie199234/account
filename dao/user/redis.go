@@ -183,39 +183,3 @@ func (d *Dao) RedisDelUserIDCardIndex(ctx context.Context, idcard string) error 
 	_, e := d.redis.Del(ctx, "idcard_{"+idcard+"}_index").Result()
 	return e
 }
-
-// nickname
-func (d *Dao) RedisSetUserNickNameIndex(ctx context.Context, nickname string, userid string) error {
-	_, e := d.redis.SetEx(ctx, "nickname_{"+nickname+"}_index", userid, 7*24*time.Hour).Result()
-	return e
-}
-func (d *Dao) RedisGetUserNickNameIndex(ctx context.Context, nickname string) (string, error) {
-	userid, e := d.redis.GetEx(ctx, "nickname_{"+nickname+"}_index", 7*24*time.Hour).Result()
-	if e != nil {
-		return "", e
-	}
-	if userid == "" {
-		//key exist but value is empty
-		return "", ecode.ErrUserNotExist
-	}
-	return userid, nil
-}
-func (d *Dao) RedisGetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
-	//nickname -> userid -> user
-	if userid, e := d.RedisGetUserNickNameIndex(ctx, nickname); e != nil {
-		return nil, e
-	} else if user, e := d.RedisGetUser(ctx, userid); e != nil {
-		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrCacheDataConflict
-		}
-		return nil, e
-	} else if user.NickName != nickname {
-		return nil, ecode.ErrCacheDataConflict
-	} else {
-		return user, nil
-	}
-}
-func (d *Dao) RedisDelUserNickNameIndex(ctx context.Context, nickname string) error {
-	_, e := d.redis.Del(ctx, "nickname_{"+nickname+"}_index").Result()
-	return e
-}

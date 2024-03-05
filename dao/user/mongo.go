@@ -42,7 +42,6 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 	user = &model.User{
 		Password: util.SignMake("", nonce),
 		IDCard:   "",
-		NickName: "",
 		Tel:      tel,
 		Email:    "",
 		OAuths:   map[string]string{},
@@ -85,7 +84,6 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 	user = &model.User{
 		Password: util.SignMake("", nonce),
 		IDCard:   "",
-		NickName: "",
 		Tel:      "",
 		Email:    email,
 		OAuths:   map[string]string{},
@@ -128,7 +126,6 @@ func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 	user = &model.User{
 		Password: util.SignMake("", nonce),
 		IDCard:   "",
-		NickName: "",
 		Tel:      "",
 		Email:    "",
 		OAuths:   map[string]string{oauthservicename: oauthid},
@@ -208,25 +205,6 @@ func (d *Dao) MongoGetUserByIDCard(ctx context.Context, idcard string) (*model.U
 		return nil, e
 	}
 	if user.IDCard != idcard {
-		return nil, ecode.ErrDBDataConflict
-	}
-	return user, nil
-}
-func (d *Dao) MongoGetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
-	index, e := d.MongoGetUserNickNameIndex(ctx, nickname)
-	if e != nil {
-		return nil, e
-	}
-	//between find email index and find user
-	//another thread may change the association between user and nickname
-	user, e := d.MongoGetUser(ctx, index.UserID)
-	if e != nil {
-		if e == ecode.ErrUserNotExist {
-			e = ecode.ErrDBDataConflict
-		}
-		return nil, e
-	}
-	if user.NickName != nickname {
 		return nil, ecode.ErrDBDataConflict
 	}
 	return user, nil
@@ -501,65 +479,6 @@ func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*mode
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserNickName(ctx context.Context, userid primitive.ObjectID, newNickName string) (olduser *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
-	if e != nil {
-		return
-	}
-	defer s.EndSession(ctx)
-	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
-		return
-	}
-	defer func() {
-		if e != nil {
-			s.AbortTransaction(sctx)
-		} else if e = s.CommitTransaction(sctx); e != nil {
-			s.AbortTransaction(sctx)
-		}
-	}()
-	olduser = &model.User{}
-	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"nick_name": newNickName}}).Decode(olduser); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
-		return
-	}
-	if olduser.NickName == newNickName {
-		return
-	}
-	oldNickName := olduser.NickName
-	if newNickName != "" {
-		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").InsertOne(sctx, bson.M{"nick_name": newNickName, "user_id": userid}); e != nil {
-			if mongo.IsDuplicateKeyError(e) {
-				e = ecode.ErrNickNameAlreadyUsed
-			}
-			return
-		}
-	}
-	if oldNickName != "" {
-		if _, e = d.mongo.Database("account").Collection("user_nick_name_index").DeleteOne(sctx, bson.M{"nick_name": oldNickName, "user_id": userid}); e != nil {
-			return
-		}
-	}
-	olduser.NickName = newNickName
-	//now olduser is new,check if we need to delete it
-	e = d._MongoDelUselessUser(sctx, olduser)
-	//turn back to olduser
-	olduser.NickName = oldNickName
-	return
-}
-func (d *Dao) MongoGetUserNickNameIndex(ctx context.Context, nickname string) (*model.UserNickNameIndex, error) {
-	index := &model.UserNickNameIndex{}
-	if e := d.mongo.Database("account").Collection("user_nick_name_index").FindOne(ctx, bson.M{"nick_name": nickname}).Decode(index); e != nil {
-		if e == mongo.ErrNoDocuments {
-			e = ecode.ErrUserNotExist
-		}
-		return nil, e
-	}
-	return index, nil
-}
 func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.ObjectID, oldpassword, newpassword string) (e error) {
 	var s mongo.Session
 	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
@@ -596,7 +515,7 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 	return
 }
 func (d *Dao) _MongoDelUselessUser(ctx context.Context, user *model.User) error {
-	if user.NickName != "" || user.IDCard != "" || user.Email != "" || user.Tel != "" || len(user.OAuths) != 0 {
+	if user.IDCard != "" || user.Email != "" || user.Tel != "" || len(user.OAuths) != 0 {
 		return nil
 	}
 	_, e := d.mongo.Database("account").Collection("user").DeleteOne(ctx, bson.M{"_id": user.UserID})

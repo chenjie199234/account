@@ -44,7 +44,7 @@ func StartCrpcServer() {
 
 	//you just need to register your service here
 	api.RegisterStatusCrpcServer(s, service.SvcStatus, mids.AllMids())
-	api.RegisterUserCrpcServer(s, service.SvcUser, mids.AllMids())
+	api.RegisterBaseCrpcServer(s, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyCrpcServer(s, service.SvcMoney, mids.AllMids())
 
 	//example

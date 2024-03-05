@@ -2,7 +2,7 @@
 // version:
 // 	protoc-gen-go-crpc v0.0.103<br />
 // 	protoc             v4.25.3<br />
-// source: api/account_user.proto<br />
+// source: api/account_base.proto<br />
 
 package api
 
@@ -15,30 +15,30 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-var _CrpcPathUserGetUserInfo = "/account.user/get_user_info"
+var _CrpcPathBaseGetBaseInfo = "/account.base/get_base_info"
 
-type UserCrpcClient interface {
-	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
+type BaseCrpcClient interface {
+	GetBaseInfo(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)
 }
 
-type userCrpcClient struct {
+type baseCrpcClient struct {
 	cc *crpc.CrpcClient
 }
 
-func NewUserCrpcClient(c *crpc.CrpcClient) UserCrpcClient {
-	return &userCrpcClient{cc: c}
+func NewBaseCrpcClient(c *crpc.CrpcClient) BaseCrpcClient {
+	return &baseCrpcClient{cc: c}
 }
 
-func (c *userCrpcClient) GetUserInfo(ctx context.Context, req *GetUserInfoReq) (*GetUserInfoResp, error) {
+func (c *baseCrpcClient) GetBaseInfo(ctx context.Context, req *GetBaseInfoReq) (*GetBaseInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	reqd, _ := proto.Marshal(req)
-	respd, e := c.cc.Call(ctx, _CrpcPathUserGetUserInfo, reqd)
+	respd, e := c.cc.Call(ctx, _CrpcPathBaseGetBaseInfo, reqd)
 	if e != nil {
 		return nil, e
 	}
-	resp := new(GetUserInfoResp)
+	resp := new(GetBaseInfoResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -52,20 +52,20 @@ func (c *userCrpcClient) GetUserInfo(ctx context.Context, req *GetUserInfoReq) (
 	return resp, nil
 }
 
-type UserCrpcServer interface {
-	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)
+type BaseCrpcServer interface {
+	GetBaseInfo(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)
 }
 
-func _User_GetUserInfo_CrpcHandler(handler func(context.Context, *GetUserInfoReq) (*GetUserInfoResp, error)) crpc.OutsideHandler {
+func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
-		req := new(GetUserInfoReq)
+		req := new(GetBaseInfoReq)
 		reqbody := ctx.GetBody()
 		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
 				req.Reset()
 				if e := proto.Unmarshal(reqbody, req); e != nil {
-					log.Error(ctx, "[/account.user/get_user_info] json and proto format decode both failed")
+					log.Error(ctx, "[/account.base/get_base_info] json and proto format decode both failed")
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -75,7 +75,7 @@ func _User_GetUserInfo_CrpcHandler(handler func(context.Context, *GetUserInfoReq
 		} else if e := proto.Unmarshal(reqbody, req); e != nil {
 			req.Reset()
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
-				log.Error(ctx, "[/account.user/get_user_info] json and proto format decode both failed")
+				log.Error(ctx, "[/account.base/get_base_info] json and proto format decode both failed")
 				ctx.Abort(cerror.ErrReq)
 				return
 			} else {
@@ -83,7 +83,7 @@ func _User_GetUserInfo_CrpcHandler(handler func(context.Context, *GetUserInfoReq
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/get_user_info] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/get_base_info] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -93,7 +93,7 @@ func _User_GetUserInfo_CrpcHandler(handler func(context.Context, *GetUserInfoReq
 			return
 		}
 		if resp == nil {
-			resp = new(GetUserInfoResp)
+			resp = new(GetBaseInfoResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -104,8 +104,8 @@ func _User_GetUserInfo_CrpcHandler(handler func(context.Context, *GetUserInfoReq
 		}
 	}
 }
-func RegisterUserCrpcServer(engine *crpc.CrpcServer, svc UserCrpcServer, allmids map[string]crpc.OutsideHandler) {
+func RegisterBaseCrpcServer(engine *crpc.CrpcServer, svc BaseCrpcServer, allmids map[string]crpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.user", "get_user_info", _User_GetUserInfo_CrpcHandler(svc.GetUserInfo))
+	engine.RegisterHandler("account.base", "get_base_info", _Base_GetBaseInfo_CrpcHandler(svc.GetBaseInfo))
 }

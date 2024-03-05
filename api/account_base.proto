@@ -7,8 +7,8 @@ option go_package="github.com/chenjie199234/account/api;api";
 //https://github.com/chenjie199234/Corelib/blob/main/pbex/pbex.proto
 import "pbex/pbex.proto";
 
-//this is the proto file for user service
-service user{
+//this is the proto file for base service
+service base{
 	//rpc example(examplereq)returns(exampleresp){
 	//	option (pbex.method)="get";
 	//	option (pbex.method)="crpc";
@@ -24,7 +24,7 @@ service user{
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
 
-	rpc get_user_info(get_user_info_req)returns(get_user_info_resp){
+	rpc get_base_info(get_base_info_req)returns(get_base_info_resp){
 		option (pbex.method)="crpc";
 		option (pbex.method)="grpc";
 	}
@@ -32,7 +32,7 @@ service user{
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
-	rpc self_user_info(self_user_info_req)returns(self_user_info_resp){
+	rpc self_base_info(self_base_info_req)returns(self_base_info_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -45,18 +45,6 @@ service user{
 		option (pbex.web_midwares)="token";
 	}
 	rpc del_oauth(del_oauth_req)returns(del_oauth_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc nick_name_duplicate_check(nick_name_duplicate_check_req)returns(nick_name_duplicate_check_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc update_nick_name(update_nick_name_req)returns(update_nick_name_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc del_nick_name(del_nick_name_req)returns(del_nick_name_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -106,27 +94,26 @@ service user{
 	//int64 example_resp=1;
 //}
 
-message user_info{
+message base_info{
 	string user_id=1;
 	string idcard=2;
 	string tel=3;
 	string email=4;
-	string nick_name=5;
-	uint32 ctime=6;
-	map<string,int32> money=7;
+	uint32 ctime=5;
+	map<string,int32> money=6;
 }
-message get_user_info_req{
-	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nick_name"];
+message get_base_info_req{
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
 }
-message get_user_info_resp{
-	user_info info=1;
+message get_base_info_resp{
+	base_info info=1;
 }
 message login_req{
-	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nick_name",(pbex.string_bytes_in)="oauth"];
+	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="oauth"];
 	//when src_type is oauth,this is the oauth service name
 	string src_type_extra=2[(pbex.string_bytes_len_gt)=0];
-	//when src_type is idcard or nick_name,this can't be dynamic
+	//when src_type is idcard this can't be dynamic
 	//when src_type is oauth,this can't be static
 	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
@@ -135,16 +122,16 @@ message login_req{
 }
 message login_resp{
 	string token=1;
-	user_info info=2;
+	base_info info=2;
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
 	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
 	string step=3;
 }
-message self_user_info_req{
+message self_base_info_req{
 }
-message self_user_info_resp{
-	user_info info=1;
+message self_base_info_resp{
+	base_info info=1;
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password
@@ -184,48 +171,6 @@ message del_oauth_req{
 }
 message del_oauth_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_oauth_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	string step=1;
-	//if this is true,means this is the last way to login this account
-	//if del this,this account will be deleted completely
-	bool final=2;
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	string receiver=3;
-}
-message nick_name_duplicate_check_req{
-	string nick_name=1[(pbex.string_bytes_len_gt)=0];
-}
-message nick_name_duplicate_check_resp{
-	bool duplicate=1;
-}
-message update_nick_name_req{
-	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when verify_src_type is oauth,this is the oauth service name
-	string verify_src_type_extra=2;
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	string verify_dynamic_password=3;
-	string new_nick_name=4[(pbex.string_bytes_len_gt)=0];
-}
-message update_nick_name_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	string step=1;
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	string receiver=2;
-}
-message del_nick_name_req{
-	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when verify_src_type is oauth,this is the oauth service name
-	string verify_src_type_extra=2;
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	string verify_dynamic_password=3;
-}
-message del_nick_name_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account

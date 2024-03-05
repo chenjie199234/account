@@ -9,7 +9,7 @@ export interface LogicError{
 	msg: string;
 }
 
-export class GetUserMoneyLogsReq{
+export class GetMoneyLogsReq{
 	src_type: string = ''
 	src: string = ''
 	//0:return all logs
@@ -44,7 +44,7 @@ export class GetUserMoneyLogsReq{
 		return tmp
 	}
 }
-export class GetUserMoneyLogsResp{
+export class GetMoneyLogsResp{
 	//Warning!!!Type is uint32,be careful of sign(+) and overflow
 	page: number = 0
 	//Warning!!!Type is uint32,be careful of sign(+) and overflow
@@ -148,7 +148,7 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 		}
 	})
 }
-const _WebPathMoneyGetUserMoneyLogs: string ="/account.money/get_user_money_logs";
+const _WebPathMoneyGetMoneyLogs: string ="/account.money/get_money_logs";
 //ToB means this is for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
 //If your are not using 'admin' as your tob request's proxy gate,don't use this
@@ -168,7 +168,7 @@ export class MoneyBrowserClientToB {
 		this.group=servergroup
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	get_user_money_logs(header: Object,req: GetUserMoneyLogsReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetUserMoneyLogsResp)=>void){
+	get_money_logs(header: Object,req: GetMoneyLogsReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetMoneyLogsResp)=>void){
 		if(!header){
 			header={}
 		}
@@ -177,11 +177,11 @@ export class MoneyBrowserClientToB {
 			project_id:this.projectid,
 			g_name:this.group,
 			a_name:"account",
-			path:_WebPathMoneyGetUserMoneyLogs,
+			path:_WebPathMoneyGetMoneyLogs,
 			data:JSON.stringify(req),
 		}
 		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
-			let r=new GetUserMoneyLogsResp()
+			let r=new GetMoneyLogsResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

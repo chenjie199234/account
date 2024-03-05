@@ -8,7 +8,6 @@ type User struct {
 	UserID   primitive.ObjectID `bson:"_id,omitempty"`
 	Password string             `bson:"password"`
 	IDCard   string             `bson:"idcard"`
-	NickName string             `bson:"nick_name"`
 	Tel      string             `bson:"tel"`
 	Email    string             `bson:"email"`
 	OAuths   map[string]string  `bson:"oauths"` //key service name,value unique id in this service
@@ -25,10 +24,6 @@ type UserEmailIndex struct {
 type UserIDCardIndex struct {
 	IDCard string             `bson:"idcard"`
 	UserID primitive.ObjectID `bson:"user_id"`
-}
-type UserNickNameIndex struct {
-	NickName string             `bson:"nick_name"`
-	UserID   primitive.ObjectID `bson:"user_id"`
 }
 type UserOAuthIndex struct {
 	Service string             `bson:"service"` //service_name+'|'+service_id

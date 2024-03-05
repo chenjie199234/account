@@ -48,16 +48,6 @@ func (d *Dao) RedisLockIDCardOP(ctx context.Context, userid string) error {
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockNickNameOP(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"nickname_op_lock_{" + userid + "}": {5, 3600}}
-	success, e := d.redis.RateLimit(ctx, rate)
-	if e == nil && !success {
-		e = ecode.ErrTooFast
-	}
-	return e
-}
-
-// 5 times per hour
 func (d *Dao) RedisLockOAuthOP(ctx context.Context, userid string) error {
 	rate := map[string][2]uint64{"oauth_op_lock_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)

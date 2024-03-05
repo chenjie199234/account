@@ -35,7 +35,7 @@ func Start() *Service {
 		moneyDao: moneydao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 	}
 }
-func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLogsReq) (*api.GetUserMoneyLogsResp, error) {
+func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*api.GetMoneyLogsResp, error) {
 	if req.EndTime < req.StartTime {
 		return nil, ecode.ErrReq
 	}
@@ -44,56 +44,46 @@ func (s *Service) GetUserMoneyLogs(ctx context.Context, req *api.GetUserMoneyLog
 	case "user_id":
 		var e error
 		if userid, e = primitive.ObjectIDFromHex(req.Src); e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] userid format wrong", log.String("user_id", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] userid format wrong", log.String("user_id", req.Src), log.CError(e))
 			return nil, ecode.ErrReq
 		}
 	case "tel":
 		useridstr, e := s.userDao.GetUserTelIndex(ctx, req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] dao op failed", log.String("tel", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] dao op failed", log.String("tel", req.Src), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] userid format wrong", log.String("tel", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] userid format wrong", log.String("tel", req.Src), log.CError(e))
 			return nil, ecode.ErrSystem
 		}
 	case "email":
 		useridstr, e := s.userDao.GetUserEmailIndex(ctx, req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] dao op failed", log.String("email", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] dao op failed", log.String("email", req.Src), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] userid format wrong", log.String("email", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] userid format wrong", log.String("email", req.Src), log.CError(e))
 			return nil, ecode.ErrSystem
 		}
 	case "idcard":
 		useridstr, e := s.userDao.GetUserIDCardIndex(ctx, req.Src)
 		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] dao op failed", log.String("idcard", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] dao op failed", log.String("idcard", req.Src), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] userid format wrong", log.String("idcard", req.Src), log.CError(e))
-			return nil, ecode.ErrSystem
-		}
-	case "nick_name":
-		useridstr, e := s.userDao.GetUserNickNameIndex(ctx, req.Src)
-		if e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] dao op failed", log.String("nick_name", req.Src), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
-			log.Error(ctx, "[GetUserMoneyLogs] userid in redis format wrong", log.String("nick_name", req.Src), log.CError(e))
+			log.Error(ctx, "[GetMoneyLogs] userid format wrong", log.String("idcard", req.Src), log.CError(e))
 			return nil, ecode.ErrSystem
 		}
 	}
 	logs, totalsize, page, e := s.moneyDao.GetMoneyLogs(ctx, userid, req.Action, req.StartTime, req.EndTime, moneydao.DefaultMoneyLogsPageSize, req.Page)
 	if e != nil {
-		log.Error(ctx, "[GetUserMoneyLogs] dao op failed", log.String(req.SrcType, req.Src), log.CError(e))
+		log.Error(ctx, "[GetMoneyLogs] dao op failed", log.String(req.SrcType, req.Src), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	resp := &api.GetUserMoneyLogsResp{
+	resp := &api.GetMoneyLogsResp{
 		Page:      page,
 		Pagesize:  moneydao.DefaultMoneyLogsPageSize,
 		Totalsize: totalsize,

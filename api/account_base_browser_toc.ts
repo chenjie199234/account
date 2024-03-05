@@ -2,13 +2,46 @@
 // version:
 // 	protoc-gen-browser v0.0.103<br />
 // 	protoc             v4.25.3<br />
-// source: api/account_user.proto<br />
+// source: api/account_base.proto<br />
 
 export interface LogicError{
 	code: number;
 	msg: string;
 }
 
+export class BaseInfo{
+	user_id: string = ''
+	idcard: string = ''
+	tel: string = ''
+	email: string = ''
+	//Warning!!!Type is uint32,be careful of sign(+) and overflow
+	ctime: number = 0
+	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
+	money: Map<string,number>|null = null
+	fromOBJ(obj:Object){
+		if(obj["user_id"]){
+			this.user_id=obj["user_id"]
+		}
+		if(obj["idcard"]){
+			this.idcard=obj["idcard"]
+		}
+		if(obj["tel"]){
+			this.tel=obj["tel"]
+		}
+		if(obj["email"]){
+			this.email=obj["email"]
+		}
+		if(obj["ctime"]){
+			this.ctime=obj["ctime"]
+		}
+		if(obj["money"] && Object.keys(obj["money"]).length>0){
+			this.money=new Map<string,number>()
+			for(let key of Object.keys(obj["money"])){
+				this.money.set(key,obj["money"][key])
+			}
+		}
+	}
+}
 export class DelEmailReq{
 	verify_src_type: string = ''
 	//when verify_src_type is oauth,this is the oauth service name
@@ -75,49 +108,6 @@ export class DelIdcardReq{
 }
 export class DelIdcardResp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	step: string = ''
-	//if this is true,means this is the last way to login this account
-	//if del this,this account will be deleted completely
-	final: boolean = false
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	receiver: string = ''
-	fromOBJ(obj:Object){
-		if(obj["step"]){
-			this.step=obj["step"]
-		}
-		if(obj["final"]){
-			this.final=obj["final"]
-		}
-		if(obj["receiver"]){
-			this.receiver=obj["receiver"]
-		}
-	}
-}
-export class DelNickNameReq{
-	verify_src_type: string = ''
-	//when verify_src_type is oauth,this is the oauth service name
-	verify_src_type_extra: string = ''
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	verify_dynamic_password: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.verify_src_type){
-			tmp["verify_src_type"]=this.verify_src_type
-		}
-		if(this.verify_src_type_extra){
-			tmp["verify_src_type_extra"]=this.verify_src_type_extra
-		}
-		if(this.verify_dynamic_password){
-			tmp["verify_dynamic_password"]=this.verify_dynamic_password
-		}
-		return tmp
-	}
-}
-export class DelNickNameResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string = ''
 	//if this is true,means this is the last way to login this account
@@ -268,7 +258,7 @@ export class LoginReq{
 	src_type: string = ''
 	//when src_type is oauth,this is the oauth service name
 	src_type_extra: string = ''
-	//when src_type is idcard or nick_name,this can't be dynamic
+	//when src_type is idcard this can't be dynamic
 	//when src_type is oauth,this can't be static
 	password_type: string = ''
 	//when password_type is dynamic and this is empty,means send dynamic password to email or tel.
@@ -293,7 +283,7 @@ export class LoginReq{
 }
 export class LoginResp{
 	token: string = ''
-	info: UserInfo|null = null
+	info: BaseInfo|null = null
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
 	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
@@ -303,7 +293,7 @@ export class LoginResp{
 			this.token=obj["token"]
 		}
 		if(obj["info"]){
-			this.info=new UserInfo()
+			this.info=new BaseInfo()
 			this.info.fromOBJ(obj["info"])
 		}
 		if(obj["step"]){
@@ -311,35 +301,17 @@ export class LoginResp{
 		}
 	}
 }
-export class NickNameDuplicateCheckReq{
-	nick_name: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.nick_name){
-			tmp["nick_name"]=this.nick_name
-		}
-		return tmp
-	}
-}
-export class NickNameDuplicateCheckResp{
-	duplicate: boolean = false
-	fromOBJ(obj:Object){
-		if(obj["duplicate"]){
-			this.duplicate=obj["duplicate"]
-		}
-	}
-}
-export class SelfUserInfoReq{
+export class SelfBaseInfoReq{
 	toJSON(){
 		let tmp = {}
 		return tmp
 	}
 }
-export class SelfUserInfoResp{
-	info: UserInfo|null = null
+export class SelfBaseInfoResp{
+	info: BaseInfo|null = null
 	fromOBJ(obj:Object){
 		if(obj["info"]){
-			this.info=new UserInfo()
+			this.info=new BaseInfo()
 			this.info.fromOBJ(obj["info"])
 		}
 	}
@@ -437,47 +409,6 @@ export class UpdateIdcardReq{
 }
 export class UpdateIdcardResp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	step: string = ''
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	receiver: string = ''
-	fromOBJ(obj:Object){
-		if(obj["step"]){
-			this.step=obj["step"]
-		}
-		if(obj["receiver"]){
-			this.receiver=obj["receiver"]
-		}
-	}
-}
-export class UpdateNickNameReq{
-	verify_src_type: string = ''
-	//when verify_src_type is oauth,this is the oauth service name
-	verify_src_type_extra: string = ''
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	verify_dynamic_password: string = ''
-	new_nick_name: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.verify_src_type){
-			tmp["verify_src_type"]=this.verify_src_type
-		}
-		if(this.verify_src_type_extra){
-			tmp["verify_src_type_extra"]=this.verify_src_type_extra
-		}
-		if(this.verify_dynamic_password){
-			tmp["verify_dynamic_password"]=this.verify_dynamic_password
-		}
-		if(this.new_nick_name){
-			tmp["new_nick_name"]=this.new_nick_name
-		}
-		return tmp
-	}
-}
-export class UpdateNickNameResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string = ''
 	//send dynamic password to where,this will be masked
@@ -606,43 +537,6 @@ export class UpdateTelResp{
 		}
 	}
 }
-export class UserInfo{
-	user_id: string = ''
-	idcard: string = ''
-	tel: string = ''
-	email: string = ''
-	nick_name: string = ''
-	//Warning!!!Type is uint32,be careful of sign(+) and overflow
-	ctime: number = 0
-	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
-	money: Map<string,number>|null = null
-	fromOBJ(obj:Object){
-		if(obj["user_id"]){
-			this.user_id=obj["user_id"]
-		}
-		if(obj["idcard"]){
-			this.idcard=obj["idcard"]
-		}
-		if(obj["tel"]){
-			this.tel=obj["tel"]
-		}
-		if(obj["email"]){
-			this.email=obj["email"]
-		}
-		if(obj["nick_name"]){
-			this.nick_name=obj["nick_name"]
-		}
-		if(obj["ctime"]){
-			this.ctime=obj["ctime"]
-		}
-		if(obj["money"] && Object.keys(obj["money"]).length>0){
-			this.money=new Map<string,number>()
-			for(let key of Object.keys(obj["money"])){
-				this.money.set(key,obj["money"][key])
-			}
-		}
-	}
-}
 //timeout's unit is millisecond,it will be used when > 0
 function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=>void,success: (arg: Object)=>void){
 	let tid: number|null = null
@@ -681,28 +575,25 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 		}
 	})
 }
-const _WebPathUserLogin: string ="/account.user/login";
-const _WebPathUserSelfUserInfo: string ="/account.user/self_user_info";
-const _WebPathUserUpdateStaticPassword: string ="/account.user/update_static_password";
-const _WebPathUserUpdateOauth: string ="/account.user/update_oauth";
-const _WebPathUserDelOauth: string ="/account.user/del_oauth";
-const _WebPathUserNickNameDuplicateCheck: string ="/account.user/nick_name_duplicate_check";
-const _WebPathUserUpdateNickName: string ="/account.user/update_nick_name";
-const _WebPathUserDelNickName: string ="/account.user/del_nick_name";
-const _WebPathUserIdcardDuplicateCheck: string ="/account.user/idcard_duplicate_check";
-const _WebPathUserUpdateIdcard: string ="/account.user/update_idcard";
-const _WebPathUserDelIdcard: string ="/account.user/del_idcard";
-const _WebPathUserEmailDuplicateCheck: string ="/account.user/email_duplicate_check";
-const _WebPathUserUpdateEmail: string ="/account.user/update_email";
-const _WebPathUserDelEmail: string ="/account.user/del_email";
-const _WebPathUserTelDuplicateCheck: string ="/account.user/tel_duplicate_check";
-const _WebPathUserUpdateTel: string ="/account.user/update_tel";
-const _WebPathUserDelTel: string ="/account.user/del_tel";
+const _WebPathBaseLogin: string ="/account.base/login";
+const _WebPathBaseSelfBaseInfo: string ="/account.base/self_base_info";
+const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
+const _WebPathBaseUpdateOauth: string ="/account.base/update_oauth";
+const _WebPathBaseDelOauth: string ="/account.base/del_oauth";
+const _WebPathBaseIdcardDuplicateCheck: string ="/account.base/idcard_duplicate_check";
+const _WebPathBaseUpdateIdcard: string ="/account.base/update_idcard";
+const _WebPathBaseDelIdcard: string ="/account.base/del_idcard";
+const _WebPathBaseEmailDuplicateCheck: string ="/account.base/email_duplicate_check";
+const _WebPathBaseUpdateEmail: string ="/account.base/update_email";
+const _WebPathBaseDelEmail: string ="/account.base/del_email";
+const _WebPathBaseTelDuplicateCheck: string ="/account.base/tel_duplicate_check";
+const _WebPathBaseUpdateTel: string ="/account.base/update_tel";
+const _WebPathBaseDelTel: string ="/account.base/del_tel";
 //ToC means this is for users
-export class UserBrowserClientToC {
+export class BaseBrowserClientToC {
 	constructor(host: string){
 		if(!host || host.length==0){
-			throw "UserBrowserClientToC's host missing"
+			throw "BaseBrowserClientToC's host missing"
 		}
 		this.host=host
 	}
@@ -712,20 +603,20 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserLogin,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseLogin,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new LoginResp()
 			r.fromOBJ(arg)
 			success(r)
 		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	self_user_info(header: Object,req: SelfUserInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: SelfUserInfoResp)=>void){
+	self_base_info(header: Object,req: SelfBaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: SelfBaseInfoResp)=>void){
 		if(!header){
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserSelfUserInfo,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new SelfUserInfoResp()
+		call(timeout,this.host+_WebPathBaseSelfBaseInfo,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new SelfBaseInfoResp()
 			r.fromOBJ(arg)
 			success(r)
 		})
@@ -736,7 +627,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateStaticPassword,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseUpdateStaticPassword,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateStaticPasswordResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -748,7 +639,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateOauth,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseUpdateOauth,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateOauthResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -760,44 +651,8 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserDelOauth,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseDelOauth,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new DelOauthResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	nick_name_duplicate_check(header: Object,req: NickNameDuplicateCheckReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: NickNameDuplicateCheckResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserNickNameDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new NickNameDuplicateCheckResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	update_nick_name(header: Object,req: UpdateNickNameReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: UpdateNickNameResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateNickName,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new UpdateNickNameResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	del_nick_name(header: Object,req: DelNickNameReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: DelNickNameResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserDelNickName,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new DelNickNameResp()
 			r.fromOBJ(arg)
 			success(r)
 		})
@@ -808,7 +663,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserIdcardDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseIdcardDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new IdcardDuplicateCheckResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -820,7 +675,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseUpdateIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateIdcardResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -832,7 +687,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserDelIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseDelIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new DelIdcardResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -844,7 +699,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserEmailDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseEmailDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new EmailDuplicateCheckResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -856,7 +711,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateEmail,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseUpdateEmail,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateEmailResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -868,7 +723,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserDelEmail,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseDelEmail,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new DelEmailResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -880,7 +735,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserTelDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseTelDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new TelDuplicateCheckResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -892,7 +747,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserUpdateTel,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseUpdateTel,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateTelResp()
 			r.fromOBJ(arg)
 			success(r)
@@ -904,7 +759,7 @@ export class UserBrowserClientToC {
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathUserDelTel,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+		call(timeout,this.host+_WebPathBaseDelTel,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new DelTelResp()
 			r.fromOBJ(arg)
 			success(r)

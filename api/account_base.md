@@ -2,24 +2,24 @@
 // version:<br />
 // 	protoc-gen-markdown v0.0.103<br />
 // 	protoc              v4.25.3<br />
-// source: api/account_user.proto<br />
+// source: api/account_base.proto<br />
 
-## user
+## base
 ### login
 
 #### Req:
 ```
-Path:         /account.user/login
+Path:         /account.base/login
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
-	//value must in ["tel","email","idcard","nick_name","oauth"]
+	//value must in ["tel","email","idcard","oauth"]
 	"src_type":"str",
 	//when src_type is oauth,this is the oauth service name
 	//value length must > 0
 	"src_type_extra":"str",
-	//when src_type is idcard or nick_name,this can't be dynamic
+	//when src_type is idcard this can't be dynamic
 	//when src_type is oauth,this can't be static
 	//value must in ["static","dynamic"]
 	"password_type":"str",
@@ -39,7 +39,7 @@ Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
 	"token":"str",
-	//object user_info
+	//object base_info
 	"info":{},
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
 	//password:login success,but this account is new and it can be setted with a static password(optional)
@@ -47,12 +47,11 @@ Success: httpcode:200
 	"step":"str"
 }
 ------------------------------------------------------------------------------------------------------------
-user_info: {
+base_info: {
 	"user_id":"str",
 	"idcard":"str",
 	"tel":"str",
 	"email":"str",
-	"nick_name":"str",
 	//uint32
 	"ctime":0,
 	//kv map,value-int32
@@ -60,11 +59,11 @@ user_info: {
 }
 ------------------------------------------------------------------------------------------------------------
 ```
-### self_user_info
+### self_base_info
 
 #### Req:
 ```
-Path:         /account.user/self_user_info
+Path:         /account.base/self_base_info
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -81,16 +80,15 @@ Fail:    httpcode:4xx/5xx
 Success: httpcode:200
 ------------------------------------------------------------------------------------------------------------
 {
-	//object user_info
+	//object base_info
 	"info":{}
 }
 ------------------------------------------------------------------------------------------------------------
-user_info: {
+base_info: {
 	"user_id":"str",
 	"idcard":"str",
 	"tel":"str",
 	"email":"str",
-	"nick_name":"str",
 	//uint32
 	"ctime":0,
 	//kv map,value-int32
@@ -102,7 +100,7 @@ user_info: {
 
 #### Req:
 ```
-Path:         /account.user/update_static_password
+Path:         /account.base/update_static_password
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -130,7 +128,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/update_oauth
+Path:         /account.base/update_oauth
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -171,7 +169,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/del_oauth
+Path:         /account.base/del_oauth
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -209,117 +207,11 @@ Success: httpcode:200
 }
 ------------------------------------------------------------------------------------------------------------
 ```
-### nick_name_duplicate_check
-
-#### Req:
-```
-Path:         /account.user/nick_name_duplicate_check
-Method:       POST
-Content-Type: application/json
-------------------------------------------------------------------------------------------------------------
-{
-	//value length must > 0
-	"nick_name":"str"
-}
-------------------------------------------------------------------------------------------------------------
-```
-#### Resp:
-```
-Fail:    httpcode:4xx/5xx
-------------------------------------------------------------------------------------------------------------
-{"code":123,"msg":"error message"}
-------------------------------------------------------------------------------------------------------------
-Success: httpcode:200
-------------------------------------------------------------------------------------------------------------
-{
-	"duplicate":true
-}
-------------------------------------------------------------------------------------------------------------
-```
-### update_nick_name
-
-#### Req:
-```
-Path:         /account.user/update_nick_name
-Method:       POST
-Content-Type: application/json
-------------------------------------------------------------------------------------------------------------
-{
-	//value must in ["email","tel","oauth"]
-	"verify_src_type":"str",
-	//when verify_src_type is oauth,this is the oauth service name
-	"verify_src_type_extra":"str",
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	"verify_dynamic_password":"str",
-	//value length must > 0
-	"new_nick_name":"str"
-}
-------------------------------------------------------------------------------------------------------------
-```
-#### Resp:
-```
-Fail:    httpcode:4xx/5xx
-------------------------------------------------------------------------------------------------------------
-{"code":123,"msg":"error message"}
-------------------------------------------------------------------------------------------------------------
-Success: httpcode:200
-------------------------------------------------------------------------------------------------------------
-{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_nick_name_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	"step":"str",
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	"receiver":"str"
-}
-------------------------------------------------------------------------------------------------------------
-```
-### del_nick_name
-
-#### Req:
-```
-Path:         /account.user/del_nick_name
-Method:       POST
-Content-Type: application/json
-------------------------------------------------------------------------------------------------------------
-{
-	//value must in ["email","tel","oauth"]
-	"verify_src_type":"str",
-	//when verify_src_type is oauth,this is the oauth service name
-	"verify_src_type_extra":"str",
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	"verify_dynamic_password":"str"
-}
-------------------------------------------------------------------------------------------------------------
-```
-#### Resp:
-```
-Fail:    httpcode:4xx/5xx
-------------------------------------------------------------------------------------------------------------
-{"code":123,"msg":"error message"}
-------------------------------------------------------------------------------------------------------------
-Success: httpcode:200
-------------------------------------------------------------------------------------------------------------
-{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_nick_name_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	"step":"str",
-	//if this is true,means this is the last way to login this account
-	//if del this,this account will be deleted completely
-	"final":true,
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	"receiver":"str"
-}
-------------------------------------------------------------------------------------------------------------
-```
 ### idcard_duplicate_check
 
 #### Req:
 ```
-Path:         /account.user/idcard_duplicate_check
+Path:         /account.base/idcard_duplicate_check
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -346,7 +238,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/update_idcard
+Path:         /account.base/update_idcard
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -385,7 +277,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/del_idcard
+Path:         /account.base/del_idcard
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -425,7 +317,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/email_duplicate_check
+Path:         /account.base/email_duplicate_check
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -452,7 +344,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/update_email
+Path:         /account.base/update_email
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -495,7 +387,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/del_email
+Path:         /account.base/del_email
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -535,7 +427,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/tel_duplicate_check
+Path:         /account.base/tel_duplicate_check
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -562,7 +454,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/update_tel
+Path:         /account.base/update_tel
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
@@ -605,7 +497,7 @@ Success: httpcode:200
 
 #### Req:
 ```
-Path:         /account.user/del_tel
+Path:         /account.base/del_tel
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------

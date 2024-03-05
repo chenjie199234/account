@@ -2,7 +2,7 @@
 // version:
 // 	protoc-gen-go-web v0.0.103<br />
 // 	protoc            v4.25.3<br />
-// source: api/account_user.proto<br />
+// source: api/account_base.proto<br />
 
 package api
 
@@ -19,33 +19,27 @@ import (
 	strings "strings"
 )
 
-var _WebPathUserLogin = "/account.user/login"
-var _WebPathUserSelfUserInfo = "/account.user/self_user_info"
-var _WebPathUserUpdateStaticPassword = "/account.user/update_static_password"
-var _WebPathUserUpdateOauth = "/account.user/update_oauth"
-var _WebPathUserDelOauth = "/account.user/del_oauth"
-var _WebPathUserNickNameDuplicateCheck = "/account.user/nick_name_duplicate_check"
-var _WebPathUserUpdateNickName = "/account.user/update_nick_name"
-var _WebPathUserDelNickName = "/account.user/del_nick_name"
-var _WebPathUserIdcardDuplicateCheck = "/account.user/idcard_duplicate_check"
-var _WebPathUserUpdateIdcard = "/account.user/update_idcard"
-var _WebPathUserDelIdcard = "/account.user/del_idcard"
-var _WebPathUserEmailDuplicateCheck = "/account.user/email_duplicate_check"
-var _WebPathUserUpdateEmail = "/account.user/update_email"
-var _WebPathUserDelEmail = "/account.user/del_email"
-var _WebPathUserTelDuplicateCheck = "/account.user/tel_duplicate_check"
-var _WebPathUserUpdateTel = "/account.user/update_tel"
-var _WebPathUserDelTel = "/account.user/del_tel"
+var _WebPathBaseLogin = "/account.base/login"
+var _WebPathBaseSelfBaseInfo = "/account.base/self_base_info"
+var _WebPathBaseUpdateStaticPassword = "/account.base/update_static_password"
+var _WebPathBaseUpdateOauth = "/account.base/update_oauth"
+var _WebPathBaseDelOauth = "/account.base/del_oauth"
+var _WebPathBaseIdcardDuplicateCheck = "/account.base/idcard_duplicate_check"
+var _WebPathBaseUpdateIdcard = "/account.base/update_idcard"
+var _WebPathBaseDelIdcard = "/account.base/del_idcard"
+var _WebPathBaseEmailDuplicateCheck = "/account.base/email_duplicate_check"
+var _WebPathBaseUpdateEmail = "/account.base/update_email"
+var _WebPathBaseDelEmail = "/account.base/del_email"
+var _WebPathBaseTelDuplicateCheck = "/account.base/tel_duplicate_check"
+var _WebPathBaseUpdateTel = "/account.base/update_tel"
+var _WebPathBaseDelTel = "/account.base/del_tel"
 
-type UserWebClient interface {
+type BaseWebClient interface {
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
-	SelfUserInfo(context.Context, *SelfUserInfoReq, http.Header) (*SelfUserInfoResp, error)
+	SelfBaseInfo(context.Context, *SelfBaseInfoReq, http.Header) (*SelfBaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq, http.Header) (*DelOauthResp, error)
-	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq, http.Header) (*NickNameDuplicateCheckResp, error)
-	UpdateNickName(context.Context, *UpdateNickNameReq, http.Header) (*UpdateNickNameResp, error)
-	DelNickName(context.Context, *DelNickNameReq, http.Header) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq, http.Header) (*UpdateIdcardResp, error)
 	DelIdcard(context.Context, *DelIdcardReq, http.Header) (*DelIdcardResp, error)
@@ -57,15 +51,15 @@ type UserWebClient interface {
 	DelTel(context.Context, *DelTelReq, http.Header) (*DelTelResp, error)
 }
 
-type userWebClient struct {
+type baseWebClient struct {
 	cc *web.WebClient
 }
 
-func NewUserWebClient(c *web.WebClient) UserWebClient {
-	return &userWebClient{cc: c}
+func NewBaseWebClient(c *web.WebClient) BaseWebClient {
+	return &baseWebClient{cc: c}
 }
 
-func (c *userWebClient) Login(ctx context.Context, req *LoginReq, header http.Header) (*LoginResp, error) {
+func (c *baseWebClient) Login(ctx context.Context, req *LoginReq, header http.Header) (*LoginResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -75,7 +69,7 @@ func (c *userWebClient) Login(ctx context.Context, req *LoginReq, header http.He
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserLogin, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseLogin, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -97,7 +91,7 @@ func (c *userWebClient) Login(ctx context.Context, req *LoginReq, header http.He
 	}
 	return resp, nil
 }
-func (c *userWebClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq, header http.Header) (*SelfUserInfoResp, error) {
+func (c *baseWebClient) SelfBaseInfo(ctx context.Context, req *SelfBaseInfoReq, header http.Header) (*SelfBaseInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -107,7 +101,7 @@ func (c *userWebClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq, 
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserSelfUserInfo, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseSelfBaseInfo, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -116,7 +110,7 @@ func (c *userWebClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq, 
 	if e != nil {
 		return nil, cerror.ConvertStdError(e)
 	}
-	resp := new(SelfUserInfoResp)
+	resp := new(SelfBaseInfoResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -129,7 +123,7 @@ func (c *userWebClient) SelfUserInfo(ctx context.Context, req *SelfUserInfoReq, 
 	}
 	return resp, nil
 }
-func (c *userWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateStaticPasswordReq, header http.Header) (*UpdateStaticPasswordResp, error) {
+func (c *baseWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateStaticPasswordReq, header http.Header) (*UpdateStaticPasswordResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -139,7 +133,7 @@ func (c *userWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateStaticPassword, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateStaticPassword, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -161,7 +155,7 @@ func (c *userWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 	}
 	return resp, nil
 }
-func (c *userWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, header http.Header) (*UpdateOauthResp, error) {
+func (c *baseWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, header http.Header) (*UpdateOauthResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -171,7 +165,7 @@ func (c *userWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, he
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateOauth, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -193,7 +187,7 @@ func (c *userWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, he
 	}
 	return resp, nil
 }
-func (c *userWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header http.Header) (*DelOauthResp, error) {
+func (c *baseWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header http.Header) (*DelOauthResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -203,7 +197,7 @@ func (c *userWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header h
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserDelOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelOauth, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -225,7 +219,7 @@ func (c *userWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header h
 	}
 	return resp, nil
 }
-func (c *userWebClient) NickNameDuplicateCheck(ctx context.Context, req *NickNameDuplicateCheckReq, header http.Header) (*NickNameDuplicateCheckResp, error) {
+func (c *baseWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -235,103 +229,7 @@ func (c *userWebClient) NickNameDuplicateCheck(ctx context.Context, req *NickNam
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserNickNameDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(NickNameDuplicateCheckResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *userWebClient) UpdateNickName(ctx context.Context, req *UpdateNickNameReq, header http.Header) (*UpdateNickNameResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateNickName, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(UpdateNickNameResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *userWebClient) DelNickName(ctx context.Context, req *DelNickNameReq, header http.Header) (*DelNickNameResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserDelNickName, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(DelNickNameResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *userWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -353,7 +251,7 @@ func (c *userWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDup
 	}
 	return resp, nil
 }
-func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, header http.Header) (*UpdateIdcardResp, error) {
+func (c *baseWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, header http.Header) (*UpdateIdcardResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -363,7 +261,7 @@ func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, 
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateIdcard, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateIdcard, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -385,7 +283,7 @@ func (c *userWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, 
 	}
 	return resp, nil
 }
-func (c *userWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header http.Header) (*DelIdcardResp, error) {
+func (c *baseWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header http.Header) (*DelIdcardResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -395,7 +293,7 @@ func (c *userWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserDelIdcard, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelIdcard, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -417,7 +315,7 @@ func (c *userWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header
 	}
 	return resp, nil
 }
-func (c *userWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDuplicateCheckReq, header http.Header) (*EmailDuplicateCheckResp, error) {
+func (c *baseWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDuplicateCheckReq, header http.Header) (*EmailDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -427,7 +325,7 @@ func (c *userWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDupli
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserEmailDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseEmailDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -449,7 +347,7 @@ func (c *userWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDupli
 	}
 	return resp, nil
 }
-func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, header http.Header) (*UpdateEmailResp, error) {
+func (c *baseWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, header http.Header) (*UpdateEmailResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -459,7 +357,7 @@ func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, he
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateEmail, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateEmail, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -481,7 +379,7 @@ func (c *userWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, he
 	}
 	return resp, nil
 }
-func (c *userWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header http.Header) (*DelEmailResp, error) {
+func (c *baseWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header http.Header) (*DelEmailResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -491,7 +389,7 @@ func (c *userWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header h
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserDelEmail, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelEmail, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -513,7 +411,7 @@ func (c *userWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header h
 	}
 	return resp, nil
 }
-func (c *userWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq, header http.Header) (*TelDuplicateCheckResp, error) {
+func (c *baseWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicateCheckReq, header http.Header) (*TelDuplicateCheckResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -523,7 +421,7 @@ func (c *userWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicate
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserTelDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseTelDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -545,7 +443,7 @@ func (c *userWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicate
 	}
 	return resp, nil
 }
-func (c *userWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header http.Header) (*UpdateTelResp, error) {
+func (c *baseWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header http.Header) (*UpdateTelResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -555,7 +453,7 @@ func (c *userWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserUpdateTel, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateTel, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -577,7 +475,7 @@ func (c *userWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header
 	}
 	return resp, nil
 }
-func (c *userWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.Header) (*DelTelResp, error) {
+func (c *baseWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.Header) (*DelTelResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -587,7 +485,7 @@ func (c *userWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathUserDelTel, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelTel, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -610,15 +508,12 @@ func (c *userWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 	return resp, nil
 }
 
-type UserWebServer interface {
+type BaseWebServer interface {
 	Login(context.Context, *LoginReq) (*LoginResp, error)
-	SelfUserInfo(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)
+	SelfBaseInfo(context.Context, *SelfBaseInfoReq) (*SelfBaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
-	NickNameDuplicateCheck(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)
-	UpdateNickName(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)
-	DelNickName(context.Context, *DelNickNameReq) (*DelNickNameResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
 	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
 	DelIdcard(context.Context, *DelIdcardReq) (*DelIdcardResp, error)
@@ -630,19 +525,19 @@ type UserWebServer interface {
 	DelTel(context.Context, *DelTelReq) (*DelTelResp, error)
 }
 
-func _User_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp, error)) web.OutsideHandler {
+func _Base_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(LoginReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/login] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/login] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/login] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/login] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -650,20 +545,20 @@ func _User_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/login] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/login] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/login] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/login] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/login] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/login] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -685,7 +580,7 @@ func _User_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/login] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/login] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -707,9 +602,9 @@ func _User_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp
 		}
 	}
 }
-func _User_SelfUserInfo_WebHandler(handler func(context.Context, *SelfUserInfoReq) (*SelfUserInfoResp, error)) web.OutsideHandler {
+func _Base_SelfBaseInfo_WebHandler(handler func(context.Context, *SelfBaseInfoReq) (*SelfBaseInfoResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
-		req := new(SelfUserInfoReq)
+		req := new(SelfBaseInfoReq)
 		resp, e := handler(ctx, req)
 		ee := cerror.ConvertStdError(e)
 		if ee != nil {
@@ -717,7 +612,7 @@ func _User_SelfUserInfo_WebHandler(handler func(context.Context, *SelfUserInfoRe
 			return
 		}
 		if resp == nil {
-			resp = new(SelfUserInfoResp)
+			resp = new(SelfBaseInfoResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -728,19 +623,19 @@ func _User_SelfUserInfo_WebHandler(handler func(context.Context, *SelfUserInfoRe
 		}
 	}
 }
-func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)) web.OutsideHandler {
+func _Base_UpdateStaticPassword_WebHandler(handler func(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateStaticPasswordReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_static_password] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_static_password] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_static_password] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_static_password] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -748,20 +643,20 @@ func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_static_password] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_static_password] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_static_password] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_static_password] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_static_password] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_static_password] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -775,7 +670,7 @@ func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_static_password] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/update_static_password] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -797,19 +692,19 @@ func _User_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 		}
 	}
 }
-func _User_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) web.OutsideHandler {
+func _Base_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateOauthReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_oauth] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_oauth] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_oauth] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_oauth] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -817,20 +712,20 @@ func _User_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq)
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_oauth] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_oauth] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_oauth] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_oauth] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_oauth] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_oauth] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -856,7 +751,7 @@ func _User_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq)
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_oauth] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/update_oauth] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -878,19 +773,19 @@ func _User_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq)
 		}
 	}
 }
-func _User_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*DelOauthResp, error)) web.OutsideHandler {
+func _Base_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*DelOauthResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(DelOauthReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_oauth] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_oauth] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_oauth] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_oauth] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -898,20 +793,20 @@ func _User_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*Del
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_oauth] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_oauth] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_oauth] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_oauth] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/del_oauth] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_oauth] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -933,7 +828,7 @@ func _User_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*Del
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/del_oauth] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/del_oauth] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -955,234 +850,19 @@ func _User_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*Del
 		}
 	}
 }
-func _User_NickNameDuplicateCheck_WebHandler(handler func(context.Context, *NickNameDuplicateCheckReq) (*NickNameDuplicateCheckResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(NickNameDuplicateCheckReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/nick_name_duplicate_check] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/nick_name_duplicate_check] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/nick_name_duplicate_check] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/nick_name_duplicate_check] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/nick_name_duplicate_check] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.NickName
-			if form := ctx.GetForm("nick_name"); len(form) != 0 {
-				req.NickName = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/nick_name_duplicate_check] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(NickNameDuplicateCheckResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _User_UpdateNickName_WebHandler(handler func(context.Context, *UpdateNickNameReq) (*UpdateNickNameResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(UpdateNickNameReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/update_nick_name] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_nick_name] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/update_nick_name] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_nick_name] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_nick_name] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.VerifySrcType
-			if form := ctx.GetForm("verify_src_type"); len(form) != 0 {
-				req.VerifySrcType = form
-			}
-			// req.VerifySrcTypeExtra
-			if form := ctx.GetForm("verify_src_type_extra"); len(form) != 0 {
-				req.VerifySrcTypeExtra = form
-			}
-			// req.VerifyDynamicPassword
-			if form := ctx.GetForm("verify_dynamic_password"); len(form) != 0 {
-				req.VerifyDynamicPassword = form
-			}
-			// req.NewNickName
-			if form := ctx.GetForm("new_nick_name"); len(form) != 0 {
-				req.NewNickName = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_nick_name] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(UpdateNickNameResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _User_DelNickName_WebHandler(handler func(context.Context, *DelNickNameReq) (*DelNickNameResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(DelNickNameReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/del_nick_name] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_nick_name] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.user/del_nick_name] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_nick_name] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/del_nick_name] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.VerifySrcType
-			if form := ctx.GetForm("verify_src_type"); len(form) != 0 {
-				req.VerifySrcType = form
-			}
-			// req.VerifySrcTypeExtra
-			if form := ctx.GetForm("verify_src_type_extra"); len(form) != 0 {
-				req.VerifySrcTypeExtra = form
-			}
-			// req.VerifyDynamicPassword
-			if form := ctx.GetForm("verify_dynamic_password"); len(form) != 0 {
-				req.VerifyDynamicPassword = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/del_nick_name] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(DelNickNameResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
+func _Base_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(IdcardDuplicateCheckReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/idcard_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/idcard_duplicate_check] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1190,20 +870,20 @@ func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *Idcard
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/idcard_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/idcard_duplicate_check] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/idcard_duplicate_check] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1213,7 +893,7 @@ func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *Idcard
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/idcard_duplicate_check] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/idcard_duplicate_check] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1235,19 +915,19 @@ func _User_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *Idcard
 		}
 	}
 }
-func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) web.OutsideHandler {
+func _Base_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateIdcardReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_idcard] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_idcard] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_idcard] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_idcard] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1255,20 +935,20 @@ func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardRe
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_idcard] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_idcard] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_idcard] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_idcard] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_idcard] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_idcard] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1290,7 +970,7 @@ func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardRe
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_idcard] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/update_idcard] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1312,19 +992,19 @@ func _User_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardRe
 		}
 	}
 }
-func _User_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*DelIdcardResp, error)) web.OutsideHandler {
+func _Base_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*DelIdcardResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(DelIdcardReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_idcard] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_idcard] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_idcard] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_idcard] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1332,20 +1012,20 @@ func _User_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*D
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_idcard] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_idcard] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_idcard] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_idcard] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/del_idcard] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_idcard] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1363,7 +1043,7 @@ func _User_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*D
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/del_idcard] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/del_idcard] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1385,19 +1065,19 @@ func _User_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*D
 		}
 	}
 }
-func _User_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)) web.OutsideHandler {
+func _Base_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(EmailDuplicateCheckReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/email_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/email_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/email_duplicate_check] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/email_duplicate_check] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1405,20 +1085,20 @@ func _User_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDu
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/email_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/email_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/email_duplicate_check] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/email_duplicate_check] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/email_duplicate_check] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/email_duplicate_check] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1428,7 +1108,7 @@ func _User_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDu
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/email_duplicate_check] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/email_duplicate_check] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1450,19 +1130,19 @@ func _User_EmailDuplicateCheck_WebHandler(handler func(context.Context, *EmailDu
 		}
 	}
 }
-func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)) web.OutsideHandler {
+func _Base_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateEmailReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_email] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_email] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_email] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_email] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1470,20 +1150,20 @@ func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq)
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_email] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_email] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_email] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_email] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_email] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_email] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1509,7 +1189,7 @@ func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq)
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_email] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/update_email] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1531,19 +1211,19 @@ func _User_UpdateEmail_WebHandler(handler func(context.Context, *UpdateEmailReq)
 		}
 	}
 }
-func _User_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*DelEmailResp, error)) web.OutsideHandler {
+func _Base_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*DelEmailResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(DelEmailReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_email] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_email] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_email] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_email] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1551,20 +1231,20 @@ func _User_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*Del
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_email] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_email] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_email] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_email] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/del_email] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_email] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1582,7 +1262,7 @@ func _User_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*Del
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/del_email] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/del_email] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1604,19 +1284,19 @@ func _User_DelEmail_WebHandler(handler func(context.Context, *DelEmailReq) (*Del
 		}
 	}
 }
-func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) web.OutsideHandler {
+func _Base_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplicateCheckReq) (*TelDuplicateCheckResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(TelDuplicateCheckReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/tel_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/tel_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/tel_duplicate_check] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/tel_duplicate_check] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1624,20 +1304,20 @@ func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplic
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/tel_duplicate_check] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/tel_duplicate_check] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/tel_duplicate_check] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/tel_duplicate_check] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/tel_duplicate_check] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/tel_duplicate_check] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1647,7 +1327,7 @@ func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplic
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/tel_duplicate_check] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/tel_duplicate_check] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1669,19 +1349,19 @@ func _User_TelDuplicateCheck_WebHandler(handler func(context.Context, *TelDuplic
 		}
 	}
 }
-func _User_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*UpdateTelResp, error)) web.OutsideHandler {
+func _Base_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*UpdateTelResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateTelReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_tel] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_tel] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_tel] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_tel] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1689,20 +1369,20 @@ func _User_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*U
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/update_tel] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_tel] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/update_tel] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/update_tel] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/update_tel] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/update_tel] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1728,7 +1408,7 @@ func _User_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*U
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/update_tel] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/update_tel] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1750,19 +1430,19 @@ func _User_UpdateTel_WebHandler(handler func(context.Context, *UpdateTelReq) (*U
 		}
 	}
 }
-func _User_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelResp, error)) web.OutsideHandler {
+func _Base_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(DelTelReq)
 		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_tel] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_tel] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_tel] unmarshal json body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_tel] unmarshal json body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -1770,20 +1450,20 @@ func _User_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelR
 		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
 			data, e := ctx.GetBody()
 			if e != nil {
-				log.Error(ctx, "[/account.user/del_tel] get body failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_tel] get body failed", log.CError(e))
 				ctx.Abort(e)
 				return
 			}
 			if len(data) > 0 {
 				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.user/del_tel] unmarshal proto body failed", log.CError(e))
+					log.Error(ctx, "[/account.base/del_tel] unmarshal proto body failed", log.CError(e))
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
 			}
 		} else {
 			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.user/del_tel] parse form failed", log.CError(e))
+				log.Error(ctx, "[/account.base/del_tel] parse form failed", log.CError(e))
 				ctx.Abort(cerror.ErrReq)
 				return
 			}
@@ -1801,7 +1481,7 @@ func _User_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelR
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.user/del_tel] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/del_tel] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -1823,10 +1503,10 @@ func _User_DelTel_WebHandler(handler func(context.Context, *DelTelReq) (*DelTelR
 		}
 	}
 }
-func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[string]web.OutsideHandler) {
+func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[string]web.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	router.Post(_WebPathUserLogin, _User_Login_WebHandler(svc.Login))
+	router.Post(_WebPathBaseLogin, _Base_Login_WebHandler(svc.Login))
 	{
 		requiredMids := []string{"token"}
 		mids := make([]web.OutsideHandler, 0, 2)
@@ -1837,8 +1517,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_SelfUserInfo_WebHandler(svc.SelfUserInfo))
-		router.Post(_WebPathUserSelfUserInfo, mids...)
+		mids = append(mids, _Base_SelfBaseInfo_WebHandler(svc.SelfBaseInfo))
+		router.Post(_WebPathBaseSelfBaseInfo, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1850,8 +1530,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_UpdateStaticPassword_WebHandler(svc.UpdateStaticPassword))
-		router.Post(_WebPathUserUpdateStaticPassword, mids...)
+		mids = append(mids, _Base_UpdateStaticPassword_WebHandler(svc.UpdateStaticPassword))
+		router.Post(_WebPathBaseUpdateStaticPassword, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1863,8 +1543,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_UpdateOauth_WebHandler(svc.UpdateOauth))
-		router.Post(_WebPathUserUpdateOauth, mids...)
+		mids = append(mids, _Base_UpdateOauth_WebHandler(svc.UpdateOauth))
+		router.Post(_WebPathBaseUpdateOauth, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1876,8 +1556,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_DelOauth_WebHandler(svc.DelOauth))
-		router.Post(_WebPathUserDelOauth, mids...)
+		mids = append(mids, _Base_DelOauth_WebHandler(svc.DelOauth))
+		router.Post(_WebPathBaseDelOauth, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1889,8 +1569,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_NickNameDuplicateCheck_WebHandler(svc.NickNameDuplicateCheck))
-		router.Post(_WebPathUserNickNameDuplicateCheck, mids...)
+		mids = append(mids, _Base_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
+		router.Post(_WebPathBaseIdcardDuplicateCheck, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1902,8 +1582,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_UpdateNickName_WebHandler(svc.UpdateNickName))
-		router.Post(_WebPathUserUpdateNickName, mids...)
+		mids = append(mids, _Base_UpdateIdcard_WebHandler(svc.UpdateIdcard))
+		router.Post(_WebPathBaseUpdateIdcard, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1915,8 +1595,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_DelNickName_WebHandler(svc.DelNickName))
-		router.Post(_WebPathUserDelNickName, mids...)
+		mids = append(mids, _Base_DelIdcard_WebHandler(svc.DelIdcard))
+		router.Post(_WebPathBaseDelIdcard, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1928,8 +1608,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
-		router.Post(_WebPathUserIdcardDuplicateCheck, mids...)
+		mids = append(mids, _Base_EmailDuplicateCheck_WebHandler(svc.EmailDuplicateCheck))
+		router.Post(_WebPathBaseEmailDuplicateCheck, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1941,8 +1621,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_UpdateIdcard_WebHandler(svc.UpdateIdcard))
-		router.Post(_WebPathUserUpdateIdcard, mids...)
+		mids = append(mids, _Base_UpdateEmail_WebHandler(svc.UpdateEmail))
+		router.Post(_WebPathBaseUpdateEmail, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1954,8 +1634,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_DelIdcard_WebHandler(svc.DelIdcard))
-		router.Post(_WebPathUserDelIdcard, mids...)
+		mids = append(mids, _Base_DelEmail_WebHandler(svc.DelEmail))
+		router.Post(_WebPathBaseDelEmail, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1967,8 +1647,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_EmailDuplicateCheck_WebHandler(svc.EmailDuplicateCheck))
-		router.Post(_WebPathUserEmailDuplicateCheck, mids...)
+		mids = append(mids, _Base_TelDuplicateCheck_WebHandler(svc.TelDuplicateCheck))
+		router.Post(_WebPathBaseTelDuplicateCheck, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1980,8 +1660,8 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_UpdateEmail_WebHandler(svc.UpdateEmail))
-		router.Post(_WebPathUserUpdateEmail, mids...)
+		mids = append(mids, _Base_UpdateTel_WebHandler(svc.UpdateTel))
+		router.Post(_WebPathBaseUpdateTel, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1993,46 +1673,7 @@ func RegisterUserWebServer(router *web.Router, svc UserWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _User_DelEmail_WebHandler(svc.DelEmail))
-		router.Post(_WebPathUserDelEmail, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _User_TelDuplicateCheck_WebHandler(svc.TelDuplicateCheck))
-		router.Post(_WebPathUserTelDuplicateCheck, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _User_UpdateTel_WebHandler(svc.UpdateTel))
-		router.Post(_WebPathUserUpdateTel, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _User_DelTel_WebHandler(svc.DelTel))
-		router.Post(_WebPathUserDelTel, mids...)
+		mids = append(mids, _Base_DelTel_WebHandler(svc.DelTel))
+		router.Post(_WebPathBaseDelTel, mids...)
 	}
 }

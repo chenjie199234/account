@@ -24,7 +24,7 @@ service money{
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
 
-	rpc get_user_money_logs(get_user_money_logs_req)returns(get_user_money_logs_resp){
+	rpc get_money_logs(get_money_logs_req)returns(get_money_logs_resp){
 		option (pbex.method)="crpc";
 		option (pbex.method)="grpc";
 	}
@@ -56,8 +56,8 @@ message money_log{
 	uint32 money_amount=6;
 	uint32 ctime=7;
 }
-message get_user_money_logs_req{
-	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="nickname"];
+message get_money_logs_req{
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
 	string src=2[(pbex.string_bytes_len_gt)=0];
 	//0:return all logs
 	//>0:return the required page's data
@@ -66,7 +66,7 @@ message get_user_money_logs_req{
 	uint32 page=5;
 	string action=6[(pbex.string_bytes_in)="spend",(pbex.string_bytes_in)="recharge",(pbex.string_bytes_in)="refund",(pbex.string_bytes_in)="all"];
 }
-message get_user_money_logs_resp{
+message get_money_logs_resp{
 	uint32 page=1;
 	uint32 pagesize=2;
 	uint32 totalsize=3;

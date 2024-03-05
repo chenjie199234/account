@@ -47,7 +47,7 @@ func StartWebServer() {
 
 	//you just need to register your service here
 	api.RegisterStatusWebServer(r, service.SvcStatus, mids.AllMids())
-	api.RegisterUserWebServer(r, service.SvcUser, mids.AllMids())
+	api.RegisterBaseWebServer(r, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyWebServer(r, service.SvcMoney, mids.AllMids())
 
 	//example

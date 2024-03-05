@@ -395,57 +395,6 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 	})
 	return (*model.User)(unsafeUser), e
 }
-func (d *Dao) GetUserByNickName(ctx context.Context, nickname string) (*model.User, error) {
-	if user, e := d.RedisGetUserByNickName(ctx, nickname); e != nil {
-		if e == ecode.ErrUserNotExist {
-			//key exist but value is empty
-			return nil, e
-		}
-		if e != gredis.Nil && e != ecode.ErrCacheDataConflict {
-			log.Error(ctx, "[dao.GetUserByNickName] redis op failed", log.String("nick_name", nickname), log.CError(e))
-		}
-	} else if user != nil {
-		return user, nil
-	}
-	//redis error or redis not exist,we need to query db
-	unsafeUser, e := oneshot.Do("GetUserByNickName_"+nickname, func() (unsafe.Pointer, error) {
-		var user *model.User
-		var e error
-		for {
-			user, e = d.MongoGetUserByNickName(ctx, nickname)
-			if e != nil {
-				log.Error(nil, "[dao.GetUserByNickName] db op failed", log.String("nick_name", nickname), log.CError(e))
-				if e == ecode.ErrDBDataConflict {
-					time.Sleep(time.Millisecond * 5)
-					continue
-				}
-				if e == ecode.ErrUserNotExist {
-					//set redis empty key
-					go func() {
-						if e := d.RedisSetUserNickNameIndex(context.Background(), nickname, ""); e != nil {
-							log.Error(nil, "[dao.GetUserByNickName] update redis failed", log.String("nick_name", nickname), log.CError(e))
-						}
-					}()
-				}
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-			break
-		}
-		//update redis
-		go func() {
-			if e := d.RedisSetUser(context.Background(), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUserByNickName] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
-			}
-		}()
-		go func() {
-			if e := d.RedisSetUserNickNameIndex(context.Background(), user.NickName, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetUserByNickName] update redis failed", log.String("nick_name", user.NickName), log.CError(e))
-			}
-		}()
-		return unsafe.Pointer(user), e
-	})
-	return (*model.User)(unsafeUser), e
-}
 
 // oauth index
 func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid string) (string, error) {
@@ -608,49 +557,6 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 		go func() {
 			if e := d.RedisSetUserIDCardIndex(context.Background(), idcard, userid); e != nil {
 				log.Error(ctx, "[dao.GetUserIDCardIndex] update redis failed", log.String("idcard", idcard), log.CError(e))
-			}
-		}()
-		return unsafe.Pointer(&userid), nil
-	})
-	if e != nil {
-		return "", e
-	}
-	return *(*string)(unsafeUserid), e
-}
-
-// nickname index
-func (d *Dao) GetUserNickNameIndex(ctx context.Context, nickname string) (string, error) {
-	if userid, e := d.RedisGetUserNickNameIndex(ctx, nickname); e != nil {
-		if e == ecode.ErrUserNotExist {
-			//key exist but value is empty
-			return userid, e
-		}
-		if e != gredis.Nil {
-			log.Error(ctx, "[dao.GetUserNickNameIndex] redis op failed", log.String("nick_name", nickname), log.CError(e))
-		}
-	} else if userid != "" {
-		return userid, nil
-	}
-	//redis error or redis not exist,we need to query db
-	unsafeUserid, e := oneshot.Do("GetUserNickNameIndex_"+nickname, func() (unsafe.Pointer, error) {
-		index, e := d.MongoGetUserNickNameIndex(ctx, nickname)
-		if e != nil {
-			log.Error(nil, "[dao.GetUserNickNameIndex] db op failed", log.String("nick_name", nickname), log.CError(e))
-			if e == ecode.ErrUserNotExist {
-				//set redis empty key
-				go func() {
-					if e := d.RedisSetUserNickNameIndex(context.Background(), nickname, ""); e != nil {
-						log.Error(nil, "[dao.GetUserNickNameIndex] update redis failed", log.String("nick_name", nickname), log.CError(e))
-					}
-				}()
-			}
-			return nil, e
-		}
-		userid := index.UserID.Hex()
-		//update redis
-		go func() {
-			if e := d.RedisSetUserNickNameIndex(context.Background(), nickname, userid); e != nil {
-				log.Error(ctx, "[dao.GetUserNickNameIndex] update redis failed", log.String("nick_name", nickname), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(&userid), nil

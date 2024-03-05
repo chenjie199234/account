@@ -60,7 +60,6 @@ collection: user
     _id:ObjectId("xxx"),//user id
     password:"",
     idcard:"",//实名认证
-    nick_name:"",
     tel:"",
     email:"",
     oauths:{
@@ -120,17 +119,6 @@ use account;
 db.createCollection("user_idcard_index");
 db.user_idcard_index.createIndex({idcard:1},{unique:true});
 sh.shardCollection("account.user_idcard_index",{idcard:"hashed"});
-
-collection: user_nick_name_index
-{
-    nick_name:"",
-    user_id:ObjectId("xxx"),//collection user's _id field
-}
-//手动创建数据库
-use account;
-db.createCollection("user_nick_name_index");
-db.user_nick_name_index.createIndex({nick_name:1},{unique:true});
-sh.shardCollection("account.user_nick_name_index",{nick_name:"hashed"});
 
 collection money_log
 {
