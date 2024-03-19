@@ -56,8 +56,9 @@ func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.Us
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), userid.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUser] update redis failed", log.String("user_id", userid.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, userid.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetUser] update redis failed", log.String("user_id", userid.Hex()), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), e
@@ -88,8 +89,9 @@ func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid stri
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						if e := d.RedisSetUserOAuthIndex(trace.CloneSpan(ctx), oauthservicename, oauthid, ""); e != nil {
-							log.Error(nil, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
+						ctx := trace.CloneSpan(ctx)
+						if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, ""); e != nil {
+							log.Error(ctx, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 						}
 					}()
 				}
@@ -99,13 +101,15 @@ func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid stri
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserOAuthIndex(trace.CloneSpan(ctx), oauthservicename, oauthid, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), e
@@ -139,13 +143,15 @@ func (d *Dao) GetOrCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByOAuth] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByOAuth] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserOAuthIndex(trace.CloneSpan(ctx), oauthservicename, oauthid, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), nil
@@ -176,8 +182,9 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						if e := d.RedisSetUserTelIndex(trace.CloneSpan(ctx), tel, ""); e != nil {
-							log.Error(nil, "[dao.GetUserByTel] update redis failed", log.String("tel", tel), log.CError(e))
+						ctx := trace.CloneSpan(ctx)
+						if e := d.RedisSetUserTelIndex(ctx, tel, ""); e != nil {
+							log.Error(ctx, "[dao.GetUserByTel] update redis failed", log.String("tel", tel), log.CError(e))
 						}
 					}()
 				}
@@ -187,13 +194,15 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUserByTel] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetUserByTel] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserTelIndex(trace.CloneSpan(ctx), user.Tel, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetUserByTel] update redis failed", log.String("tel", user.Tel), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserTelIndex(ctx, user.Tel, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetUserByTel] update redis failed", log.String("tel", user.Tel), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), e
@@ -227,13 +236,15 @@ func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByTel] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByTel] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserTelIndex(trace.CloneSpan(ctx), user.Tel, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByTel] update redis failed", log.String("tel", user.Tel), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserTelIndex(ctx, user.Tel, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByTel] update redis failed", log.String("tel", user.Tel), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), nil
@@ -264,8 +275,9 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						if e := d.RedisSetUserEmailIndex(trace.CloneSpan(ctx), email, ""); e != nil {
-							log.Error(nil, "[dao.GetUserByEmail] update redis failed", log.String("email", email), log.CError(e))
+						ctx := trace.CloneSpan(ctx)
+						if e := d.RedisSetUserEmailIndex(ctx, email, ""); e != nil {
+							log.Error(ctx, "[dao.GetUserByEmail] update redis failed", log.String("email", email), log.CError(e))
 						}
 					}()
 				}
@@ -275,13 +287,15 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUserByEmail] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetUserByEmail] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserEmailIndex(trace.CloneSpan(ctx), user.Email, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetUserByEmail] update redis failed", log.String("email", user.Email), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserEmailIndex(ctx, user.Email, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetUserByEmail] update redis failed", log.String("email", user.Email), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), e
@@ -315,13 +329,15 @@ func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByEmail] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByEmail] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserEmailIndex(trace.CloneSpan(ctx), user.Email, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetOrCreateUserByEmail] update redis failed", log.String("email", user.Email), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserEmailIndex(ctx, user.Email, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetOrCreateUserByEmail] update redis failed", log.String("email", user.Email), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), nil
@@ -352,8 +368,9 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						if e := d.RedisSetUserIDCardIndex(trace.CloneSpan(ctx), idcard, ""); e != nil {
-							log.Error(nil, "[dao.GetUserByIDCard] update redis failed", log.String("idcard", idcard), log.CError(e))
+						ctx := trace.CloneSpan(ctx)
+						if e := d.RedisSetUserIDCardIndex(ctx, idcard, ""); e != nil {
+							log.Error(ctx, "[dao.GetUserByIDCard] update redis failed", log.String("idcard", idcard), log.CError(e))
 						}
 					}()
 				}
@@ -363,13 +380,15 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUser(trace.CloneSpan(ctx), user.UserID.Hex(), user); e != nil {
-				log.Error(nil, "[dao.GetUserByIDCard] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
+				log.Error(ctx, "[dao.GetUserByIDCard] update redis failed", log.String("user_id", user.UserID.Hex()), log.CError(e))
 			}
 		}()
 		go func() {
-			if e := d.RedisSetUserIDCardIndex(trace.CloneSpan(ctx), user.IDCard, user.UserID.Hex()); e != nil {
-				log.Error(nil, "[dao.GetUserByIDCard] update redis failed", log.String("idcard", user.IDCard), log.CError(e))
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserIDCardIndex(ctx, user.IDCard, user.UserID.Hex()); e != nil {
+				log.Error(ctx, "[dao.GetUserByIDCard] update redis failed", log.String("idcard", user.IDCard), log.CError(e))
 			}
 		}()
 		return unsafe.Pointer(user), e
@@ -402,7 +421,8 @@ func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid s
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUserOAuthIndex(trace.CloneSpan(ctx), oauthservicename, oauthid, userid); e != nil {
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, userid); e != nil {
 				log.Error(ctx, "[dao.GetUserOAuthIndex] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
@@ -437,7 +457,8 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUserTelIndex(trace.CloneSpan(ctx), tel, userid); e != nil {
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserTelIndex(ctx, tel, userid); e != nil {
 				log.Error(ctx, "[dao.GetUserTelIndex] update redis failed", log.String("tel", tel), log.CError(e))
 			}
 		}()
@@ -472,7 +493,8 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUserEmailIndex(trace.CloneSpan(ctx), email, userid); e != nil {
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserEmailIndex(ctx, email, userid); e != nil {
 				log.Error(ctx, "[dao.GetUserEmailIndex] update redis failed", log.String("email", email), log.CError(e))
 			}
 		}()
@@ -507,7 +529,8 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetUserIDCardIndex(trace.CloneSpan(ctx), idcard, userid); e != nil {
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetUserIDCardIndex(ctx, idcard, userid); e != nil {
 				log.Error(ctx, "[dao.GetUserIDCardIndex] update redis failed", log.String("idcard", idcard), log.CError(e))
 			}
 		}()

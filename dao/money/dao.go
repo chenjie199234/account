@@ -7,6 +7,7 @@ import (
 	"github.com/chenjie199234/account/model"
 
 	"github.com/chenjie199234/Corelib/log"
+	"github.com/chenjie199234/Corelib/log/trace"
 	cmongo "github.com/chenjie199234/Corelib/mongo"
 	cmysql "github.com/chenjie199234/Corelib/mysql"
 	credis "github.com/chenjie199234/Corelib/redis"
@@ -52,8 +53,9 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 		}
 		//update redis
 		go func() {
-			if e := d.RedisSetMoneyLogs(context.Background(), userid.Hex(), opaction, all); e != nil {
-				log.Error(nil, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
+			ctx := trace.CloneSpan(ctx)
+			if e := d.RedisSetMoneyLogs(ctx, userid.Hex(), opaction, all); e != nil {
+				log.Error(ctx, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
 			}
 		}()
 		return unsafe.Pointer(&all), nil

@@ -15,6 +15,7 @@ import (
 	// "github.com/chenjie199234/Corelib/web"
 	"github.com/chenjie199234/Corelib/cerror"
 	"github.com/chenjie199234/Corelib/log"
+	"github.com/chenjie199234/Corelib/log/trace"
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/util/graceful"
@@ -104,7 +105,8 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	//if rate check failed or send failed,clean redis code
 	if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
 		go func() {
-			if ee := s.userDao.RedisDelCode(context.Background(), operator, action); ee != nil {
+			ctx := trace.CloneSpan(ctx)
+			if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
 				log.Error(ctx, "["+callerName+"] del redis code failed", log.String("operator", operator), log.String(srctype, src), log.CError(ee))
 			}
 			s.stop.DoneOne()
@@ -320,7 +322,8 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	}
 	log.Info(ctx, "[UpdateStaticPassword] success", log.String("operator", md["Token-User"]))
 	go func() {
-		if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+		ctx := trace.CloneSpan(ctx)
+		if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 			log.Error(ctx, "[UpdateStaticPassword] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 		}
 		s.stop.DoneOne()
@@ -365,14 +368,16 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		oldoauthid := olduser.OAuths[req.NewOauthServiceName]
 		if oldoauthid != newoauthid {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[UpdateOauth] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				if oldoauthid != "" {
-					if e := s.userDao.RedisDelUserOAuthIndex(context.Background(), req.NewOauthServiceName, oldoauthid); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, oldoauthid); e != nil {
 						log.Error(ctx, "[UpdateOauth] clean redis failed", log.String(req.NewOauthServiceName, oldoauthid), log.CError(e))
 					}
 				}
@@ -380,7 +385,8 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			}()
 			go func() {
 				if newoauthid != "" {
-					if e := s.userDao.RedisDelUserOAuthIndex(context.Background(), req.NewOauthServiceName, newoauthid); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, newoauthid); e != nil {
 						log.Error(ctx, "[UpdateOauth] clean redis failed", log.String(req.NewOauthServiceName, newoauthid), log.CError(e))
 					}
 				}
@@ -518,13 +524,15 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		log.Info(ctx, "[DelOauth] success", log.String("operator", md["Token-User"]), log.String("oauth", req.DelOauthServiceName))
 		if oauthid := olduser.OAuths[req.DelOauthServiceName]; oauthid != "" {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[DelOauth] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserOAuthIndex(context.Background(), req.DelOauthServiceName, oauthid); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.DelOauthServiceName, oauthid); e != nil {
 					log.Error(ctx, "[DelOauth] clean redis failed", log.String(req.DelOauthServiceName, oauthid), log.CError(e))
 				}
 				s.stop.DoneOne()
@@ -679,14 +687,16 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		log.Info(ctx, "[UpdateIdcard] success", log.String("operator", md["Token-User"]), log.String("new_idcard", req.NewIdcard))
 		if olduser.IDCard != req.NewIdcard {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[UpdateIdcard] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				if olduser.IDCard != "" {
-					if e := s.userDao.RedisDelUserIDCardIndex(context.Background(), olduser.IDCard); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserIDCardIndex(ctx, olduser.IDCard); e != nil {
 						log.Error(ctx, "[UpdateIdcard] clean redis failed", log.String("idcard", olduser.IDCard), log.CError(e))
 					}
 				}
@@ -694,7 +704,8 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 			}()
 			go func() {
 				if req.NewIdcard != "" {
-					if e := s.userDao.RedisDelUserIDCardIndex(context.Background(), req.NewIdcard); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserIDCardIndex(ctx, req.NewIdcard); e != nil {
 						log.Error(ctx, "[UpdateIdcard] clean redis failed", log.String("idcard", req.NewIdcard), log.CError(e))
 					}
 				}
@@ -825,13 +836,15 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		log.Info(ctx, "[DelIdcard] success", log.String("operator", md["Token-User"]))
 		if olduser.IDCard != "" {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[DelIdcard] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserIDCardIndex(context.Background(), olduser.IDCard); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUserIDCardIndex(ctx, olduser.IDCard); e != nil {
 					log.Error(ctx, "[DelIdcard] clean redis failed", log.String("idcard", olduser.IDCard), log.CError(e))
 				}
 				s.stop.DoneOne()
@@ -997,14 +1010,16 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		log.Info(ctx, "[UpdateEmail] success", log.String("operator", md["Token-User"]), log.String("new_email", req.NewEmail))
 		if olduser.Email != req.NewEmail {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[UpdateEmail] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				if olduser.Email != "" {
-					if e := s.userDao.RedisDelUserEmailIndex(context.Background(), olduser.Email); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 						log.Error(ctx, "[UpdateEmail] clean redis failed", log.String("email", olduser.Email), log.CError(e))
 					}
 				}
@@ -1012,7 +1027,8 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			}()
 			go func() {
 				if req.NewEmail != "" {
-					if e := s.userDao.RedisDelUserEmailIndex(context.Background(), req.NewEmail); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserEmailIndex(ctx, req.NewEmail); e != nil {
 						log.Error(ctx, "[UpdateEmail] clean redis failed", log.String("email", req.NewEmail), log.CError(e))
 					}
 				}
@@ -1150,13 +1166,15 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		log.Info(ctx, "[DelEmail] success", log.String("operator", md["Token-User"]))
 		if olduser.Email != "" {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[DelEmail] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserEmailIndex(context.Background(), olduser.Email); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 					log.Error(ctx, "[DelEmail] clean redis failed", log.String("email", olduser.Email), log.CError(e))
 				}
 				s.stop.DoneOne()
@@ -1322,14 +1340,16 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		log.Info(ctx, "[UpdateTel] success", log.String("operator", md["Token-User"]), log.String("new_tel", req.NewTel))
 		if olduser.Tel != req.NewTel {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[UpdateTel] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				if olduser.Tel != "" {
-					if e := s.userDao.RedisDelUserTelIndex(context.Background(), olduser.Tel); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 						log.Error(ctx, "[UpdateTel] clean redis failed", log.String("tel", olduser.Tel), log.CError(e))
 					}
 				}
@@ -1337,7 +1357,8 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			}()
 			go func() {
 				if req.NewTel != "" {
-					if e := s.userDao.RedisDelUserTelIndex(context.Background(), req.NewTel); e != nil {
+					ctx := trace.CloneSpan(ctx)
+					if e := s.userDao.RedisDelUserTelIndex(ctx, req.NewTel); e != nil {
 						log.Error(ctx, "[UpdateTel] clean redis failed", log.String("tel", req.NewTel), log.CError(e))
 					}
 				}
@@ -1475,13 +1496,15 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		log.Info(ctx, "[DelTel] success", log.String("operator", md["Token-User"]))
 		if olduser.Tel != "" {
 			go func() {
-				if e := s.userDao.RedisDelUser(context.Background(), md["Token-User"]); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					log.Error(ctx, "[DelTel] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				if e := s.userDao.RedisDelUserTelIndex(context.Background(), olduser.Tel); e != nil {
+				ctx := trace.CloneSpan(ctx)
+				if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 					log.Error(ctx, "[DelTel] clean redis failed", log.String("tel", olduser.Tel), log.CError(e))
 				}
 				s.stop.DoneOne()
