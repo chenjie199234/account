@@ -47,7 +47,8 @@ SourceConfig.json该文件配置了该服务需要使用的资源配置,不热�
 ```
 
 ## Cache
-### Redis(Version >= 6.2.0)
+### Redis(Version >= 7.0)
+#### account_redis(Cluster mode is better)
 
 ## DB
 ### Mongo(Shard Mode)(Version >= 6.0)
