@@ -25,6 +25,8 @@ type AppConfig struct {
 }
 type ServiceConfig struct {
 	//add your config here
+
+	//https://open.weixin.qq.com/connect/qrconnect?appid={APPID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=snsapi_login&state={STATE}#wechat_redirect
 	WeChatOauthUrl string `json:"wechat_oauth_url"`
 	WeChatAppID    string `json:"wechat_appid"`
 	WeChatSecret   string `json:"wechat_secret"`
