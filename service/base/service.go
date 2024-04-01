@@ -162,6 +162,15 @@ func (s *Service) GetBaseInfo(ctx context.Context, req *api.GetBaseInfoReq) (*ap
 		},
 	}, nil
 }
+
+func (s *Service) GetOauthUrl(ctx context.Context, req *api.GetOauthUrlReq) (*api.GetOauthUrlResp, error) {
+	switch req.OauthServiceName {
+	case "wechat":
+		return &api.GetOauthUrlResp{Url: config.AC.Service.WeChatOauthUrl}, nil
+	default:
+		return nil, ecode.ErrOAuthUnknown
+	}
+}
 func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp, error) {
 	if req.PasswordType == "static" && req.Password == "" {
 		log.Error(ctx, "[Login] empty static password", log.String(req.SrcType, req.SrcTypeExtra))

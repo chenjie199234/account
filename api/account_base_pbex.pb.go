@@ -18,6 +18,14 @@ func (m *GetBaseInfoReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *GetOauthUrlReq) Validate() (errstr string) {
+	if m.GetOauthServiceName() != "wechat" {
+		return "field: oauth_service_name in object: get_oauth_url_req check value str in failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *LoginReq) Validate() (errstr string) {
 	if m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" && m.GetSrcType() != "oauth" {
 		return "field: src_type in object: login_req check value str in failed"

@@ -236,6 +236,24 @@ export class EmailDuplicateCheckResp{
 		}
 	}
 }
+export class GetOauthUrlReq{
+	oauth_service_name: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.oauth_service_name){
+			tmp["oauth_service_name"]=this.oauth_service_name
+		}
+		return tmp
+	}
+}
+export class GetOauthUrlResp{
+	url: string = ''
+	fromOBJ(obj:Object){
+		if(obj["url"]){
+			this.url=obj["url"]
+		}
+	}
+}
 export class IdcardDuplicateCheckReq{
 	idcard: string = ''
 	toJSON(){
@@ -575,6 +593,7 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 		}
 	})
 }
+const _WebPathBaseGetOauthUrl: string ="/account.base/get_oauth_url";
 const _WebPathBaseLogin: string ="/account.base/login";
 const _WebPathBaseSelfBaseInfo: string ="/account.base/self_base_info";
 const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
@@ -596,6 +615,18 @@ export class BaseBrowserClientToC {
 			throw "BaseBrowserClientToC's host missing"
 		}
 		this.host=host
+	}
+	//timeout's unit is millisecond,it will be used when > 0
+	get_oauth_url(header: Object,req: GetOauthUrlReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetOauthUrlResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		call(timeout,this.host+_WebPathBaseGetOauthUrl,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new GetOauthUrlResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
 	login(header: Object,req: LoginReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: LoginResp)=>void){

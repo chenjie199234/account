@@ -1,18 +1,22 @@
 package dao
 
 import (
-	"github.com/chenjie199234/account/config"
-	// "github.com/chenjie199234/account/model"
+	"crypto/tls"
+
 	// discoversdk "github.com/chenjie199234/admin/sdk/discover"
-	// "github.com/chenjie199234/Corelib/discover"
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
-	// "github.com/chenjie199234/Corelib/web"
+	"github.com/chenjie199234/Corelib/discover"
+	"github.com/chenjie199234/Corelib/web"
+	"github.com/chenjie199234/account/config"
+	"github.com/chenjie199234/account/model"
 )
 
 //var ExampleCGrpcApi example.ExampleCGrpcClient
 //var ExampleCrpcApi example.ExampleCrpcClient
 //var ExampleWebApi  example.ExampleWebClient
+
+var WeChatWebApi *web.WebClient
 
 // NewApi create all dependent service's api we need in this program
 func NewApi() error {
@@ -82,6 +86,15 @@ func NewApi() error {
 	// 	return e
 	//}
 	//ExampleWebApi = example.NewExampleWebClient(exampleweb)
+
+	WeChatStaticDiscover, e := discover.NewStaticDiscover("tencent", "wechat", "oauth2", []string{"api.weixin.qq.com"}, 0, 0, 0)
+	if e != nil {
+		return e
+	}
+	WeChatWebApi, e = web.NewWebClient(webc, WeChatStaticDiscover, model.Project, model.Group, model.Name, "tencent", "wechat", "oauth2", &tls.Config{})
+	if e != nil {
+		return e
+	}
 
 	return nil
 }

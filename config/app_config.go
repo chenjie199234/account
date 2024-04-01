@@ -25,6 +25,9 @@ type AppConfig struct {
 }
 type ServiceConfig struct {
 	//add your config here
+	WeChatOauthUrl string `json:"wechat_oauth_url"`
+	WeChatAppID    string `json:"wechat_appid"`
+	WeChatSecret   string `json:"wechat_secret"`
 }
 
 // every time update AppConfig will call this function
