@@ -16,6 +16,7 @@ export class BaseInfo{
 	email: string = ''
 	//Warning!!!Type is uint32,be careful of sign(+) and overflow
 	ctime: number = 0
+	bind_oauths: Array<string>|null = null
 	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
 	money: Map<string,number>|null = null
 	fromOBJ(obj:Object){
@@ -33,6 +34,9 @@ export class BaseInfo{
 		}
 		if(obj["ctime"]){
 			this.ctime=obj["ctime"]
+		}
+		if(obj["bind_oauths"] && obj["bind_oauths"].length>0){
+			this.bind_oauths=obj["bind_oauths"]
 		}
 		if(obj["money"] && Object.keys(obj["money"]).length>0){
 			this.money=new Map<string,number>()

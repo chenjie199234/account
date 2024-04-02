@@ -103,7 +103,8 @@ message base_info{
 	string tel=3;
 	string email=4;
 	uint32 ctime=5;
-	map<string,int32> money=6;
+	repeated string bind_oauths=6;
+	map<string,int32> money=7;
 }
 message get_base_info_req{
 	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];

@@ -151,16 +151,21 @@ func (s *Service) GetBaseInfo(ctx context.Context, req *api.GetBaseInfoReq) (*ap
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	}
-	return &api.GetBaseInfoResp{
+	resp := &api.GetBaseInfoResp{
 		Info: &api.BaseInfo{
-			UserId: user.UserID.Hex(),
-			Idcard: user.IDCard,
-			Tel:    user.Tel,
-			Email:  user.Email,
-			Money:  user.Money,
-			Ctime:  uint32(user.UserID.Timestamp().Unix()),
+			UserId:     user.UserID.Hex(),
+			Idcard:     user.IDCard,
+			Tel:        user.Tel,
+			Email:      user.Email,
+			Money:      user.Money,
+			BindOauths: make([]string, 0, len(user.OAuths)),
+			Ctime:      uint32(user.UserID.Timestamp().Unix()),
 		},
-	}, nil
+	}
+	for oauth := range user.OAuths {
+		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
+	}
+	return resp, nil
 }
 
 func (s *Service) GetOauthUrl(ctx context.Context, req *api.GetOauthUrlReq) (*api.GetOauthUrlResp, error) {
@@ -262,14 +267,18 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	resp := &api.LoginResp{
 		Token: token,
 		Info: &api.BaseInfo{
-			UserId: user.UserID.Hex(),
-			Idcard: util.MaskIDCard(user.IDCard),
-			Tel:    util.MaskTel(user.Tel),
-			Email:  util.MaskEmail(user.Email),
-			Ctime:  uint32(user.UserID.Timestamp().Unix()),
-			Money:  user.Money,
+			UserId:     user.UserID.Hex(),
+			Idcard:     util.MaskIDCard(user.IDCard),
+			Tel:        util.MaskTel(user.Tel),
+			Email:      util.MaskEmail(user.Email),
+			Ctime:      uint32(user.UserID.Timestamp().Unix()),
+			BindOauths: make([]string, 0, len(user.OAuths)),
+			Money:      user.Money,
 		},
 		Step: "success",
+	}
+	for oauth := range user.OAuths {
+		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
 	}
 	if req.PasswordType == "dynamic" && util.SignCheck("", user.Password) == nil {
 		//this is a new account
@@ -290,16 +299,21 @@ func (s *Service) SelfBaseInfo(ctx context.Context, req *api.SelfBaseInfoReq) (*
 		log.Error(ctx, "[SelfUserInfo] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	return &api.SelfBaseInfoResp{
+	resp := &api.SelfBaseInfoResp{
 		Info: &api.BaseInfo{
-			UserId: user.UserID.Hex(),
-			Idcard: util.MaskIDCard(user.IDCard),
-			Tel:    util.MaskTel(user.Tel),
-			Email:  util.MaskEmail(user.Email),
-			Ctime:  uint32(user.UserID.Timestamp().Unix()),
-			Money:  user.Money,
+			UserId:     user.UserID.Hex(),
+			Idcard:     util.MaskIDCard(user.IDCard),
+			Tel:        util.MaskTel(user.Tel),
+			Email:      util.MaskEmail(user.Email),
+			Ctime:      uint32(user.UserID.Timestamp().Unix()),
+			BindOauths: make([]string, 0, len(user.OAuths)),
+			Money:      user.Money,
 		},
-	}, nil
+	}
+	for oauth := range user.OAuths {
+		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
+	}
+	return resp, nil
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)

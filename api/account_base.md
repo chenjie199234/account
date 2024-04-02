@@ -81,6 +81,7 @@ base_info: {
 	"email":"str",
 	//uint32
 	"ctime":0,
+	"bind_oauths":["str","str"],
 	//kv map,value-int32
 	"money":{"str":0,"str":0}
 }
@@ -118,6 +119,7 @@ base_info: {
 	"email":"str",
 	//uint32
 	"ctime":0,
+	"bind_oauths":["str","str"],
 	//kv map,value-int32
 	"money":{"str":0,"str":0}
 }
