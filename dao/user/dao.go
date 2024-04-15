@@ -154,7 +154,7 @@ func (d *Dao) GetOrCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 				log.Error(ctx, "[dao.GetOrCreateUserByOAuth] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(user), nil
+		return unsafe.Pointer(user), e
 	})
 	if e != nil {
 		return nil, e
@@ -247,7 +247,7 @@ func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User
 				log.Error(ctx, "[dao.GetOrCreateUserByTel] update redis failed", log.String("tel", user.Tel), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(user), nil
+		return unsafe.Pointer(user), e
 	})
 	if e != nil {
 		return nil, e
@@ -340,7 +340,7 @@ func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.
 				log.Error(ctx, "[dao.GetOrCreateUserByEmail] update redis failed", log.String("email", user.Email), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(user), nil
+		return unsafe.Pointer(user), e
 	})
 	if e != nil {
 		return nil, e
@@ -426,7 +426,7 @@ func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid s
 				log.Error(ctx, "[dao.GetUserOAuthIndex] update redis failed", log.String(oauthservicename, oauthid), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(&userid), nil
+		return unsafe.Pointer(&userid), e
 	})
 	if e != nil {
 		return "", e
@@ -462,7 +462,7 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 				log.Error(ctx, "[dao.GetUserTelIndex] update redis failed", log.String("tel", tel), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(&userid), nil
+		return unsafe.Pointer(&userid), e
 	})
 	if e != nil {
 		return "", e
@@ -498,7 +498,7 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 				log.Error(ctx, "[dao.GetUserEmailIndex] update redis failed", log.String("email", email), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(&userid), nil
+		return unsafe.Pointer(&userid), e
 	})
 	if e != nil {
 		return "", e
@@ -534,7 +534,7 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 				log.Error(ctx, "[dao.GetUserIDCardIndex] update redis failed", log.String("idcard", idcard), log.CError(e))
 			}
 		}()
-		return unsafe.Pointer(&userid), nil
+		return unsafe.Pointer(&userid), e
 	})
 	if e != nil {
 		return "", e
