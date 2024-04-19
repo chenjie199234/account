@@ -41,7 +41,7 @@ func NewDao(mysql *cmysql.Client, redis *credis.Client, mongo *cmongo.Client) *D
 func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.User, error) {
 	if user, e := d.RedisGetUser(ctx, userid.Hex()); e == nil || e == ecode.ErrUserNotExist {
 		return user, e
-	} else if e != nil && e != gredis.Nil {
+	} else if e != gredis.Nil {
 		log.Error(ctx, "[dao.GetUser] redis op failed", log.String("user_id", userid.Hex()), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -71,7 +71,7 @@ func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.Us
 func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid string) (*model.User, error) {
 	if user, e := d.RedisGetUserByOAuth(ctx, oauthservicename, oauthid); e == nil || e == ecode.ErrUserNotExist {
 		return user, nil
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetUserByOAuth] redis op failed", log.String(oauthservicename, oauthid), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -122,7 +122,7 @@ func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid stri
 func (d *Dao) GetOrCreateUserByOAuth(ctx context.Context, oauthservicename, oauthid string) (*model.User, error) {
 	if user, e := d.RedisGetUserByOAuth(ctx, oauthservicename, oauthid); e == nil {
 		return user, nil
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetOrCreateUserByOAuth] redis op failed", log.String(oauthservicename, oauthid), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -164,7 +164,7 @@ func (d *Dao) GetOrCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error) {
 	if user, e := d.RedisGetUserByTel(ctx, tel); e == nil || e == ecode.ErrUserNotExist {
 		return user, e
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetUserByTel] redis op failed", log.String("tel", tel), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -215,7 +215,7 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User, error) {
 	if user, e := d.RedisGetUserByTel(ctx, tel); e == nil {
 		return user, nil
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetOrCreateUserByTel] redis op failed", log.String("tel", tel), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -257,7 +257,7 @@ func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User
 func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	if user, e := d.RedisGetUserByEmail(ctx, email); e == nil || e == ecode.ErrUserNotExist {
 		return user, e
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetUserByEmail] redis op failed", log.String("email", email), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -308,7 +308,7 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	if user, e := d.RedisGetUserByEmail(ctx, email); e == nil {
 		return user, nil
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrUserNotExist && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetOrCreateUserByEmail] redis op failed", log.String("email", email), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -350,7 +350,7 @@ func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.
 func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, error) {
 	if user, e := d.RedisGetUserByIDCard(ctx, idcard); e == nil || e == ecode.ErrUserNotExist {
 		return user, e
-	} else if e != nil && e != gredis.Nil && e != ecode.ErrCacheDataConflict {
+	} else if e != gredis.Nil && e != ecode.ErrCacheDataConflict {
 		log.Error(ctx, "[dao.GetUserByIDCard] redis op failed", log.String("idcard", idcard), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -403,7 +403,7 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid string) (string, error) {
 	if userid, e := d.RedisGetUserOAuthIndex(ctx, oauthservicename, oauthid); e == nil || e == ecode.ErrUserNotExist {
 		return userid, e
-	} else if e != nil && e != gredis.Nil {
+	} else if e != gredis.Nil {
 		log.Error(ctx, "[dao.GetUserOAuthIndex] redis op failed", log.String(oauthservicename, oauthid), log.CError(e))
 	}
 	unsafeUserid, e := oneshot.Do("GetUserOAuthIndex_"+oauthservicename+"|"+oauthid, func() (unsafe.Pointer, error) {
@@ -438,7 +438,7 @@ func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid s
 func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 	if userid, e := d.RedisGetUserTelIndex(ctx, tel); e == nil || e == ecode.ErrUserNotExist {
 		return userid, e
-	} else if e != nil && e != gredis.Nil {
+	} else if e != gredis.Nil {
 		log.Error(ctx, "[dao.GetUserTelIndex] redis op failed", log.String("tel", tel), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -474,7 +474,7 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, error) {
 	if userid, e := d.RedisGetUserEmailIndex(ctx, email); e == nil || e == ecode.ErrUserNotExist {
 		return userid, e
-	} else if e != nil && e != gredis.Nil {
+	} else if e != gredis.Nil {
 		log.Error(ctx, "[dao.GetUserEmailIndex] redis op failed", log.String("email", email), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
@@ -510,7 +510,7 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, error) {
 	if userid, e := d.RedisGetUserIDCardIndex(ctx, idcard); e == nil || e == ecode.ErrUserNotExist {
 		return userid, e
-	} else if e != nil && e != gredis.Nil {
+	} else if e != gredis.Nil {
 		log.Error(ctx, "[dao.GetUserIDCardIndex] redis op failed", log.String("idcard", idcard), log.CError(e))
 	}
 	//redis error or redis not exist,we need to query db
