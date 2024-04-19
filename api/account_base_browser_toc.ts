@@ -46,6 +46,29 @@ export class BaseInfo{
 		}
 	}
 }
+export class BaseInfoReq{
+	src_type: string = ''
+	src: string = ''//if this is empty,means get self's baseinfo,src_type will force to user_id and the src is from token
+	toJSON(){
+		let tmp = {}
+		if(this.src_type){
+			tmp["src_type"]=this.src_type
+		}
+		if(this.src){
+			tmp["src"]=this.src
+		}
+		return tmp
+	}
+}
+export class BaseInfoResp{
+	info: BaseInfo|null = null
+	fromOBJ(obj:Object){
+		if(obj["info"]){
+			this.info=new BaseInfo()
+			this.info.fromOBJ(obj["info"])
+		}
+	}
+}
 export class DelEmailReq{
 	verify_src_type: string = ''
 	//when verify_src_type is oauth,this is the oauth service name
@@ -323,21 +346,6 @@ export class LoginResp{
 		}
 	}
 }
-export class SelfBaseInfoReq{
-	toJSON(){
-		let tmp = {}
-		return tmp
-	}
-}
-export class SelfBaseInfoResp{
-	info: BaseInfo|null = null
-	fromOBJ(obj:Object){
-		if(obj["info"]){
-			this.info=new BaseInfo()
-			this.info.fromOBJ(obj["info"])
-		}
-	}
-}
 export class TelDuplicateCheckReq{
 	tel: string = ''
 	toJSON(){
@@ -599,7 +607,7 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 }
 const _WebPathBaseGetOauthUrl: string ="/account.base/get_oauth_url";
 const _WebPathBaseLogin: string ="/account.base/login";
-const _WebPathBaseSelfBaseInfo: string ="/account.base/self_base_info";
+const _WebPathBaseBaseInfo: string ="/account.base/base_info";
 const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
 const _WebPathBaseUpdateOauth: string ="/account.base/update_oauth";
 const _WebPathBaseDelOauth: string ="/account.base/del_oauth";
@@ -645,13 +653,13 @@ export class BaseBrowserClientToC {
 		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	self_base_info(header: Object,req: SelfBaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: SelfBaseInfoResp)=>void){
+	base_info(header: Object,req: BaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: BaseInfoResp)=>void){
 		if(!header){
 			header={}
 		}
 		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathBaseSelfBaseInfo,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new SelfBaseInfoResp()
+		call(timeout,this.host+_WebPathBaseBaseInfo,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new BaseInfoResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

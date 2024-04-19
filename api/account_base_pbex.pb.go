@@ -7,12 +7,9 @@
 package api
 
 // return empty means pass
-func (m *GetBaseInfoReq) Validate() (errstr string) {
+func (m *BaseInfoReq) Validate() (errstr string) {
 	if m.GetSrcType() != "user_id" && m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" {
-		return "field: src_type in object: get_base_info_req check value str in failed"
-	}
-	if len(m.GetSrc()) <= 0 {
-		return "field: src in object: get_base_info_req check value str len gt failed"
+		return "field: src_type in object: base_info_req check value str in failed"
 	}
 	return ""
 }

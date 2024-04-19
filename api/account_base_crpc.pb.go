@@ -15,10 +15,10 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-var _CrpcPathBaseGetBaseInfo = "/account.base/get_base_info"
+var _CrpcPathBaseBaseInfo = "/account.base/base_info"
 
 type BaseCrpcClient interface {
-	GetBaseInfo(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 }
 
 type baseCrpcClient struct {
@@ -29,16 +29,16 @@ func NewBaseCrpcClient(c *crpc.CrpcClient) BaseCrpcClient {
 	return &baseCrpcClient{cc: c}
 }
 
-func (c *baseCrpcClient) GetBaseInfo(ctx context.Context, req *GetBaseInfoReq) (*GetBaseInfoResp, error) {
+func (c *baseCrpcClient) BaseInfo(ctx context.Context, req *BaseInfoReq) (*BaseInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	reqd, _ := proto.Marshal(req)
-	respd, e := c.cc.Call(ctx, _CrpcPathBaseGetBaseInfo, reqd)
+	respd, e := c.cc.Call(ctx, _CrpcPathBaseBaseInfo, reqd)
 	if e != nil {
 		return nil, e
 	}
-	resp := new(GetBaseInfoResp)
+	resp := new(BaseInfoResp)
 	if len(respd) == 0 {
 		return resp, nil
 	}
@@ -53,19 +53,19 @@ func (c *baseCrpcClient) GetBaseInfo(ctx context.Context, req *GetBaseInfoReq) (
 }
 
 type BaseCrpcServer interface {
-	GetBaseInfo(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 }
 
-func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)) crpc.OutsideHandler {
+func _Base_BaseInfo_CrpcHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) crpc.OutsideHandler {
 	return func(ctx *crpc.Context) {
 		var preferJSON bool
-		req := new(GetBaseInfoReq)
+		req := new(BaseInfoReq)
 		reqbody := ctx.GetBody()
 		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
 				req.Reset()
 				if e := proto.Unmarshal(reqbody, req); e != nil {
-					log.Error(ctx, "[/account.base/get_base_info] json and proto format decode both failed")
+					log.Error(ctx, "[/account.base/base_info] json and proto format decode both failed")
 					ctx.Abort(cerror.ErrReq)
 					return
 				}
@@ -75,7 +75,7 @@ func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq
 		} else if e := proto.Unmarshal(reqbody, req); e != nil {
 			req.Reset()
 			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
-				log.Error(ctx, "[/account.base/get_base_info] json and proto format decode both failed")
+				log.Error(ctx, "[/account.base/base_info] json and proto format decode both failed")
 				ctx.Abort(cerror.ErrReq)
 				return
 			} else {
@@ -83,7 +83,7 @@ func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq
 			}
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.base/get_base_info] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/base_info] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -93,7 +93,7 @@ func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq
 			return
 		}
 		if resp == nil {
-			resp = new(GetBaseInfoResp)
+			resp = new(BaseInfoResp)
 		}
 		if preferJSON {
 			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
@@ -107,5 +107,17 @@ func _Base_GetBaseInfo_CrpcHandler(handler func(context.Context, *GetBaseInfoReq
 func RegisterBaseCrpcServer(engine *crpc.CrpcServer, svc BaseCrpcServer, allmids map[string]crpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.base", "get_base_info", _Base_GetBaseInfo_CrpcHandler(svc.GetBaseInfo))
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]crpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_BaseInfo_CrpcHandler(svc.BaseInfo))
+		engine.RegisterHandler("account.base", "base_info", mids...)
+	}
 }

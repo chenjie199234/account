@@ -21,7 +21,7 @@ import (
 
 var _WebPathBaseGetOauthUrl = "/account.base/get_oauth_url"
 var _WebPathBaseLogin = "/account.base/login"
-var _WebPathBaseSelfBaseInfo = "/account.base/self_base_info"
+var _WebPathBaseBaseInfo = "/account.base/base_info"
 var _WebPathBaseUpdateStaticPassword = "/account.base/update_static_password"
 var _WebPathBaseUpdateOauth = "/account.base/update_oauth"
 var _WebPathBaseDelOauth = "/account.base/del_oauth"
@@ -38,7 +38,7 @@ var _WebPathBaseDelTel = "/account.base/del_tel"
 type BaseWebClient interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq, http.Header) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
-	SelfBaseInfo(context.Context, *SelfBaseInfoReq, http.Header) (*SelfBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq, http.Header) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq, http.Header) (*DelOauthResp, error)
@@ -125,7 +125,7 @@ func (c *baseWebClient) Login(ctx context.Context, req *LoginReq, header http.He
 	}
 	return resp, nil
 }
-func (c *baseWebClient) SelfBaseInfo(ctx context.Context, req *SelfBaseInfoReq, header http.Header) (*SelfBaseInfoResp, error) {
+func (c *baseWebClient) BaseInfo(ctx context.Context, req *BaseInfoReq, header http.Header) (*BaseInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -135,7 +135,7 @@ func (c *baseWebClient) SelfBaseInfo(ctx context.Context, req *SelfBaseInfoReq, 
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseSelfBaseInfo, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseBaseInfo, "", header, metadata.GetMetadata(ctx), reqd)
 	if e != nil {
 		return nil, e
 	}
@@ -144,7 +144,7 @@ func (c *baseWebClient) SelfBaseInfo(ctx context.Context, req *SelfBaseInfoReq, 
 	if e != nil {
 		return nil, cerror.ConvertStdError(e)
 	}
-	resp := new(SelfBaseInfoResp)
+	resp := new(BaseInfoResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -545,7 +545,7 @@ func (c *baseWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 type BaseWebServer interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
-	SelfBaseInfo(context.Context, *SelfBaseInfoReq) (*SelfBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
@@ -702,9 +702,57 @@ func _Base_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp
 		}
 	}
 }
-func _Base_SelfBaseInfo_WebHandler(handler func(context.Context, *SelfBaseInfoReq) (*SelfBaseInfoResp, error)) web.OutsideHandler {
+func _Base_BaseInfo_WebHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
-		req := new(SelfBaseInfoReq)
+		req := new(BaseInfoReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/base_info] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/base_info] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/base_info] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/base_info] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			if e := ctx.ParseForm(); e != nil {
+				log.Error(ctx, "[/account.base/base_info] parse form failed", log.CError(e))
+				ctx.Abort(cerror.ErrReq)
+				return
+			}
+			// req.SrcType
+			if form := ctx.GetForm("src_type"); len(form) != 0 {
+				req.SrcType = form
+			}
+			// req.Src
+			if form := ctx.GetForm("src"); len(form) != 0 {
+				req.Src = form
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/base_info] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
 		resp, e := handler(ctx, req)
 		ee := cerror.ConvertStdError(e)
 		if ee != nil {
@@ -712,7 +760,7 @@ func _Base_SelfBaseInfo_WebHandler(handler func(context.Context, *SelfBaseInfoRe
 			return
 		}
 		if resp == nil {
-			resp = new(SelfBaseInfoResp)
+			resp = new(BaseInfoResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -1618,8 +1666,8 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _Base_SelfBaseInfo_WebHandler(svc.SelfBaseInfo))
-		router.Post(_WebPathBaseSelfBaseInfo, mids...)
+		mids = append(mids, _Base_BaseInfo_WebHandler(svc.BaseInfo))
+		router.Post(_WebPathBaseBaseInfo, mids...)
 	}
 	{
 		requiredMids := []string{"token"}

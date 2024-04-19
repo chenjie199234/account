@@ -87,15 +87,19 @@ base_info: {
 }
 ------------------------------------------------------------------------------------------------------------
 ```
-### self_base_info
+### base_info
 
 #### Req:
 ```
-Path:         /account.base/self_base_info
+Path:         /account.base/base_info
 Method:       POST
 Content-Type: application/json
 ------------------------------------------------------------------------------------------------------------
 {
+	//value must in ["user_id","tel","email","idcard"]
+	"src_type":"str",
+	//if this is empty,means get self's baseinfo,src_type will force to user_id and the src is from token
+	"src":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

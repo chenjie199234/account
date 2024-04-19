@@ -24,20 +24,19 @@ service base{
 	//	option (pbex.cgrpc_midwares)="a";//this function on grpc protocol has 3 midwares,it's order is b,c,a
 	//}
 
-	rpc get_base_info(get_base_info_req)returns(get_base_info_resp){
-		option (pbex.method)="crpc";
-		option (pbex.method)="grpc";
-	}
-
 	rpc get_oauth_url(get_oauth_url_req)returns(get_oauth_url_resp){
 		option (pbex.method)="post";
 	}
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
-	rpc self_base_info(self_base_info_req)returns(self_base_info_resp){
+	rpc base_info(base_info_req)returns(base_info_resp){
 		option (pbex.method)="post";
+		option (pbex.method)="grpc";
+		option (pbex.method)="crpc";
 		option (pbex.web_midwares)="token";
+		option (pbex.crpc_midwares)="accesskey";
+		option (pbex.cgrpc_midwares)="accesskey";
 	}
 	rpc update_static_password(update_static_password_req)returns(update_static_password_resp){
 		option (pbex.method)="post";
@@ -106,11 +105,11 @@ message base_info{
 	repeated string bind_oauths=6;
 	map<string,int32> money=7;
 }
-message get_base_info_req{
+message base_info_req{
 	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
-	string src=2[(pbex.string_bytes_len_gt)=0];
+	string src=2;//if this is empty,means get self's baseinfo,src_type will force to user_id and the src is from token
 }
-message get_base_info_resp{
+message base_info_resp{
 	base_info info=1;
 }
 message get_oauth_url_req{
@@ -137,11 +136,6 @@ message login_resp{
 	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
 	string step=3;
-}
-message self_base_info_req{
-}
-message self_base_info_resp{
-	base_info info=1;
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password

@@ -14,10 +14,10 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-var _CGrpcPathBaseGetBaseInfo = "/account.base/get_base_info"
+var _CGrpcPathBaseBaseInfo = "/account.base/base_info"
 
 type BaseCGrpcClient interface {
-	GetBaseInfo(context.Context, *GetBaseInfoReq, ...grpc.CallOption) (*GetBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq, ...grpc.CallOption) (*BaseInfoResp, error)
 }
 
 type baseCGrpcClient struct {
@@ -28,31 +28,31 @@ func NewBaseCGrpcClient(cc grpc.ClientConnInterface) BaseCGrpcClient {
 	return &baseCGrpcClient{cc: cc}
 }
 
-func (c *baseCGrpcClient) GetBaseInfo(ctx context.Context, req *GetBaseInfoReq, opts ...grpc.CallOption) (*GetBaseInfoResp, error) {
+func (c *baseCGrpcClient) BaseInfo(ctx context.Context, req *BaseInfoReq, opts ...grpc.CallOption) (*BaseInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
-	resp := new(GetBaseInfoResp)
-	if e := c.cc.Invoke(ctx, _CGrpcPathBaseGetBaseInfo, req, resp, opts...); e != nil {
+	resp := new(BaseInfoResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathBaseBaseInfo, req, resp, opts...); e != nil {
 		return nil, e
 	}
 	return resp, nil
 }
 
 type BaseCGrpcServer interface {
-	GetBaseInfo(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)
+	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 }
 
-func _Base_GetBaseInfo_CGrpcHandler(handler func(context.Context, *GetBaseInfoReq) (*GetBaseInfoResp, error)) cgrpc.OutsideHandler {
+func _Base_BaseInfo_CGrpcHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) cgrpc.OutsideHandler {
 	return func(ctx *cgrpc.Context) {
-		req := new(GetBaseInfoReq)
+		req := new(BaseInfoReq)
 		if e := ctx.DecodeReq(req); e != nil {
-			log.Error(ctx, "[/account.base/get_base_info] decode failed")
+			log.Error(ctx, "[/account.base/base_info] decode failed")
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
 		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.base/get_base_info] validate failed", log.String("validate", errstr))
+			log.Error(ctx, "[/account.base/base_info] validate failed", log.String("validate", errstr))
 			ctx.Abort(cerror.ErrReq)
 			return
 		}
@@ -62,7 +62,7 @@ func _Base_GetBaseInfo_CGrpcHandler(handler func(context.Context, *GetBaseInfoRe
 			return
 		}
 		if resp == nil {
-			resp = new(GetBaseInfoResp)
+			resp = new(BaseInfoResp)
 		}
 		ctx.Write(resp)
 	}
@@ -70,5 +70,17 @@ func _Base_GetBaseInfo_CGrpcHandler(handler func(context.Context, *GetBaseInfoRe
 func RegisterBaseCGrpcServer(engine *cgrpc.CGrpcServer, svc BaseCGrpcServer, allmids map[string]cgrpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
-	engine.RegisterHandler("account.base", "get_base_info", _Base_GetBaseInfo_CGrpcHandler(svc.GetBaseInfo))
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]cgrpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_BaseInfo_CGrpcHandler(svc.BaseInfo))
+		engine.RegisterHandler("account.base", "base_info", mids...)
+	}
 }

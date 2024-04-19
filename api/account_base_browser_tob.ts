@@ -46,9 +46,9 @@ export class BaseInfo{
 		}
 	}
 }
-export class GetBaseInfoReq{
+export class BaseInfoReq{
 	src_type: string = ''
-	src: string = ''
+	src: string = ''//if this is empty,means get self's baseinfo,src_type will force to user_id and the src is from token
 	toJSON(){
 		let tmp = {}
 		if(this.src_type){
@@ -60,7 +60,7 @@ export class GetBaseInfoReq{
 		return tmp
 	}
 }
-export class GetBaseInfoResp{
+export class BaseInfoResp{
 	info: BaseInfo|null = null
 	fromOBJ(obj:Object){
 		if(obj["info"]){
@@ -107,7 +107,7 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 		}
 	})
 }
-const _WebPathBaseGetBaseInfo: string ="/account.base/get_base_info";
+const _WebPathBaseBaseInfo: string ="/account.base/base_info";
 //ToB means this is for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
 //If your are not using 'admin' as your tob request's proxy gate,don't use this
@@ -127,7 +127,7 @@ export class BaseBrowserClientToB {
 		this.group=servergroup
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	get_base_info(header: Object,req: GetBaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetBaseInfoResp)=>void){
+	base_info(header: Object,req: BaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: BaseInfoResp)=>void){
 		if(!header){
 			header={}
 		}
@@ -136,11 +136,11 @@ export class BaseBrowserClientToB {
 			project_id:this.projectid,
 			g_name:this.group,
 			a_name:"account",
-			path:_WebPathBaseGetBaseInfo,
+			path:_WebPathBaseBaseInfo,
 			data:JSON.stringify(req),
 		}
 		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
-			let r=new GetBaseInfoResp()
+			let r=new BaseInfoResp()
 			r.fromOBJ(arg)
 			success(r)
 		})
