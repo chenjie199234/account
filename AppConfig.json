@@ -30,6 +30,12 @@
 			"accesses":{
 				"accessid":"accesskey"
 			}
+		}],
+		"/account.base/base_info":[{
+			"methods":["CRPC","GRPC"],
+			"accesses":{
+				"accessid":"accesskey"
+			}
 		}]
 	},
 	"token_secret":"test",

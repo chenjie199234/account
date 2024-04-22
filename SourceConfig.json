@@ -52,7 +52,7 @@
 	"mongo":{
 		"account_mongo":{
 			"tls":false,
-			"specific_ca_paths":[""],
+			"specific_ca_paths":["./example.pem"],
 			"mongodb_srv":false,
 			"addrs":["localhost:27017"],
 			"user_name":"",
