@@ -41,6 +41,9 @@
 	"token_secret":"test",
 	"session_token_expire":"24h",
 	"service":{
+		"email_account":"",
+		"email_password":"",
+		"email_smtp_addr":"",
 		"wechat_oauth_url":"",
 		"wechat_appid":"",
 		"wechat_secret":""
