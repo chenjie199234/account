@@ -26,6 +26,10 @@ type AppConfig struct {
 type ServiceConfig struct {
 	//add your config here
 
+	EmailAccount  string `json:"email_account"`
+	EmailPassword string `json:"email_password"`
+	EmailSMTPAddr string `json:"email_smtp_addr"`//host:port,if port is not setted,587 will be used
+
 	//https://open.weixin.qq.com/connect/qrconnect?appid={APPID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=snsapi_login&state={STATE}#wechat_redirect
 	WeChatOauthUrl string `json:"wechat_oauth_url"`
 	WeChatAppID    string `json:"wechat_appid"`

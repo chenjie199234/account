@@ -21,9 +21,10 @@ type WeChatResponse struct {
 
 // caller is the parent function name,this is used for the log
 func OAuthVerifyCode(ctx context.Context, caller string, oauthservicename, code string) (oauthid string, e error) {
+	c := config.AC.Service
 	switch oauthservicename {
 	case "wechat":
-		query := "appid=" + config.AC.Service.WeChatAppID + "&secret=" + config.AC.Service.WeChatSecret + "&code=" + code + "&grant_type=authorization_code"
+		query := "appid=" + c.WeChatAppID + "&secret=" + c.WeChatSecret + "&code=" + code + "&grant_type=authorization_code"
 		r, err := dao.WeChatWebApi.Get(ctx, "/sns/oauth2/access_token", query, nil, nil)
 		if err != nil {
 			log.Error(ctx, "[OAuthVerifyCode] call failed", log.String("oauth_service", oauthservicename), log.String("code", code), log.CError(err))
