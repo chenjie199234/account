@@ -187,6 +187,9 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 func (s *Service) GetOauthUrl(ctx context.Context, req *api.GetOauthUrlReq) (*api.GetOauthUrlResp, error) {
 	switch req.OauthServiceName {
 	case "wechat":
+		if config.AC.Service.WeChatOauthUrl == "" {
+			return nil, ecode.ErrOAuthUnknown
+		}
 		return &api.GetOauthUrlResp{Url: config.AC.Service.WeChatOauthUrl}, nil
 	default:
 		return nil, ecode.ErrOAuthUnknown
