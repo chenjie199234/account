@@ -260,6 +260,9 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			log.Error(ctx, "[Login] oauth can't use static password")
 			return nil, ecode.ErrReq
 		}
+		if req.SrcTypeExtra == "" {
+			return nil,ecode.ErrReq
+		}
 		if req.Password == "" {
 			return nil, ecode.ErrReq
 		}

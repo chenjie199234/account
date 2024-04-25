@@ -44,7 +44,6 @@ Content-Type: application/json
 	//value must in ["tel","email","idcard","oauth"]
 	"src_type":"str",
 	//when src_type is oauth,this is the oauth service name
-	//value length must > 0
 	"src_type_extra":"str",
 	//when src_type is idcard this can't be dynamic
 	//when src_type is oauth,this can't be static

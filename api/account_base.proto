@@ -121,7 +121,7 @@ message get_oauth_url_resp{
 message login_req{
 	string src_type=1[(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard",(pbex.string_bytes_in)="oauth"];
 	//when src_type is oauth,this is the oauth service name
-	string src_type_extra=2[(pbex.string_bytes_len_gt)=0];
+	string src_type_extra=2;
 	//when src_type is idcard this can't be dynamic
 	//when src_type is oauth,this can't be static
 	string password_type=3[(pbex.string_bytes_in)="static",(pbex.string_bytes_in)="dynamic"];

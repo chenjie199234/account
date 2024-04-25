@@ -27,9 +27,6 @@ func (m *LoginReq) Validate() (errstr string) {
 	if m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" && m.GetSrcType() != "oauth" {
 		return "field: src_type in object: login_req check value str in failed"
 	}
-	if len(m.GetSrcTypeExtra()) <= 0 {
-		return "field: src_type_extra in object: login_req check value str len gt failed"
-	}
 	if m.GetPasswordType() != "static" && m.GetPasswordType() != "dynamic" {
 		return "field: password_type in object: login_req check value str in failed"
 	}
