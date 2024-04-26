@@ -108,7 +108,7 @@
 		"example_email":{
 			"max_open":100,
 			"max_conn_idletime":"3m",
-			"host":"example.mail.com",
+			"host":"smtp.example.com",
 			"port":587,
 			"account":"account@example.com",
 			"password":"xxx"
