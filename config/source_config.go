@@ -10,6 +10,7 @@ import (
 
 	"github.com/chenjie199234/Corelib/cgrpc"
 	"github.com/chenjie199234/Corelib/crpc"
+	"github.com/chenjie199234/Corelib/email"
 	"github.com/chenjie199234/Corelib/log"
 	"github.com/chenjie199234/Corelib/mongo"
 	"github.com/chenjie199234/Corelib/mysql"
@@ -21,15 +22,16 @@ import (
 
 // sourceConfig can't hot update
 type sourceConfig struct {
-	CGrpcServer *CGrpcServerConfig      `json:"cgrpc_server"`
-	CGrpcClient *CGrpcClientConfig      `json:"cgrpc_client"`
-	CrpcServer  *CrpcServerConfig       `json:"crpc_server"`
-	CrpcClient  *CrpcClientConfig       `json:"crpc_client"`
-	WebServer   *WebServerConfig        `json:"web_server"`
-	WebClient   *WebClientConfig        `json:"web_client"`
-	Mongo       map[string]*MongoConfig `json:"mongo"` //key example:xx_mongo
-	Mysql       map[string]*MysqlConfig `json:"mysql"` //key example:xx_mysql
-	Redis       map[string]*RedisConfig `json:"redis"` //key example:xx_redis
+	CGrpcServer *CGrpcServerConfig       `json:"cgrpc_server"`
+	CGrpcClient *CGrpcClientConfig       `json:"cgrpc_client"`
+	CrpcServer  *CrpcServerConfig        `json:"crpc_server"`
+	CrpcClient  *CrpcClientConfig        `json:"crpc_client"`
+	WebServer   *WebServerConfig         `json:"web_server"`
+	WebClient   *WebClientConfig         `json:"web_client"`
+	Mongo       map[string]*MongoConfig  `json:"mongo"` //key example:xx_mongo
+	Mysql       map[string]*MysqlConfig  `json:"mysql"` //key example:xx_mysql
+	Redis       map[string]*RedisConfig  `json:"redis"` //key example:xx_redis
+	Email       map[string]*email.Config `json:"email"` //key example:xx_email
 }
 
 // CGrpcServerConfig
@@ -94,6 +96,8 @@ var mongos map[string]*mongo.Client
 var mysqls map[string]*mysql.Client
 
 var rediss map[string]*redis.Client
+
+var emails map[string]*email.Client
 
 func initlocalsource() {
 	data, e := os.ReadFile("./SourceConfig.json")
@@ -181,6 +185,12 @@ func initsource() {
 	wg.Add(1)
 	go func() {
 		initmysql()
+		wg.Done()
+	}()
+	wg.Wait()
+	wg.Add(1)
+	go func() {
+		initemail()
 		wg.Done()
 	}()
 	wg.Wait()
@@ -524,6 +534,40 @@ func initmysql() {
 	}
 	wg.Wait()
 }
+func initemail() {
+	for k, emailc := range sc.Email {
+		if k == "example_email" {
+			continue
+		}
+		emailc.EmailName = k
+		if emailc.Port == 0 {
+			emailc.Port = 587
+		}
+	}
+	emails = make(map[string]*email.Client, len(sc.Email))
+	lker := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	for k, v := range sc.Email {
+		if k == "example_email" {
+			continue
+		}
+		emailc := v
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			c, e := email.NewEmail(emailc)
+			if e != nil {
+				log.Error(nil, "[config.initemail] failed", log.String("email", emailc.EmailName), log.CError(e))
+				Close()
+				os.Exit(1)
+			}
+			lker.Lock()
+			emails[emailc.EmailName] = c
+			lker.Unlock()
+		}()
+	}
+	wg.Wait()
+}
 
 // GetCGrpcServerConfig get the grpc net config
 func GetCGrpcServerConfig() *CGrpcServerConfig {
@@ -571,4 +615,10 @@ func GetMysql(mysqlname string) *mysql.Client {
 // return nil means not exist
 func GetRedis(redisname string) *redis.Client {
 	return rediss[redisname]
+}
+
+// GetEmail get a email client by email's instance name
+// return nil means not exist
+func GetEmail(emailname string) *email.Client {
+	return emails[emailname]
 }
