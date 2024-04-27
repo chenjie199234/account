@@ -12,13 +12,13 @@ import (
 
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
-	// "github.com/chenjie199234/Corelib/web"
 	"github.com/chenjie199234/Corelib/cerror"
 	"github.com/chenjie199234/Corelib/log"
 	"github.com/chenjie199234/Corelib/log/trace"
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/util/graceful"
+	"github.com/chenjie199234/Corelib/web"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -179,6 +179,10 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			BindOauths: make([]string, 0, len(user.OAuths)),
 			Ctime:      uint32(user.UserID.Timestamp().Unix()),
 		},
+	}
+	if _, ok := ctx.(*web.Context); ok {
+		resp.Info.Email = util.MaskEmail(resp.Info.Email)
+		resp.Info.Tel = util.MaskTel(resp.Info.Tel)
 	}
 	for oauth := range user.OAuths {
 		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
