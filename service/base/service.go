@@ -60,6 +60,7 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	}
 	if dup {
 		//if tel's or email's code already send,we jump to verify step
+		s.stop.DoneOne()
 		return nil
 	}
 	switch action {
@@ -86,6 +87,7 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	case util.UpdateIDCard:
 		e = s.userDao.RedisLockIDCardOP(ctx, operator)
 	default:
+		s.stop.DoneOne()
 		return ecode.ErrUnknownAction
 	}
 	if e != nil {
