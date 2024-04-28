@@ -455,6 +455,9 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
+		if user.OAuths[req.NewOauthServiceName] == oauthid {
+			return &api.UpdateOauthResp{Step: "success"}, nil
+		}
 		if e := update(oauthid); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -767,6 +770,9 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 				log.String("operator", md["Token-User"]),
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
+		}
+		if user.IDCard == req.NewIdcard {
+			return &api.UpdateIdcardResp{Step: "success"}, nil
 		}
 		//verify success
 		if e := update(); e != nil {
@@ -1099,6 +1105,9 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
+		if user.Email == req.NewEmail {
+			return &api.UpdateEmailResp{Step: "success"}, nil
+		}
 		//verify success
 		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.UpdateEmailStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1428,6 +1437,9 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 				log.String("operator", md["Token-User"]),
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
+		}
+		if user.Tel == req.NewTel {
+			return &api.UpdateTelResp{Step: "success"}, nil
 		}
 		//verify success
 		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.UpdateTelStep2); e != nil {
