@@ -600,6 +600,9 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
+		if _, ok := user.OAuths[req.DelOauthServiceName]; !ok {
+			return &api.DelOauthResp{Step: "success", Final: user.Email == "" && user.IDCard == "" && user.Tel == "" && len(user.OAuths) == 0}, nil
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -914,6 +917,9 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 				log.String("operator", md["Token-User"]),
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
+		}
+		if user.IDCard == "" {
+			return &api.DelIdcardResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
 		}
 		//verify success
 		final, e := update()
@@ -1248,6 +1254,9 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
+		if user.Email == "" {
+			return &api.DelEmailResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -1580,6 +1589,9 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 				log.String("operator", md["Token-User"]),
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
+		}
+		if user.Tel == "" {
+			return &api.DelTelResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
 		}
 		//verify success
 		final, e := update()
