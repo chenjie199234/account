@@ -266,7 +266,7 @@ func (d *Dao) MongoUpdateUserOAuth(ctx context.Context, userid primitive.ObjectI
 	if newoauthid != "" {
 		if _, e = d.mongo.Database("account").Collection("user_oauth_index").InsertOne(sctx, bson.M{"service": oauthservicename + "|" + newoauthid, "user_id": userid}); e != nil {
 			if mongo.IsDuplicateKeyError(e) {
-				e = ecode.ErrTelAlreadyUsed
+				e = ecode.ErrOAuthAlreadyUsed
 			}
 			return
 		}
