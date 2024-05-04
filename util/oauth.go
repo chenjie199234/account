@@ -24,6 +24,9 @@ func OAuthVerifyCode(ctx context.Context, caller string, oauthservicename, code 
 	c := config.AC.Service
 	switch oauthservicename {
 	case "wechat":
+		if c.WeChatAppID == "" || c.WeChatSecret == "" {
+			return "", ecode.ErrOAuthUnknown
+		}
 		query := "appid=" + c.WeChatAppID + "&secret=" + c.WeChatSecret + "&code=" + code + "&grant_type=authorization_code"
 		r, err := dao.WeChatWebApi.Get(ctx, "/sns/oauth2/access_token", query, nil, nil)
 		if err != nil {
