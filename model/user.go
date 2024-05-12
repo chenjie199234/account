@@ -12,6 +12,8 @@ type User struct {
 	Email    string             `bson:"email"`
 	OAuths   map[string]string  `bson:"oauths"` //key service name,value unique id in this service
 	Money    map[string]int32   `bson:"money"`
+	BTime    uint64             `bson:"btime"`   //unit nanoseconds,if this is 0 means not banned,>0 means banned
+	BReason  string             `bson:"breason"` //ban reason
 }
 type UserTelIndex struct {
 	Tel    string             `bson:"tel"`

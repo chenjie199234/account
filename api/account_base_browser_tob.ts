@@ -9,6 +9,28 @@ export interface LogicError{
 	msg: string;
 }
 
+export class BanReq{
+	src_type: string = ''
+	src: string = ''
+	reason: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.src_type){
+			tmp["src_type"]=this.src_type
+		}
+		if(this.src){
+			tmp["src"]=this.src
+		}
+		if(this.reason){
+			tmp["reason"]=this.reason
+		}
+		return tmp
+	}
+}
+export class BanResp{
+	fromOBJ(_obj:Object){
+	}
+}
 export class BaseInfo{
 	user_id: string = ''
 	idcard: string = ''
@@ -19,6 +41,7 @@ export class BaseInfo{
 	bind_oauths: Array<string>|null = null
 	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
 	money: Map<string,number>|null = null
+	ban: string = ''//if this is not empty,means this account is banned
 	fromOBJ(obj:Object){
 		if(obj["user_id"]){
 			this.user_id=obj["user_id"]
@@ -44,6 +67,9 @@ export class BaseInfo{
 				this.money.set(key,obj["money"][key])
 			}
 		}
+		if(obj["ban"]){
+			this.ban=obj["ban"]
+		}
 	}
 }
 export class BaseInfoReq{
@@ -67,6 +93,24 @@ export class BaseInfoResp{
 			this.info=new BaseInfo()
 			this.info.fromOBJ(obj["info"])
 		}
+	}
+}
+export class UnbanReq{
+	src_type: string = ''
+	src: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.src_type){
+			tmp["src_type"]=this.src_type
+		}
+		if(this.src){
+			tmp["src"]=this.src
+		}
+		return tmp
+	}
+}
+export class UnbanResp{
+	fromOBJ(_obj:Object){
 	}
 }
 //timeout's unit is millisecond,it will be used when > 0
@@ -108,6 +152,8 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 	})
 }
 const _WebPathBaseBaseInfo: string ="/account.base/base_info";
+const _WebPathBaseBan: string ="/account.base/ban";
+const _WebPathBaseUnban: string ="/account.base/unban";
 //ToB means this is for internal
 //ToB client must be used with https://github.com/chenjie199234/admin
 //If your are not using 'admin' as your tob request's proxy gate,don't use this
@@ -141,6 +187,44 @@ export class BaseBrowserClientToB {
 		}
 		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
 			let r=new BaseInfoResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
+	}
+	//timeout's unit is millisecond,it will be used when > 0
+	ban(header: Object,req: BanReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: BanResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let realreq = {
+			project_id:this.projectid,
+			g_name:this.group,
+			a_name:"account",
+			path:_WebPathBaseBan,
+			data:JSON.stringify(req),
+		}
+		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
+			let r=new BanResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
+	}
+	//timeout's unit is millisecond,it will be used when > 0
+	unban(header: Object,req: UnbanReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: UnbanResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		let realreq = {
+			project_id:this.projectid,
+			g_name:this.group,
+			a_name:"account",
+			path:_WebPathBaseUnban,
+			data:JSON.stringify(req),
+		}
+		call(timeout,this.host+"/admin.app/proxy",{method:"POST",headers:header,body:JSON.stringify(realreq)},error,function(arg: Object){
+			let r=new UnbanResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

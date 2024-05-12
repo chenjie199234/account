@@ -83,12 +83,14 @@ base_info: {
 	"ctime":0,
 	"bind_oauths":["str","str"],
 	//kv map,value-int32
-	"money":{"str":0,"str":0}
+	"money":{"str":0,"str":0},
+	//if this is not empty,means this account is banned
+	"ban":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```
 ### base_info
-
+//if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 #### Req:
 ```
 Path:         /account.base/base_info
@@ -125,7 +127,9 @@ base_info: {
 	"ctime":0,
 	"bind_oauths":["str","str"],
 	//kv map,value-int32
-	"money":{"str":0,"str":0}
+	"money":{"str":0,"str":0},
+	//if this is not empty,means this account is banned
+	"ban":"str"
 }
 ------------------------------------------------------------------------------------------------------------
 ```

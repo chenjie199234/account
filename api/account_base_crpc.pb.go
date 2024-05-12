@@ -16,9 +16,14 @@ import (
 )
 
 var _CrpcPathBaseBaseInfo = "/account.base/base_info"
+var _CrpcPathBaseBan = "/account.base/ban"
+var _CrpcPathBaseUnban = "/account.base/unban"
 
 type BaseCrpcClient interface {
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
+	Ban(context.Context, *BanReq) (*BanResp, error)
+	Unban(context.Context, *UnbanReq) (*UnbanResp, error)
 }
 
 type baseCrpcClient struct {
@@ -51,9 +56,56 @@ func (c *baseCrpcClient) BaseInfo(ctx context.Context, req *BaseInfoReq) (*BaseI
 	}
 	return resp, nil
 }
+func (c *baseCrpcClient) Ban(ctx context.Context, req *BanReq) (*BanResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathBaseBan, reqd)
+	if e != nil {
+		return nil, e
+	}
+	resp := new(BanResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *baseCrpcClient) Unban(ctx context.Context, req *UnbanReq) (*UnbanResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	reqd, _ := proto.Marshal(req)
+	respd, e := c.cc.Call(ctx, _CrpcPathBaseUnban, reqd)
+	if e != nil {
+		return nil, e
+	}
+	resp := new(UnbanResp)
+	if len(respd) == 0 {
+		return resp, nil
+	}
+	if len(respd) >= 2 && respd[0] == '{' && respd[len(respd)-1] == '}' {
+		if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(respd, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := proto.Unmarshal(respd, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 
 type BaseCrpcServer interface {
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
+	Ban(context.Context, *BanReq) (*BanResp, error)
+	Unban(context.Context, *UnbanReq) (*UnbanResp, error)
 }
 
 func _Base_BaseInfo_CrpcHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) crpc.OutsideHandler {
@@ -104,6 +156,102 @@ func _Base_BaseInfo_CrpcHandler(handler func(context.Context, *BaseInfoReq) (*Ba
 		}
 	}
 }
+func _Base_Ban_CrpcHandler(handler func(context.Context, *BanReq) (*BanResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(BanReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.base/ban] json and proto format decode both failed")
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.base/ban] json and proto format decode both failed")
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/ban] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(BanResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
+func _Base_Unban_CrpcHandler(handler func(context.Context, *UnbanReq) (*UnbanResp, error)) crpc.OutsideHandler {
+	return func(ctx *crpc.Context) {
+		var preferJSON bool
+		req := new(UnbanReq)
+		reqbody := ctx.GetBody()
+		if len(reqbody) >= 2 && reqbody[0] == '{' && reqbody[len(reqbody)-1] == '}' {
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				req.Reset()
+				if e := proto.Unmarshal(reqbody, req); e != nil {
+					log.Error(ctx, "[/account.base/unban] json and proto format decode both failed")
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			} else {
+				preferJSON = true
+			}
+		} else if e := proto.Unmarshal(reqbody, req); e != nil {
+			req.Reset()
+			if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(reqbody, req); e != nil {
+				log.Error(ctx, "[/account.base/unban] json and proto format decode both failed")
+				ctx.Abort(cerror.ErrReq)
+				return
+			} else {
+				preferJSON = true
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/unban] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UnbanResp)
+		}
+		if preferJSON {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write(respd)
+		} else {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write(respd)
+		}
+	}
+}
 func RegisterBaseCrpcServer(engine *crpc.CrpcServer, svc BaseCrpcServer, allmids map[string]crpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
@@ -119,5 +267,31 @@ func RegisterBaseCrpcServer(engine *crpc.CrpcServer, svc BaseCrpcServer, allmids
 		}
 		mids = append(mids, _Base_BaseInfo_CrpcHandler(svc.BaseInfo))
 		engine.RegisterHandler("account.base", "base_info", mids...)
+	}
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]crpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_Ban_CrpcHandler(svc.Ban))
+		engine.RegisterHandler("account.base", "ban", mids...)
+	}
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]crpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_Unban_CrpcHandler(svc.Unban))
+		engine.RegisterHandler("account.base", "unban", mids...)
 	}
 }

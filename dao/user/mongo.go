@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"crypto/rand"
+	"time"
 
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
@@ -513,6 +514,30 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 		e = ecode.ErrPasswordWrong
 	}
 	return
+}
+func (d *Dao) MongoBanUser(ctx context.Context, userid primitive.ObjectID, reason string) error {
+	filter := bson.M{"_id": userid}
+	updater := bson.M{"btime": time.Now().UnixNano(), "breason": reason}
+	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, filter, bson.M{"$set": updater})
+	if e != nil {
+		return e
+	}
+	if r.MatchedCount == 0 {
+		return ecode.ErrUserNotExist
+	}
+	return nil
+}
+func (d *Dao) MongoUnBanUser(ctx context.Context, userid primitive.ObjectID) error {
+	filter := bson.M{"_id": userid}
+	updater := bson.M{"btime": 0, "breason": ""}
+	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, filter, bson.M{"$set": updater})
+	if e != nil {
+		return e
+	}
+	if r.MatchedCount == 0 {
+		return ecode.ErrUserNotExist
+	}
+	return nil
 }
 func (d *Dao) _MongoDelUselessUser(ctx context.Context, user *model.User) error {
 	if user.IDCard != "" || user.Email != "" || user.Tel != "" || len(user.OAuths) != 0 {

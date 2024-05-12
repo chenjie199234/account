@@ -38,6 +38,7 @@ var _WebPathBaseDelTel = "/account.base/del_tel"
 type BaseWebClient interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq, http.Header) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq, http.Header) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
@@ -545,6 +546,7 @@ func (c *baseWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 type BaseWebServer interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)

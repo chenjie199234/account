@@ -71,6 +71,8 @@ collection: user
         "cny":100,
         "usd":100,
     },
+    btime:123,//timestamp,unit nanoseconds,>0 means this account is banned,==0 means not banned
+    breason:"",//ban reason
 }
 //手动创建数据库
 use account;

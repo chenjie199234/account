@@ -123,50 +123,60 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 
 func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.BaseInfoResp, error) {
 	var user *model.User
-	switch req.SrcType {
-	case "user_id":
-		if req.Src == "" {
-			md := metadata.GetMetadata(ctx)
-			req.Src = md["Token-User"]
-		}
-		if req.Src == "" {
-			return nil, ecode.ErrReq
-		}
-		userid, e := primitive.ObjectIDFromHex(req.Src)
+	if _, ok := ctx.(*web.Context); ok {
+		md := metadata.GetMetadata(ctx)
+		operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 		if e != nil {
-			log.Error(ctx, "[BaseInfo] user_id format wrong", log.String("user_id", req.Src), log.CError(e))
-			return nil, ecode.ErrReq
+			log.Error(ctx, "[BaseInfo] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
+			return nil, ecode.ErrToken
 		}
-		if user, e = s.userDao.GetUser(ctx, userid); e != nil {
-			log.Error(ctx, "[BaseInfo] dao op failed", log.String("user_id", req.Src), log.CError(e))
+		if user, e = s.userDao.GetUser(ctx, operator); e != nil {
+			log.Error(ctx, "[BaseInfo] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-	case "tel":
-		if req.Src == "" {
-			return nil, ecode.ErrReq
-		}
-		var e error
-		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
-			log.Error(ctx, "[BaseInfo] dao op failed", log.String("tel", req.Src), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-	case "email":
-		if req.Src == "" {
-			return nil, ecode.ErrReq
-		}
-		var e error
-		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
-			log.Error(ctx, "[BaseInfo] dao op failed", log.String("email", req.Src), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-		}
-	case "idcard":
-		if req.Src == "" {
-			return nil, ecode.ErrReq
-		}
-		var e error
-		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
-			log.Error(ctx, "[BaseInfo] dao op failed", log.String("idcard", req.Src), log.CError(e))
-			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if user == nil {
+		switch req.SrcType {
+		case "user_id":
+			if req.Src == "" {
+				return nil, ecode.ErrReq
+			}
+			userid, e := primitive.ObjectIDFromHex(req.Src)
+			if e != nil {
+				log.Error(ctx, "[BaseInfo] user_id format wrong", log.String("user_id", req.Src), log.CError(e))
+				return nil, ecode.ErrReq
+			}
+			if user, e = s.userDao.GetUser(ctx, userid); e != nil {
+				log.Error(ctx, "[BaseInfo] dao op failed", log.String("user_id", req.Src), log.CError(e))
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+		case "tel":
+			if req.Src == "" {
+				return nil, ecode.ErrReq
+			}
+			var e error
+			if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+				log.Error(ctx, "[BaseInfo] dao op failed", log.String("tel", req.Src), log.CError(e))
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+		case "email":
+			if req.Src == "" {
+				return nil, ecode.ErrReq
+			}
+			var e error
+			if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+				log.Error(ctx, "[BaseInfo] dao op failed", log.String("email", req.Src), log.CError(e))
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
+		case "idcard":
+			if req.Src == "" {
+				return nil, ecode.ErrReq
+			}
+			var e error
+			if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+				log.Error(ctx, "[BaseInfo] dao op failed", log.String("idcard", req.Src), log.CError(e))
+				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+			}
 		}
 	}
 	resp := &api.BaseInfoResp{
@@ -178,6 +188,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			Money:      user.Money,
 			BindOauths: make([]string, 0, len(user.OAuths)),
 			Ctime:      uint32(user.UserID.Timestamp().Unix()),
+			Ban:        user.BReason,
 		},
 	}
 	if _, ok := ctx.(*web.Context); ok {
@@ -188,6 +199,146 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
 	}
 	return resp, nil
+}
+
+func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error) {
+	var userid primitive.ObjectID
+	switch req.SrcType {
+	case "user_id":
+		var e error
+		userid, e = primitive.ObjectIDFromHex(req.Src)
+		if e != nil {
+			log.Error(ctx, "[Ban] user_id format wrong", log.String("user_id", req.Src), log.CError(e))
+			return nil, ecode.ErrReq
+		}
+		if user, e := s.userDao.GetUser(ctx, userid); e != nil {
+			log.Error(ctx, "[Ban] dao op failed", log.String("user_id", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BReason == req.Reason {
+			return &api.BanResp{}, nil
+		}
+	case "tel":
+		if user, e := s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Ban] dao op failed", log.String("tel", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BReason == req.Reason {
+			return &api.BanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	case "email":
+		if user, e := s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Ban] dao op failed", log.String("email", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BReason == req.Reason {
+			return &api.BanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	case "idcard":
+		if user, e := s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Ban] dao op failed", log.String("idcard", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BReason == req.Reason {
+			return &api.BanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	}
+	if e := s.stop.Add(1); e != nil {
+		if e == graceful.ErrClosing {
+			return nil, cerror.ErrServerClosing
+		}
+		return nil, ecode.ErrBusy
+	}
+	if e := s.userDao.MongoBanUser(ctx, userid, req.Reason); e != nil {
+		s.stop.DoneOne()
+		log.Error(ctx, "[Ban] db op failed", log.String(req.SrcType, req.Src), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	log.Info(ctx, "[Ban] success", log.String(req.SrcType, req.Src))
+	go func() {
+		ctx := trace.CloneSpan(ctx)
+		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
+			if req.SrcType == "user_id" {
+				log.Error(ctx, "[Ban] clean redis failed", log.String(req.SrcType, req.Src), log.CError(e))
+			} else {
+				log.Error(ctx, "[Ban] clean redis failed", log.String(req.SrcType, req.Src), log.String("user_id", userid.Hex()), log.CError(e))
+			}
+		}
+		s.stop.DoneOne()
+	}()
+	return &api.BanResp{}, nil
+}
+
+func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp, error) {
+	var userid primitive.ObjectID
+	switch req.SrcType {
+	case "user_id":
+		var e error
+		userid, e = primitive.ObjectIDFromHex(req.Src)
+		if e != nil {
+			log.Error(ctx, "[Unban] user_id format wrong", log.String("user_id", req.Src), log.CError(e))
+			return nil, ecode.ErrReq
+		}
+		if user, e := s.userDao.GetUser(ctx, userid); e != nil {
+			log.Error(ctx, "[Unban] dao op failed", log.String("user_id", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BTime == 0 {
+			return &api.UnbanResp{}, nil
+		}
+	case "tel":
+		if user, e := s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Unban] dao op failed", log.String("tel", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BTime == 0 {
+			return &api.UnbanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	case "email":
+		if user, e := s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Unban] dao op failed", log.String("email", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BTime == 0 {
+			return &api.UnbanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	case "idcard":
+		if user, e := s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+			log.Error(ctx, "[Unban] dao op failed", log.String("idcard", req.Src), log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		} else if user.BTime == 0 {
+			return &api.UnbanResp{}, nil
+		} else {
+			userid = user.UserID
+		}
+	}
+	if e := s.stop.Add(1); e != nil {
+		if e == graceful.ErrClosing {
+			return nil, cerror.ErrServerClosing
+		}
+		return nil, ecode.ErrBusy
+	}
+	if e := s.userDao.MongoUnBanUser(ctx, userid); e != nil {
+		s.stop.DoneOne()
+		log.Error(ctx, "[Unban] db op failed", log.String(req.SrcType, req.Src), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	log.Info(ctx, "[Unban] success", log.String(req.SrcType, req.Src))
+	go func() {
+		ctx := trace.CloneSpan(ctx)
+		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
+			if req.SrcType == "user_id" {
+				log.Error(ctx, "[Unban] clean redis failed", log.String("user_id", userid.Hex()), log.CError(e))
+			} else {
+				log.Error(ctx, "[Unban] clean redis failed", log.String(req.SrcType, req.Src), log.String("user_id", userid.Hex()), log.CError(e))
+			}
+		}
+		s.stop.DoneOne()
+	}()
+	return &api.UnbanResp{}, nil
 }
 
 func (s *Service) GetOauthUrl(ctx context.Context, req *api.GetOauthUrlReq) (*api.GetOauthUrlResp, error) {
@@ -278,6 +429,9 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 	if req.PasswordType == "static" {
 		if e := util.SignCheck(req.Password, user.Password); e != nil {
 			if e == ecode.ErrSignCheckFailed {
@@ -319,6 +473,12 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	if e != nil {
 		log.Error(ctx, "[UpdateStaticPassword] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
+	}
+	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+		log.Error(ctx, "[UpdateStaticPassword] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if user.BTime != 0 {
+		return nil, ecode.ErrBan
 	}
 	//update db and clean redis is async
 	//the service's rolling update may happened between update db and clean redis
@@ -449,6 +609,9 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		//get the new oauth
 		oauthid, e = util.OAuthVerifyCode(ctx, "UpdateOauth", req.NewOauthServiceName, req.NewOauthDynamicPassword)
@@ -491,6 +654,10 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		log.Error(ctx, "[UpdateOauth] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
+
 	if req.VerifySrcType == "email" && user.Email == "" {
 		log.Error(ctx, "[UpdateOauth] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
@@ -499,6 +666,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		log.Error(ctx, "[UpdateOauth] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
+
 	if req.VerifySrcType == "email" {
 		e = s.sendcode(ctx, "UpdateOauth", "email", user.Email, md["Token-User"], util.UpdateOAuth)
 	} else {
@@ -603,6 +771,9 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if _, ok := user.OAuths[req.DelOauthServiceName]; !ok {
 			return &api.DelOauthResp{Step: "success", Final: user.Email == "" && user.IDCard == "" && user.Tel == "" && len(user.OAuths) == 0}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -639,6 +810,9 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 	if user.OAuths[req.DelOauthServiceName] == "" {
 		return &api.DelOauthResp{Step: "success", Final: final}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelOauth] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
@@ -648,6 +822,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		log.Error(ctx, "[DelOauth] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
+
 	if req.VerifySrcType == "email" {
 		e = s.sendcode(ctx, "DelOauth", "email", user.Email, md["Token-User"], util.DelOAuth)
 	} else {
@@ -664,6 +839,17 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 
 func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDuplicateCheckReq) (*api.IdcardDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	if e != nil {
+		log.Error(ctx, "[IdcardDuplicateCheck] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ErrToken
+	}
+	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+		log.Error(ctx, "[IdcardDuplicateCheck] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 	//redis lock
 	if e := s.userDao.RedisLockDuplicateCheck(ctx, "idcard", md["Token-User"]); e != nil {
 		log.Error(ctx, "[IdcardDuplicateCheck] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -777,6 +963,9 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 		if user.IDCard == req.NewIdcard {
 			return &api.UpdateIdcardResp{Step: "success"}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		if e := update(); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -806,6 +995,9 @@ func (s *Service) UpdateIdcard(ctx context.Context, req *api.UpdateIdcardReq) (*
 	}
 	if user.IDCard == req.NewIdcard {
 		return &api.UpdateIdcardResp{Step: "success"}, nil
+	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
 	}
 
 	if req.VerifySrcType == "tel" && user.Tel == "" {
@@ -921,6 +1113,9 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		if user.IDCard == "" {
 			return &api.DelIdcardResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -957,6 +1152,9 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 	if user.IDCard == "" {
 		return &api.DelIdcardResp{Step: "success", Final: final}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelIdcard] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
@@ -966,6 +1164,7 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		log.Error(ctx, "[DelIdcard] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
+
 	if req.VerifySrcType == "email" {
 		e = s.sendcode(ctx, "DelIdcard", "email", user.Email, md["Token-User"], util.DelIDCard)
 	} else {
@@ -982,6 +1181,17 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 
 func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplicateCheckReq) (*api.EmailDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	if e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ErrToken
+	}
+	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+		log.Error(ctx, "[EmailDuplicateCheck] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 	//redis lock
 	if e := s.userDao.RedisLockDuplicateCheck(ctx, "email", md["Token-User"]); e != nil {
 		log.Error(ctx, "[EmailDuplicateCheck] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -1114,6 +1324,9 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		if user.Email == req.NewEmail {
 			return &api.UpdateEmailResp{Step: "success"}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		if e := s.sendcode(ctx, "UpdateEmail", "email", req.NewEmail, md["Token-User"], util.UpdateEmailStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1144,6 +1357,10 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	if user.Email == req.NewEmail {
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
+
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
@@ -1257,6 +1474,9 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if user.Email == "" {
 			return &api.DelEmailResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -1293,6 +1513,9 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 	if user.Email == "" {
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelEmail] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
@@ -1302,6 +1525,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		log.Error(ctx, "[DelEmail] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
+
 	if req.VerifySrcType == "email" {
 		e = s.sendcode(ctx, "DelEmail", "email", user.Email, md["Token-User"], util.DelEmail)
 	} else {
@@ -1318,6 +1542,17 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 
 func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCheckReq) (*api.TelDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	if e != nil {
+		log.Error(ctx, "[TelDuplicateCheck] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ErrToken
+	}
+	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+		log.Error(ctx, "[TelDuplicateCheck] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	} else if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 	//redis lock
 	if e := s.userDao.RedisLockDuplicateCheck(ctx, "tel", md["Token-User"]); e != nil {
 		log.Error(ctx, "[TelDuplicateCheck] redis op failed", log.String("operator", md["Token-User"]), log.CError(e))
@@ -1450,6 +1685,9 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		if user.Tel == req.NewTel {
 			return &api.UpdateTelResp{Step: "success"}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		if e := s.sendcode(ctx, "UpdateTel", "tel", req.NewTel, md["Token-User"], util.UpdateTelStep2); e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1480,6 +1718,10 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	if user.Tel == req.NewTel {
 		return &api.UpdateTelResp{Step: "success"}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
+
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[UpdateTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
@@ -1593,6 +1835,9 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if user.Tel == "" {
 			return &api.DelTelResp{Step: "success", Final: user.Email == "" && user.Tel == "" && user.IDCard == "" && len(user.OAuths) == 0}, nil
 		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
 		//verify success
 		final, e := update()
 		if e != nil {
@@ -1629,6 +1874,9 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 	if user.Tel == "" {
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
 
 	if req.VerifySrcType == "tel" && user.Tel == "" {
 		log.Error(ctx, "[DelTel] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
@@ -1638,6 +1886,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		log.Error(ctx, "[DelTel] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
 		return nil, ecode.ErrReq
 	}
+
 	if req.VerifySrcType == "email" {
 		e = s.sendcode(ctx, "DelTel", "email", user.Email, md["Token-User"], util.DelTel)
 	} else {

@@ -30,11 +30,24 @@ service base{
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
+	//if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	rpc base_info(base_info_req)returns(base_info_resp){
 		option (pbex.method)="post";
 		option (pbex.method)="grpc";
 		option (pbex.method)="crpc";
 		option (pbex.web_midwares)="token";
+		option (pbex.crpc_midwares)="accesskey";
+		option (pbex.cgrpc_midwares)="accesskey";
+	}
+	rpc ban(ban_req)returns(ban_resp){
+		option (pbex.method)="grpc";
+		option (pbex.method)="crpc";
+		option (pbex.crpc_midwares)="accesskey";
+		option (pbex.cgrpc_midwares)="accesskey";
+	}
+	rpc unban(unban_req)returns(unban_resp){
+		option (pbex.method)="grpc";
+		option (pbex.method)="crpc";
 		option (pbex.crpc_midwares)="accesskey";
 		option (pbex.cgrpc_midwares)="accesskey";
 	}
@@ -104,6 +117,7 @@ message base_info{
 	uint32 ctime=5;
 	repeated string bind_oauths=6;
 	map<string,int32> money=7;
+	string ban=8;//if this is not empty,means this account is banned
 }
 message base_info_req{
 	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
@@ -111,6 +125,21 @@ message base_info_req{
 }
 message base_info_resp{
 	base_info info=1;
+}
+message ban_req{
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
+	string src=2[(pbex.string_bytes_len_gt)=0];
+	string reason=3[(pbex.string_bytes_len_gt)=0];
+}
+message ban_resp{
+
+}
+message unban_req{
+	string src_type=1[(pbex.string_bytes_in)="user_id",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="idcard"];
+	string src=2[(pbex.string_bytes_len_gt)=0];
+}
+message unban_resp{
+
 }
 message get_oauth_url_req{
 	string oauth_service_name=1[(pbex.string_bytes_in)="wechat"];

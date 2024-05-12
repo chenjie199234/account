@@ -15,6 +15,31 @@ func (m *BaseInfoReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *BanReq) Validate() (errstr string) {
+	if m.GetSrcType() != "user_id" && m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" {
+		return "field: src_type in object: ban_req check value str in failed"
+	}
+	if len(m.GetSrc()) <= 0 {
+		return "field: src in object: ban_req check value str len gt failed"
+	}
+	if len(m.GetReason()) <= 0 {
+		return "field: reason in object: ban_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *UnbanReq) Validate() (errstr string) {
+	if m.GetSrcType() != "user_id" && m.GetSrcType() != "tel" && m.GetSrcType() != "email" && m.GetSrcType() != "idcard" {
+		return "field: src_type in object: unban_req check value str in failed"
+	}
+	if len(m.GetSrc()) <= 0 {
+		return "field: src in object: unban_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *GetOauthUrlReq) Validate() (errstr string) {
 	if m.GetOauthServiceName() != "wechat" {
 		return "field: oauth_service_name in object: get_oauth_url_req check value str in failed"

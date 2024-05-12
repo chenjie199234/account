@@ -19,6 +19,7 @@ export class BaseInfo{
 	bind_oauths: Array<string>|null = null
 	//Warning!!!map's value's type is int32,be careful of sign(+,-) and overflow
 	money: Map<string,number>|null = null
+	ban: string = ''//if this is not empty,means this account is banned
 	fromOBJ(obj:Object){
 		if(obj["user_id"]){
 			this.user_id=obj["user_id"]
@@ -43,6 +44,9 @@ export class BaseInfo{
 			for(let key of Object.keys(obj["money"])){
 				this.money.set(key,obj["money"][key])
 			}
+		}
+		if(obj["ban"]){
+			this.ban=obj["ban"]
 		}
 	}
 }

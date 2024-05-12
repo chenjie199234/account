@@ -15,9 +15,14 @@ import (
 )
 
 var _CGrpcPathBaseBaseInfo = "/account.base/base_info"
+var _CGrpcPathBaseBan = "/account.base/ban"
+var _CGrpcPathBaseUnban = "/account.base/unban"
 
 type BaseCGrpcClient interface {
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq, ...grpc.CallOption) (*BaseInfoResp, error)
+	Ban(context.Context, *BanReq, ...grpc.CallOption) (*BanResp, error)
+	Unban(context.Context, *UnbanReq, ...grpc.CallOption) (*UnbanResp, error)
 }
 
 type baseCGrpcClient struct {
@@ -38,9 +43,32 @@ func (c *baseCGrpcClient) BaseInfo(ctx context.Context, req *BaseInfoReq, opts .
 	}
 	return resp, nil
 }
+func (c *baseCGrpcClient) Ban(ctx context.Context, req *BanReq, opts ...grpc.CallOption) (*BanResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(BanResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathBaseBan, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
+func (c *baseCGrpcClient) Unban(ctx context.Context, req *UnbanReq, opts ...grpc.CallOption) (*UnbanResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	resp := new(UnbanResp)
+	if e := c.cc.Invoke(ctx, _CGrpcPathBaseUnban, req, resp, opts...); e != nil {
+		return nil, e
+	}
+	return resp, nil
+}
 
 type BaseCGrpcServer interface {
+	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
+	Ban(context.Context, *BanReq) (*BanResp, error)
+	Unban(context.Context, *UnbanReq) (*UnbanResp, error)
 }
 
 func _Base_BaseInfo_CGrpcHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) cgrpc.OutsideHandler {
@@ -67,6 +95,54 @@ func _Base_BaseInfo_CGrpcHandler(handler func(context.Context, *BaseInfoReq) (*B
 		ctx.Write(resp)
 	}
 }
+func _Base_Ban_CGrpcHandler(handler func(context.Context, *BanReq) (*BanResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(BanReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.base/ban] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/ban] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(BanResp)
+		}
+		ctx.Write(resp)
+	}
+}
+func _Base_Unban_CGrpcHandler(handler func(context.Context, *UnbanReq) (*UnbanResp, error)) cgrpc.OutsideHandler {
+	return func(ctx *cgrpc.Context) {
+		req := new(UnbanReq)
+		if e := ctx.DecodeReq(req); e != nil {
+			log.Error(ctx, "[/account.base/unban] decode failed")
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/unban] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		if e != nil {
+			ctx.Abort(e)
+			return
+		}
+		if resp == nil {
+			resp = new(UnbanResp)
+		}
+		ctx.Write(resp)
+	}
+}
 func RegisterBaseCGrpcServer(engine *cgrpc.CGrpcServer, svc BaseCGrpcServer, allmids map[string]cgrpc.OutsideHandler) {
 	// avoid lint
 	_ = allmids
@@ -82,5 +158,31 @@ func RegisterBaseCGrpcServer(engine *cgrpc.CGrpcServer, svc BaseCGrpcServer, all
 		}
 		mids = append(mids, _Base_BaseInfo_CGrpcHandler(svc.BaseInfo))
 		engine.RegisterHandler("account.base", "base_info", mids...)
+	}
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]cgrpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_Ban_CGrpcHandler(svc.Ban))
+		engine.RegisterHandler("account.base", "ban", mids...)
+	}
+	{
+		requiredMids := []string{"accesskey"}
+		mids := make([]cgrpc.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_Unban_CGrpcHandler(svc.Unban))
+		engine.RegisterHandler("account.base", "unban", mids...)
 	}
 }
