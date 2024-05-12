@@ -17,6 +17,16 @@ func (d *Dao) RedisLockLoginDynamic(ctx context.Context, src string) error {
 	return e
 }
 
+// 2 times per hour
+func (d *Dao) RedisLockResetPassword(ctx context.Context, userid string) error {
+	rate := map[string][2]uint64{"reset_password_lock_{" + userid + "}": {2, 3600}}
+	success, e := d.redis.RateLimit(ctx, rate)
+	if e == nil && !success {
+		e = ecode.ErrTooFast
+	}
+	return e
+}
+
 // 5 times per hour
 func (d *Dao) RedisLockTelOP(ctx context.Context, userid string) error {
 	rate := map[string][2]uint64{"tel_op_lock_{" + userid + "}": {5, 3600}}

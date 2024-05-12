@@ -17,4 +17,6 @@ const (
 
 	UpdateOAuth = "update_oauth"
 	DelOAuth    = "del_oauth"
+
+	ResetPassword = "reset_password"
 )

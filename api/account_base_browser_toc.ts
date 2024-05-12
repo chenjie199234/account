@@ -350,6 +350,43 @@ export class LoginResp{
 		}
 	}
 }
+export class ResetStaticPasswordReq{
+	verify_src_type: string = ''
+	//when verify_src_type is oauth,this is the oauth service name
+	verify_src_type_extra: string = ''
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	verify_dynamic_password: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.verify_src_type){
+			tmp["verify_src_type"]=this.verify_src_type
+		}
+		if(this.verify_src_type_extra){
+			tmp["verify_src_type_extra"]=this.verify_src_type_extra
+		}
+		if(this.verify_dynamic_password){
+			tmp["verify_dynamic_password"]=this.verify_dynamic_password
+		}
+		return tmp
+	}
+}
+export class ResetStaticPasswordResp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	step: string = ''
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	receiver: string = ''
+	fromOBJ(obj:Object){
+		if(obj["step"]){
+			this.step=obj["step"]
+		}
+		if(obj["receiver"]){
+			this.receiver=obj["receiver"]
+		}
+	}
+}
 export class TelDuplicateCheckReq{
 	tel: string = ''
 	toJSON(){
@@ -613,6 +650,7 @@ const _WebPathBaseGetOauthUrl: string ="/account.base/get_oauth_url";
 const _WebPathBaseLogin: string ="/account.base/login";
 const _WebPathBaseBaseInfo: string ="/account.base/base_info";
 const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
+const _WebPathBaseResetStaticPassword: string ="/account.base/reset_static_password";
 const _WebPathBaseUpdateOauth: string ="/account.base/update_oauth";
 const _WebPathBaseDelOauth: string ="/account.base/del_oauth";
 const _WebPathBaseIdcardDuplicateCheck: string ="/account.base/idcard_duplicate_check";
@@ -676,6 +714,18 @@ export class BaseBrowserClientToC {
 		header["Content-Type"] = "application/json"
 		call(timeout,this.host+_WebPathBaseUpdateStaticPassword,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new UpdateStaticPasswordResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
+	}
+	//timeout's unit is millisecond,it will be used when > 0
+	reset_static_password(header: Object,req: ResetStaticPasswordReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: ResetStaticPasswordResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		call(timeout,this.host+_WebPathBaseResetStaticPassword,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new ResetStaticPasswordResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

@@ -161,6 +161,43 @@ Success: httpcode:200
 }
 ------------------------------------------------------------------------------------------------------------
 ```
+### reset_static_password
+
+#### Req:
+```
+Path:         /account.base/reset_static_password
+Method:       POST
+Content-Type: application/json
+------------------------------------------------------------------------------------------------------------
+{
+	//value must in ["email","tel","oauth"]
+	"verify_src_type":"str",
+	//when verify_src_type is oauth,this is the oauth service name
+	"verify_src_type_extra":"str",
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	"verify_dynamic_password":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
+#### Resp:
+```
+Fail:    httpcode:4xx/5xx
+------------------------------------------------------------------------------------------------------------
+{"code":123,"msg":"error message"}
+------------------------------------------------------------------------------------------------------------
+Success: httpcode:200
+------------------------------------------------------------------------------------------------------------
+{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	"step":"str",
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	"receiver":"str"
+}
+------------------------------------------------------------------------------------------------------------
+```
 ### update_oauth
 
 #### Req:

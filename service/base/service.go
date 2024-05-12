@@ -86,6 +86,8 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 		fallthrough
 	case util.UpdateIDCard:
 		e = s.userDao.RedisLockIDCardOP(ctx, operator)
+	case util.ResetPassword:
+		e = s.userDao.RedisLockResetPassword(ctx, operator)
 	default:
 		s.stop.DoneOne()
 		return ecode.ErrUnknownAction
@@ -179,7 +181,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			}
 		}
 	}
-	if user.BTime !=0 {
+	if user.BTime != 0 {
 		return nil, ecode.ErrBan
 	}
 	resp := &api.BaseInfoResp{
@@ -513,6 +515,132 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		s.stop.DoneOne()
 	}()
 	return &api.UpdateStaticPasswordResp{}, nil
+}
+
+// ResetStaticPassword By OAuth
+//
+//	Step 1:verify oauth belong to this account
+//
+// ResetStaticPassword By Dynamic Password
+//
+//	Step 1:send dynamic password to email to tel
+//	Step 2:verify email's or tel's dynamic password
+func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticPasswordReq) (*api.ResetStaticPasswordResp, error) {
+	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-user"])
+	if e != nil {
+		log.Error(ctx, "[ResetStaticPassword] operator's token format wrong", log.String("operator", md["Token-user"]), log.CError(e))
+		return nil, ecode.ErrToken
+	}
+	update := func() error {
+		//update db and clean redis is async
+		//the service's rolling update may happened between update db and clean redis
+		//so we need to make this not happened
+		if e := s.stop.Add(1); e != nil {
+			if e == graceful.ErrClosing {
+				return ecode.ErrServerClosing
+			}
+			return ecode.ErrBusy
+		}
+		if e := s.userDao.MongoResetUserPassword(ctx, operator); e != nil {
+			log.Error(ctx, "[ResetStaticPassword] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			s.stop.DoneOne()
+			return e
+		}
+		log.Info(ctx, "[ResetStaticPassword] success", log.String("operator", md["Token-User"]))
+		go func() {
+			ctx := trace.CloneSpan(ctx)
+			if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				log.Error(ctx, "[ResetStaticPassword] clean redis failed", log.String("operator", md["Token-User"]), log.CError(e))
+			}
+			s.stop.DoneOne()
+		}()
+		return nil
+	}
+	if req.VerifySrcType == "oauth" {
+		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
+			return nil, ecode.ErrReq
+		}
+		if e := s.userDao.RedisLockResetPassword(ctx, md["Token-User"]); e != nil {
+			log.Error(ctx, "[ResetStaticPassword] rate check failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		oauthid, e := util.OAuthVerifyCode(ctx, "ResetStaticPassword", req.VerifySrcTypeExtra, req.VerifyDynamicPassword)
+		if e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		if e != nil {
+			log.Error(ctx, "[ResetStaticPassword] dao op failed",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		if user.UserID.Hex() != md["Token-User"] {
+			log.Error(ctx, "[ResetStaticPassword] this is not the required oauth",
+				log.String("operator", md["Token-User"]),
+				log.String(req.VerifySrcTypeExtra, oauthid))
+			return nil, ecode.ErrOAuthWrong
+		}
+		if user.BTime != 0 {
+			return nil, ecode.ErrBan
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.ResetStaticPasswordResp{Step: "success"}, nil
+	}
+	if req.VerifyDynamicPassword != "" {
+		//step2
+		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.ResetPassword, req.VerifyDynamicPassword, ""); e != nil {
+			log.Error(ctx, "[ResetStaticPassword] redis op failed",
+				log.String("operator", md["Token-User"]),
+				log.String("code", req.VerifyDynamicPassword),
+				log.CError(e))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		//verify success
+		if e := update(); e != nil {
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+		return &api.ResetStaticPasswordResp{Step: "success"}, nil
+	}
+	//step1
+	user, e := s.userDao.GetUser(ctx, operator)
+	if e != nil {
+		log.Error(ctx, "[ResetStaticPassword] dao op failed", log.String("operator", md["Token-user"]), log.CError(e))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
+
+	if req.VerifySrcType == "tel" && user.Tel == "" {
+		log.Error(ctx, "[ResetStaticPassword] missing tel,can't use tel to receive dynamic password", log.String("operator", md["Token-User"]))
+		return nil, ecode.ErrReq
+	}
+	if req.VerifySrcType == "email" && user.Email == "" {
+		log.Error(ctx, "[ResetStaticPassword] missing email,can't use email to receive dynamic password", log.String("operator", md["Token-User"]))
+		return nil, ecode.ErrReq
+	}
+
+	if req.VerifySrcType == "email" {
+		e = s.sendcode(ctx, "ResetStaticPassword", "email", user.Email, md["Token-User"], util.ResetPassword)
+	} else {
+		e = s.sendcode(ctx, "ResetStaticPassword", "tel", user.Tel, md["Token-User"], util.ResetPassword)
+	}
+	if e != nil {
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if req.VerifySrcType == "email" {
+		return &api.ResetStaticPasswordResp{Step: "oldverify", Receiver: util.MaskEmail(user.Email)}, nil
+	}
+	return &api.ResetStaticPasswordResp{Step: "oldverify", Receiver: util.MaskTel(user.Tel)}, nil
 }
 
 // UpdateOAuth By OAuth

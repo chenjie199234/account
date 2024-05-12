@@ -55,6 +55,10 @@ service base{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc reset_static_password(reset_static_password_req)returns(reset_static_password_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc update_oauth(update_oauth_req)returns(update_oauth_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
@@ -172,6 +176,22 @@ message update_static_password_req{
 	string new_static_password=2[(pbex.string_bytes_len_gte)=10];
 }
 message update_static_password_resp{
+}
+message reset_static_password_req{
+	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
+	//when verify_src_type is oauth,this is the oauth service name
+	string verify_src_type_extra=2;
+	//if this is empty,means send dynamic password
+	//if this is not empty,means verify dynamic password
+	string verify_dynamic_password=3;
+}
+message reset_static_password_resp{
+	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_oauth_req's verify_src_type) and is waiting for verify
+	//success:nothing need to do
+	string step=1;
+	//send dynamic password to where,this will be masked
+	//when step is success,ignore this
+	string receiver=2;
 }
 message update_oauth_req{
 	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];

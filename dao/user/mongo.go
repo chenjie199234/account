@@ -515,6 +515,18 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 	}
 	return
 }
+func (d *Dao) MongoResetUserPassword(ctx context.Context, userid primitive.ObjectID) error {
+	nonce := make([]byte, 16)
+	rand.Read(nonce)
+	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"password": util.SignMake("", nonce)}})
+	if e != nil {
+		return e
+	}
+	if r.MatchedCount == 0 {
+		return ecode.ErrUserNotExist
+	}
+	return nil
+}
 func (d *Dao) MongoBanUser(ctx context.Context, userid primitive.ObjectID, reason string) error {
 	filter := bson.M{"_id": userid}
 	updater := bson.M{"btime": time.Now().UnixNano(), "breason": reason}

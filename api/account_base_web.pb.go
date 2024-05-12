@@ -23,6 +23,7 @@ var _WebPathBaseGetOauthUrl = "/account.base/get_oauth_url"
 var _WebPathBaseLogin = "/account.base/login"
 var _WebPathBaseBaseInfo = "/account.base/base_info"
 var _WebPathBaseUpdateStaticPassword = "/account.base/update_static_password"
+var _WebPathBaseResetStaticPassword = "/account.base/reset_static_password"
 var _WebPathBaseUpdateOauth = "/account.base/update_oauth"
 var _WebPathBaseDelOauth = "/account.base/del_oauth"
 var _WebPathBaseIdcardDuplicateCheck = "/account.base/idcard_duplicate_check"
@@ -41,6 +42,7 @@ type BaseWebClient interface {
 	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq, http.Header) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
+	ResetStaticPassword(context.Context, *ResetStaticPasswordReq, http.Header) (*ResetStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq, http.Header) (*DelOauthResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
@@ -178,6 +180,38 @@ func (c *baseWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(UpdateStaticPasswordResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *baseWebClient) ResetStaticPassword(ctx context.Context, req *ResetStaticPasswordReq, header http.Header) (*ResetStaticPasswordResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathBaseResetStaticPassword, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(ResetStaticPasswordResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -549,6 +583,7 @@ type BaseWebServer interface {
 	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
+	ResetStaticPassword(context.Context, *ResetStaticPasswordReq) (*ResetStaticPasswordResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
@@ -832,6 +867,79 @@ func _Base_UpdateStaticPassword_WebHandler(handler func(context.Context, *Update
 		}
 		if resp == nil {
 			resp = new(UpdateStaticPasswordResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _Base_ResetStaticPassword_WebHandler(handler func(context.Context, *ResetStaticPasswordReq) (*ResetStaticPasswordResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(ResetStaticPasswordReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/reset_static_password] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/reset_static_password] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/reset_static_password] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/reset_static_password] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			if e := ctx.ParseForm(); e != nil {
+				log.Error(ctx, "[/account.base/reset_static_password] parse form failed", log.CError(e))
+				ctx.Abort(cerror.ErrReq)
+				return
+			}
+			// req.VerifySrcType
+			if form := ctx.GetForm("verify_src_type"); len(form) != 0 {
+				req.VerifySrcType = form
+			}
+			// req.VerifySrcTypeExtra
+			if form := ctx.GetForm("verify_src_type_extra"); len(form) != 0 {
+				req.VerifySrcTypeExtra = form
+			}
+			// req.VerifyDynamicPassword
+			if form := ctx.GetForm("verify_dynamic_password"); len(form) != 0 {
+				req.VerifyDynamicPassword = form
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/reset_static_password] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(ResetStaticPasswordResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -1683,6 +1791,19 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 		}
 		mids = append(mids, _Base_UpdateStaticPassword_WebHandler(svc.UpdateStaticPassword))
 		router.Post(_WebPathBaseUpdateStaticPassword, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_ResetStaticPassword_WebHandler(svc.ResetStaticPassword))
+		router.Post(_WebPathBaseResetStaticPassword, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
