@@ -95,18 +95,18 @@ func (d *Dao) RedisSetMoneyLogs(ctx context.Context, userid, opaction string, lo
 		data, _ := json.Marshal(log)
 		args = append(args, log.LogID.Timestamp().Unix(), data)
 	}
-	_, e := setMoneyLogsScript.Run(ctx, d.redis, []string{opaction + "_money_logs_{" + userid + "}"}, args...).Result()
+	_, e := setMoneyLogsScript.Run(ctx, d.redis, []string{"user_{" + userid + "}_money_logs_" + opaction}, args...).Result()
 	return e
 }
 
 // log will be added only when the user's money logs' redis key exist.if key not exist,ecode.ErrMoneyLogsNotExist will return
 func (d *Dao) RedisAddMoneyLogs(ctx context.Context, userid, opaction string, log *model.MoneyLog) error {
 	data, _ := json.Marshal(log)
-	_, e := addMoneyLogsScript.Run(ctx, d.redis, []string{opaction + "_money_logs_{" + userid + "}"}, int64(30*24*time.Hour.Seconds()), log.LogID.Timestamp().Unix(), data).Result()
+	_, e := addMoneyLogsScript.Run(ctx, d.redis, []string{"user_{" + userid + "}_money_logs_" + opaction}, int64(30*24*time.Hour.Seconds()), log.LogID.Timestamp().Unix(), data).Result()
 	return e
 }
 func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) error {
-	_, e := d.redis.Del(ctx, opaction+"_money_logs_{"+userid+"}").Result()
+	_, e := d.redis.Del(ctx, "user_{"+userid+"}_money_logs_"+opaction).Result()
 	return e
 }
 
@@ -114,7 +114,7 @@ func (d *Dao) RedisDelMoneyLogs(ctx context.Context, userid, opaction string) er
 // if page != 0,return the required page's logs
 // if page != 0 and page overflow,return the last page's logs
 func (d *Dao) RedisGetMoneyLogs(ctx context.Context, userid, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
-	values, e := getMoneyLogsScript.Run(ctx, d.redis, []string{opaction + "_money_logs_{" + userid + "}"}, starttime, endtime, page, pagesize).Slice()
+	values, e := getMoneyLogsScript.Run(ctx, d.redis, []string{"user_{" + userid + "}_money_logs_" + opaction}, starttime, endtime, page, pagesize).Slice()
 	if e != nil {
 		return nil, 0, 0, e
 	}
