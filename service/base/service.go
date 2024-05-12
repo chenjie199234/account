@@ -527,9 +527,9 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticPasswordReq) (*api.ResetStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-user"])
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
-		log.Error(ctx, "[ResetStaticPassword] operator's token format wrong", log.String("operator", md["Token-user"]), log.CError(e))
+		log.Error(ctx, "[ResetStaticPassword] operator's token format wrong", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ErrToken
 	}
 	update := func() error {
@@ -543,7 +543,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 			return ecode.ErrBusy
 		}
 		if e := s.userDao.MongoResetUserPassword(ctx, operator); e != nil {
-			log.Error(ctx, "[ResetStaticPassword] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			log.Error(ctx, "[ResetStaticPassword] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			s.stop.DoneOne()
 			return e
 		}
@@ -616,7 +616,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 	//step1
 	user, e := s.userDao.GetUser(ctx, operator)
 	if e != nil {
-		log.Error(ctx, "[ResetStaticPassword] dao op failed", log.String("operator", md["Token-user"]), log.CError(e))
+		log.Error(ctx, "[ResetStaticPassword] dao op failed", log.String("operator", md["Token-User"]), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 	if util.SignCheck("", user.Password) == nil {
@@ -847,7 +847,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if olduser, e = s.userDao.MongoUpdateUserOAuth(ctx, operator, req.DelOauthServiceName, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
-			log.Error(ctx, "[DelOauth] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			log.Error(ctx, "[DelOauth] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
 		log.Info(ctx, "[DelOauth] success", log.String("operator", md["Token-User"]), log.String("oauth", req.DelOauthServiceName))
@@ -1189,7 +1189,7 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		if olduser, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
-			log.Error(ctx, "[DelIdcard] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			log.Error(ctx, "[DelIdcard] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
 		log.Info(ctx, "[DelIdcard] success", log.String("operator", md["Token-User"]))
@@ -1550,7 +1550,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if olduser, e = s.userDao.MongoUpdateUserEmail(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
-			log.Error(ctx, "[DelEmail] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			log.Error(ctx, "[DelEmail] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
 		log.Info(ctx, "[DelEmail] success", log.String("operator", md["Token-User"]))
@@ -1911,7 +1911,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if olduser, e = s.userDao.MongoUpdateUserTel(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
-			log.Error(ctx, "[DelTel] db op failed", log.String("operator", md["Token-user"]), log.CError(e))
+			log.Error(ctx, "[DelTel] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
 		log.Info(ctx, "[DelTel] success", log.String("operator", md["Token-User"]))
