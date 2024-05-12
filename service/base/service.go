@@ -586,6 +586,9 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 				log.String(req.VerifySrcTypeExtra, oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
+		if util.SignCheck("", user.Password) == nil {
+			return &api.ResetStaticPasswordResp{Step: "success"}, nil
+		}
 		if user.BTime != 0 {
 			return nil, ecode.ErrBan
 		}
@@ -615,6 +618,9 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 	if e != nil {
 		log.Error(ctx, "[ResetStaticPassword] dao op failed", log.String("operator", md["Token-user"]), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if util.SignCheck("", user.Password) == nil {
+		return &api.ResetStaticPasswordResp{Step: "success"}, nil
 	}
 	if user.BTime != 0 {
 		return nil, ecode.ErrBan
