@@ -179,6 +179,9 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			}
 		}
 	}
+	if user.BTime !=0 {
+		return nil, ecode.ErrBan
+	}
 	resp := &api.BaseInfoResp{
 		Info: &api.BaseInfo{
 			UserId:     user.UserID.Hex(),
