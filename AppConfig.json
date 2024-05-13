@@ -36,6 +36,18 @@
 			"accesses":{
 				"accessid":"accesskey"
 			}
+		}],
+		"/account.base/ban":[{
+			"methods":["CRPC","GRPC"],
+			"accesses":{
+				"accessid":"accesskey"
+			}
+		}],
+		"/account.base/unban":[{
+			"methods":["CRPC","GRPC"],
+			"accesses":{
+				"accessid":"accesskey"
+			}
 		}]
 	},
 	"token_secret":"test",
