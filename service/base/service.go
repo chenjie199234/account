@@ -262,7 +262,11 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 		log.Error(ctx, "[Ban] db op failed", log.String(req.SrcType, req.Src), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	log.Info(ctx, "[Ban] success", log.String(req.SrcType, req.Src))
+	if req.SrcType == "user_id" {
+		log.Info(ctx, "[Ban] success", log.String(req.SrcType, req.Src))
+	} else {
+		log.Info(ctx, "[Ban] success", log.String(req.SrcType, req.Src), log.String("user_id", userid.Hex()))
+	}
 	go func() {
 		ctx := trace.CloneSpan(ctx)
 		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
@@ -332,7 +336,11 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 		log.Error(ctx, "[Unban] db op failed", log.String(req.SrcType, req.Src), log.CError(e))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	log.Info(ctx, "[Unban] success", log.String(req.SrcType, req.Src))
+	if req.SrcType == "user_id" {
+		log.Info(ctx, "[Unban] success", log.String(req.SrcType, req.Src))
+	} else {
+		log.Info(ctx, "[Unban] success", log.String(req.SrcType, req.Src), log.String("user_id", userid.Hex()))
+	}
 	go func() {
 		ctx := trace.CloneSpan(ctx)
 		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
@@ -863,7 +871,6 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 			log.Error(ctx, "[DelOauth] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
-		log.Info(ctx, "[DelOauth] success", log.String("operator", md["Token-User"]), log.String("oauth", req.DelOauthServiceName))
 		if oauthid := olduser.OAuths[req.DelOauthServiceName]; oauthid != "" {
 			go func() {
 				ctx := trace.CloneSpan(ctx)
@@ -887,6 +894,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if olduser.Email == "" && olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 1 && olduser.OAuths[req.DelOauthServiceName] != "" {
 			final = true
 		}
+		log.Info(ctx, "[DelOauth] success", log.String("operator", md["Token-User"]), log.String("oauth", req.DelOauthServiceName), log.Bool("final", final))
 		return final, nil
 	}
 	if req.VerifySrcType == "oauth" {
@@ -1205,7 +1213,6 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 			log.Error(ctx, "[DelIdcard] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
-		log.Info(ctx, "[DelIdcard] success", log.String("operator", md["Token-User"]))
 		if olduser.IDCard != "" {
 			go func() {
 				ctx := trace.CloneSpan(ctx)
@@ -1229,6 +1236,7 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 		if olduser.Email == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
 			final = true
 		}
+		log.Info(ctx, "[DelIdcard] success", log.String("operator", md["Token-User"]), log.Bool("final", final))
 		return final, nil
 	}
 	if req.VerifySrcType == "oauth" {
@@ -1590,7 +1598,6 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 			log.Error(ctx, "[DelEmail] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
-		log.Info(ctx, "[DelEmail] success", log.String("operator", md["Token-User"]))
 		if olduser.Email != "" {
 			go func() {
 				ctx := trace.CloneSpan(ctx)
@@ -1614,6 +1621,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if olduser.IDCard == "" && olduser.Tel == "" && len(olduser.OAuths) == 0 {
 			final = true
 		}
+		log.Info(ctx, "[DelEmail] success", log.String("operator", md["Token-User"]), log.Bool("final", final))
 		return final, nil
 	}
 	if req.VerifySrcType == "oauth" {
@@ -1951,7 +1959,6 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 			log.Error(ctx, "[DelTel] db op failed", log.String("operator", md["Token-User"]), log.CError(e))
 			return false, e
 		}
-		log.Info(ctx, "[DelTel] success", log.String("operator", md["Token-User"]))
 		if olduser.Tel != "" {
 			go func() {
 				ctx := trace.CloneSpan(ctx)
@@ -1975,6 +1982,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if olduser.IDCard == "" && olduser.Email == "" && len(olduser.OAuths) == 0 {
 			final = true
 		}
+		log.Info(ctx, "[DelTel] success", log.String("operator", md["Token-User"]), log.Bool("final", final))
 		return final, nil
 	}
 	if req.VerifySrcType == "oauth" {
