@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"strings"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -397,6 +398,18 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 		}
 	case "email":
+		emailServices := config.AC.Service.SupportEmailService
+		support := false
+		low := strings.ToLower(req.SrcTypeExtra)
+		for _, v := range emailServices {
+			if strings.HasSuffix(low, v) {
+				support = true
+				break
+			}
+		}
+		if !support {
+			return nil, ecode.ErrUnsupportedEmailService
+		}
 		if req.PasswordType == "static" {
 			if user, e = s.userDao.GetUserByEmail(ctx, req.SrcTypeExtra); e != nil {
 				log.Error(ctx, "[Login] dao op failed", log.String("email", req.SrcTypeExtra), log.CError(e))
@@ -1317,6 +1330,18 @@ func (s *Service) DelIdcard(ctx context.Context, req *api.DelIdcardReq) (*api.De
 }
 
 func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplicateCheckReq) (*api.EmailDuplicateCheckResp, error) {
+	emailServices := config.AC.Service.SupportEmailService
+	support := false
+	low := strings.ToLower(req.Email)
+	for _, v := range emailServices {
+		if strings.HasSuffix(low, v) {
+			support = true
+			break
+		}
+	}
+	if !support {
+		return nil, ecode.ErrUnsupportedEmailService
+	}
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
@@ -1353,6 +1378,18 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 //	Step 2:verify old email's or tel's dynamic password and send dynamic password to new email
 //	Step final:verify new email's dynamic password and update
 func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*api.UpdateEmailResp, error) {
+	emailServices := config.AC.Service.SupportEmailService
+	support := false
+	low := strings.ToLower(req.NewEmail)
+	for _, v := range emailServices {
+		if strings.HasSuffix(low, v) {
+			support = true
+			break
+		}
+	}
+	if !support {
+		return nil, ecode.ErrUnsupportedEmailService
+	}
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
