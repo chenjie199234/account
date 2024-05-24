@@ -116,49 +116,6 @@ export class DelEmailResp{
 		}
 	}
 }
-export class DelIdcardReq{
-	verify_src_type: string = ''
-	//when verify_src_type is oauth,this is the oauth service name
-	verify_src_type_extra: string = ''
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	verify_dynamic_password: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.verify_src_type){
-			tmp["verify_src_type"]=this.verify_src_type
-		}
-		if(this.verify_src_type_extra){
-			tmp["verify_src_type_extra"]=this.verify_src_type_extra
-		}
-		if(this.verify_dynamic_password){
-			tmp["verify_dynamic_password"]=this.verify_dynamic_password
-		}
-		return tmp
-	}
-}
-export class DelIdcardResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	step: string = ''
-	//if this is true,means this is the last way to login this account
-	//if del this,this account will be deleted completely
-	final: boolean = false
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	receiver: string = ''
-	fromOBJ(obj:Object){
-		if(obj["step"]){
-			this.step=obj["step"]
-		}
-		if(obj["final"]){
-			this.final=obj["final"]
-		}
-		if(obj["receiver"]){
-			this.receiver=obj["receiver"]
-		}
-	}
-}
 export class DelOauthReq{
 	verify_src_type: string = ''
 	//when verify_src_type is oauth,this is the oauth service name
@@ -387,6 +344,20 @@ export class ResetStaticPasswordResp{
 		}
 	}
 }
+export class SetIdcardReq{
+	idcard: string = ''
+	toJSON(){
+		let tmp = {}
+		if(this.idcard){
+			tmp["idcard"]=this.idcard
+		}
+		return tmp
+	}
+}
+export class SetIdcardResp{
+	fromOBJ(_obj:Object){
+	}
+}
 export class TelDuplicateCheckReq{
 	tel: string = ''
 	toJSON(){
@@ -439,47 +410,6 @@ export class UpdateEmailReq{
 export class UpdateEmailResp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_email_req's verify_src_type) and is waiting for verify
 	//newverify:server already send the dynamic password to the new email(depend on the update_email_req's new_email) and is waiting for verify
-	//success:nothing need to do
-	step: string = ''
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	receiver: string = ''
-	fromOBJ(obj:Object){
-		if(obj["step"]){
-			this.step=obj["step"]
-		}
-		if(obj["receiver"]){
-			this.receiver=obj["receiver"]
-		}
-	}
-}
-export class UpdateIdcardReq{
-	verify_src_type: string = ''
-	//when verify_src_type is oauth,this is the oauth service name
-	verify_src_type_extra: string = ''
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	verify_dynamic_password: string = ''
-	new_idcard: string = ''
-	toJSON(){
-		let tmp = {}
-		if(this.verify_src_type){
-			tmp["verify_src_type"]=this.verify_src_type
-		}
-		if(this.verify_src_type_extra){
-			tmp["verify_src_type_extra"]=this.verify_src_type_extra
-		}
-		if(this.verify_dynamic_password){
-			tmp["verify_dynamic_password"]=this.verify_dynamic_password
-		}
-		if(this.new_idcard){
-			tmp["new_idcard"]=this.new_idcard
-		}
-		return tmp
-	}
-}
-export class UpdateIdcardResp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	step: string = ''
 	//send dynamic password to where,this will be masked
@@ -651,11 +581,10 @@ const _WebPathBaseLogin: string ="/account.base/login";
 const _WebPathBaseBaseInfo: string ="/account.base/base_info";
 const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
 const _WebPathBaseResetStaticPassword: string ="/account.base/reset_static_password";
+const _WebPathBaseIdcardDuplicateCheck: string ="/account.base/idcard_duplicate_check";
+const _WebPathBaseSetIdcard: string ="/account.base/set_idcard";
 const _WebPathBaseUpdateOauth: string ="/account.base/update_oauth";
 const _WebPathBaseDelOauth: string ="/account.base/del_oauth";
-const _WebPathBaseIdcardDuplicateCheck: string ="/account.base/idcard_duplicate_check";
-const _WebPathBaseUpdateIdcard: string ="/account.base/update_idcard";
-const _WebPathBaseDelIdcard: string ="/account.base/del_idcard";
 const _WebPathBaseEmailDuplicateCheck: string ="/account.base/email_duplicate_check";
 const _WebPathBaseUpdateEmail: string ="/account.base/update_email";
 const _WebPathBaseDelEmail: string ="/account.base/del_email";
@@ -731,6 +660,30 @@ export class BaseBrowserClientToC {
 		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
+	idcard_duplicate_check(header: Object,req: IdcardDuplicateCheckReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: IdcardDuplicateCheckResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		call(timeout,this.host+_WebPathBaseIdcardDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new IdcardDuplicateCheckResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
+	}
+	//timeout's unit is millisecond,it will be used when > 0
+	set_idcard(header: Object,req: SetIdcardReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: SetIdcardResp)=>void){
+		if(!header){
+			header={}
+		}
+		header["Content-Type"] = "application/json"
+		call(timeout,this.host+_WebPathBaseSetIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
+			let r=new SetIdcardResp()
+			r.fromOBJ(arg)
+			success(r)
+		})
+	}
+	//timeout's unit is millisecond,it will be used when > 0
 	update_oauth(header: Object,req: UpdateOauthReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: UpdateOauthResp)=>void){
 		if(!header){
 			header={}
@@ -750,42 +703,6 @@ export class BaseBrowserClientToC {
 		header["Content-Type"] = "application/json"
 		call(timeout,this.host+_WebPathBaseDelOauth,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
 			let r=new DelOauthResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	idcard_duplicate_check(header: Object,req: IdcardDuplicateCheckReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: IdcardDuplicateCheckResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathBaseIdcardDuplicateCheck,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new IdcardDuplicateCheckResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	update_idcard(header: Object,req: UpdateIdcardReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: UpdateIdcardResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathBaseUpdateIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new UpdateIdcardResp()
-			r.fromOBJ(arg)
-			success(r)
-		})
-	}
-	//timeout's unit is millisecond,it will be used when > 0
-	del_idcard(header: Object,req: DelIdcardReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: DelIdcardResp)=>void){
-		if(!header){
-			header={}
-		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathBaseDelIdcard,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new DelIdcardResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

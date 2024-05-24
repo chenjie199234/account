@@ -78,6 +78,22 @@ func (m *ResetStaticPasswordReq) Validate() (errstr string) {
 }
 
 // return empty means pass
+func (m *IdcardDuplicateCheckReq) Validate() (errstr string) {
+	if len(m.GetIdcard()) <= 0 {
+		return "field: idcard in object: idcard_duplicate_check_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
+func (m *SetIdcardReq) Validate() (errstr string) {
+	if len(m.GetIdcard()) <= 0 {
+		return "field: idcard in object: set_idcard_req check value str len gt failed"
+	}
+	return ""
+}
+
+// return empty means pass
 func (m *UpdateOauthReq) Validate() (errstr string) {
 	if m.GetVerifySrcType() != "email" && m.GetVerifySrcType() != "tel" && m.GetVerifySrcType() != "oauth" {
 		return "field: verify_src_type in object: update_oauth_req check value str in failed"
@@ -92,33 +108,6 @@ func (m *DelOauthReq) Validate() (errstr string) {
 	}
 	if len(m.GetDelOauthServiceName()) <= 0 {
 		return "field: del_oauth_service_name in object: del_oauth_req check value str len gt failed"
-	}
-	return ""
-}
-
-// return empty means pass
-func (m *IdcardDuplicateCheckReq) Validate() (errstr string) {
-	if len(m.GetIdcard()) <= 0 {
-		return "field: idcard in object: idcard_duplicate_check_req check value str len gt failed"
-	}
-	return ""
-}
-
-// return empty means pass
-func (m *UpdateIdcardReq) Validate() (errstr string) {
-	if m.GetVerifySrcType() != "email" && m.GetVerifySrcType() != "tel" && m.GetVerifySrcType() != "oauth" {
-		return "field: verify_src_type in object: update_idcard_req check value str in failed"
-	}
-	if len(m.GetNewIdcard()) <= 0 {
-		return "field: new_idcard in object: update_idcard_req check value str len gt failed"
-	}
-	return ""
-}
-
-// return empty means pass
-func (m *DelIdcardReq) Validate() (errstr string) {
-	if m.GetVerifySrcType() != "email" && m.GetVerifySrcType() != "tel" && m.GetVerifySrcType() != "oauth" {
-		return "field: verify_src_type in object: del_idcard_req check value str in failed"
 	}
 	return ""
 }

@@ -24,11 +24,10 @@ var _WebPathBaseLogin = "/account.base/login"
 var _WebPathBaseBaseInfo = "/account.base/base_info"
 var _WebPathBaseUpdateStaticPassword = "/account.base/update_static_password"
 var _WebPathBaseResetStaticPassword = "/account.base/reset_static_password"
+var _WebPathBaseIdcardDuplicateCheck = "/account.base/idcard_duplicate_check"
+var _WebPathBaseSetIdcard = "/account.base/set_idcard"
 var _WebPathBaseUpdateOauth = "/account.base/update_oauth"
 var _WebPathBaseDelOauth = "/account.base/del_oauth"
-var _WebPathBaseIdcardDuplicateCheck = "/account.base/idcard_duplicate_check"
-var _WebPathBaseUpdateIdcard = "/account.base/update_idcard"
-var _WebPathBaseDelIdcard = "/account.base/del_idcard"
 var _WebPathBaseEmailDuplicateCheck = "/account.base/email_duplicate_check"
 var _WebPathBaseUpdateEmail = "/account.base/update_email"
 var _WebPathBaseDelEmail = "/account.base/del_email"
@@ -43,11 +42,10 @@ type BaseWebClient interface {
 	BaseInfo(context.Context, *BaseInfoReq, http.Header) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	ResetStaticPassword(context.Context, *ResetStaticPasswordReq, http.Header) (*ResetStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
+	SetIdcard(context.Context, *SetIdcardReq, http.Header) (*SetIdcardResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq, http.Header) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq, http.Header) (*DelOauthResp, error)
-	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
-	UpdateIdcard(context.Context, *UpdateIdcardReq, http.Header) (*UpdateIdcardResp, error)
-	DelIdcard(context.Context, *DelIdcardReq, http.Header) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq, http.Header) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq, http.Header) (*UpdateEmailResp, error)
 	DelEmail(context.Context, *DelEmailReq, http.Header) (*DelEmailResp, error)
@@ -224,6 +222,70 @@ func (c *baseWebClient) ResetStaticPassword(ctx context.Context, req *ResetStati
 	}
 	return resp, nil
 }
+func (c *baseWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathBaseIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(IdcardDuplicateCheckResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
+func (c *baseWebClient) SetIdcard(ctx context.Context, req *SetIdcardReq, header http.Header) (*SetIdcardResp, error) {
+	if req == nil {
+		return nil, cerror.ErrReq
+	}
+	if header == nil {
+		header = make(http.Header)
+	}
+	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Accept", "application/x-protobuf")
+	reqd, _ := proto.Marshal(req)
+	r, e := c.cc.Post(ctx, _WebPathBaseSetIdcard, "", header, metadata.GetMetadata(ctx), reqd)
+	if e != nil {
+		return nil, e
+	}
+	data, e := io.ReadAll(r.Body)
+	r.Body.Close()
+	if e != nil {
+		return nil, cerror.ConvertStdError(e)
+	}
+	resp := new(SetIdcardResp)
+	if len(data) == 0 {
+		return resp, nil
+	}
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
+		if e := proto.Unmarshal(data, resp); e != nil {
+			return nil, cerror.ErrResp
+		}
+	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
+		return nil, cerror.ErrResp
+	}
+	return resp, nil
+}
 func (c *baseWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, header http.Header) (*UpdateOauthResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
@@ -276,102 +338,6 @@ func (c *baseWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header h
 		return nil, cerror.ConvertStdError(e)
 	}
 	resp := new(DelOauthResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *baseWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDuplicateCheckReq, header http.Header) (*IdcardDuplicateCheckResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(IdcardDuplicateCheckResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *baseWebClient) UpdateIdcard(ctx context.Context, req *UpdateIdcardReq, header http.Header) (*UpdateIdcardResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseUpdateIdcard, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(UpdateIdcardResp)
-	if len(data) == 0 {
-		return resp, nil
-	}
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-protobuf") {
-		if e := proto.Unmarshal(data, resp); e != nil {
-			return nil, cerror.ErrResp
-		}
-	} else if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, resp); e != nil {
-		return nil, cerror.ErrResp
-	}
-	return resp, nil
-}
-func (c *baseWebClient) DelIdcard(ctx context.Context, req *DelIdcardReq, header http.Header) (*DelIdcardResp, error) {
-	if req == nil {
-		return nil, cerror.ErrReq
-	}
-	if header == nil {
-		header = make(http.Header)
-	}
-	header.Set("Content-Type", "application/x-protobuf")
-	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseDelIdcard, "", header, metadata.GetMetadata(ctx), reqd)
-	if e != nil {
-		return nil, e
-	}
-	data, e := io.ReadAll(r.Body)
-	r.Body.Close()
-	if e != nil {
-		return nil, cerror.ConvertStdError(e)
-	}
-	resp := new(DelIdcardResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -584,11 +550,10 @@ type BaseWebServer interface {
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	ResetStaticPassword(context.Context, *ResetStaticPasswordReq) (*ResetStaticPasswordResp, error)
+	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
+	SetIdcard(context.Context, *SetIdcardReq) (*SetIdcardResp, error)
 	UpdateOauth(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)
 	DelOauth(context.Context, *DelOauthReq) (*DelOauthResp, error)
-	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
-	UpdateIdcard(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)
-	DelIdcard(context.Context, *DelIdcardReq) (*DelIdcardResp, error)
 	EmailDuplicateCheck(context.Context, *EmailDuplicateCheckReq) (*EmailDuplicateCheckResp, error)
 	UpdateEmail(context.Context, *UpdateEmailReq) (*UpdateEmailResp, error)
 	DelEmail(context.Context, *DelEmailReq) (*DelEmailResp, error)
@@ -950,6 +915,136 @@ func _Base_ResetStaticPassword_WebHandler(handler func(context.Context, *ResetSt
 		}
 	}
 }
+func _Base_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(IdcardDuplicateCheckReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			if e := ctx.ParseForm(); e != nil {
+				log.Error(ctx, "[/account.base/idcard_duplicate_check] parse form failed", log.CError(e))
+				ctx.Abort(cerror.ErrReq)
+				return
+			}
+			// req.Idcard
+			if form := ctx.GetForm("idcard"); len(form) != 0 {
+				req.Idcard = form
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/idcard_duplicate_check] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(IdcardDuplicateCheckResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
+func _Base_SetIdcard_WebHandler(handler func(context.Context, *SetIdcardReq) (*SetIdcardResp, error)) web.OutsideHandler {
+	return func(ctx *web.Context) {
+		req := new(SetIdcardReq)
+		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/set_idcard] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/set_idcard] unmarshal json body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
+			data, e := ctx.GetBody()
+			if e != nil {
+				log.Error(ctx, "[/account.base/set_idcard] get body failed", log.CError(e))
+				ctx.Abort(e)
+				return
+			}
+			if len(data) > 0 {
+				if e := proto.Unmarshal(data, req); e != nil {
+					log.Error(ctx, "[/account.base/set_idcard] unmarshal proto body failed", log.CError(e))
+					ctx.Abort(cerror.ErrReq)
+					return
+				}
+			}
+		} else {
+			if e := ctx.ParseForm(); e != nil {
+				log.Error(ctx, "[/account.base/set_idcard] parse form failed", log.CError(e))
+				ctx.Abort(cerror.ErrReq)
+				return
+			}
+			// req.Idcard
+			if form := ctx.GetForm("idcard"); len(form) != 0 {
+				req.Idcard = form
+			}
+		}
+		if errstr := req.Validate(); errstr != "" {
+			log.Error(ctx, "[/account.base/set_idcard] validate failed", log.String("validate", errstr))
+			ctx.Abort(cerror.ErrReq)
+			return
+		}
+		resp, e := handler(ctx, req)
+		ee := cerror.ConvertStdError(e)
+		if ee != nil {
+			ctx.Abort(ee)
+			return
+		}
+		if resp == nil {
+			resp = new(SetIdcardResp)
+		}
+		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
+			respd, _ := proto.Marshal(resp)
+			ctx.Write("application/x-protobuf", respd)
+		} else {
+			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
+			ctx.Write("application/json", respd)
+		}
+	}
+}
 func _Base_UpdateOauth_WebHandler(handler func(context.Context, *UpdateOauthReq) (*UpdateOauthResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
 		req := new(UpdateOauthReq)
@@ -1098,221 +1193,6 @@ func _Base_DelOauth_WebHandler(handler func(context.Context, *DelOauthReq) (*Del
 		}
 		if resp == nil {
 			resp = new(DelOauthResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _Base_IdcardDuplicateCheck_WebHandler(handler func(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(IdcardDuplicateCheckReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/idcard_duplicate_check] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/idcard_duplicate_check] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.base/idcard_duplicate_check] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.Idcard
-			if form := ctx.GetForm("idcard"); len(form) != 0 {
-				req.Idcard = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.base/idcard_duplicate_check] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(IdcardDuplicateCheckResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _Base_UpdateIdcard_WebHandler(handler func(context.Context, *UpdateIdcardReq) (*UpdateIdcardResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(UpdateIdcardReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/update_idcard] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/update_idcard] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/update_idcard] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/update_idcard] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.base/update_idcard] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.VerifySrcType
-			if form := ctx.GetForm("verify_src_type"); len(form) != 0 {
-				req.VerifySrcType = form
-			}
-			// req.VerifySrcTypeExtra
-			if form := ctx.GetForm("verify_src_type_extra"); len(form) != 0 {
-				req.VerifySrcTypeExtra = form
-			}
-			// req.VerifyDynamicPassword
-			if form := ctx.GetForm("verify_dynamic_password"); len(form) != 0 {
-				req.VerifyDynamicPassword = form
-			}
-			// req.NewIdcard
-			if form := ctx.GetForm("new_idcard"); len(form) != 0 {
-				req.NewIdcard = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.base/update_idcard] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(UpdateIdcardResp)
-		}
-		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
-			respd, _ := proto.Marshal(resp)
-			ctx.Write("application/x-protobuf", respd)
-		} else {
-			respd, _ := protojson.MarshalOptions{AllowPartial: true, UseProtoNames: true, UseEnumNumbers: true, EmitUnpopulated: true}.Marshal(resp)
-			ctx.Write("application/json", respd)
-		}
-	}
-}
-func _Base_DelIdcard_WebHandler(handler func(context.Context, *DelIdcardReq) (*DelIdcardResp, error)) web.OutsideHandler {
-	return func(ctx *web.Context) {
-		req := new(DelIdcardReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/del_idcard] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/del_idcard] unmarshal json body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				log.Error(ctx, "[/account.base/del_idcard] get body failed", log.CError(e))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					log.Error(ctx, "[/account.base/del_idcard] unmarshal proto body failed", log.CError(e))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				log.Error(ctx, "[/account.base/del_idcard] parse form failed", log.CError(e))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.VerifySrcType
-			if form := ctx.GetForm("verify_src_type"); len(form) != 0 {
-				req.VerifySrcType = form
-			}
-			// req.VerifySrcTypeExtra
-			if form := ctx.GetForm("verify_src_type_extra"); len(form) != 0 {
-				req.VerifySrcTypeExtra = form
-			}
-			// req.VerifyDynamicPassword
-			if form := ctx.GetForm("verify_dynamic_password"); len(form) != 0 {
-				req.VerifyDynamicPassword = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			log.Error(ctx, "[/account.base/del_idcard] validate failed", log.String("validate", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
-		resp, e := handler(ctx, req)
-		ee := cerror.ConvertStdError(e)
-		if ee != nil {
-			ctx.Abort(ee)
-			return
-		}
-		if resp == nil {
-			resp = new(DelIdcardResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -1815,6 +1695,32 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
+		mids = append(mids, _Base_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
+		router.Post(_WebPathBaseIdcardDuplicateCheck, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
+		mids = append(mids, _Base_SetIdcard_WebHandler(svc.SetIdcard))
+		router.Post(_WebPathBaseSetIdcard, mids...)
+	}
+	{
+		requiredMids := []string{"token"}
+		mids := make([]web.OutsideHandler, 0, 2)
+		for _, v := range requiredMids {
+			if mid, ok := allmids[v]; ok {
+				mids = append(mids, mid)
+			} else {
+				panic("missing midware:" + v)
+			}
+		}
 		mids = append(mids, _Base_UpdateOauth_WebHandler(svc.UpdateOauth))
 		router.Post(_WebPathBaseUpdateOauth, mids...)
 	}
@@ -1830,45 +1736,6 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 		}
 		mids = append(mids, _Base_DelOauth_WebHandler(svc.DelOauth))
 		router.Post(_WebPathBaseDelOauth, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _Base_IdcardDuplicateCheck_WebHandler(svc.IdcardDuplicateCheck))
-		router.Post(_WebPathBaseIdcardDuplicateCheck, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _Base_UpdateIdcard_WebHandler(svc.UpdateIdcard))
-		router.Post(_WebPathBaseUpdateIdcard, mids...)
-	}
-	{
-		requiredMids := []string{"token"}
-		mids := make([]web.OutsideHandler, 0, 2)
-		for _, v := range requiredMids {
-			if mid, ok := allmids[v]; ok {
-				mids = append(mids, mid)
-			} else {
-				panic("missing midware:" + v)
-			}
-		}
-		mids = append(mids, _Base_DelIdcard_WebHandler(svc.DelIdcard))
-		router.Post(_WebPathBaseDelIdcard, mids...)
 	}
 	{
 		requiredMids := []string{"token"}

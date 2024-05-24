@@ -38,16 +38,6 @@ func (d *Dao) RedisLockEmailOP(ctx context.Context, userid string) error {
 }
 
 // 5 times per hour
-func (d *Dao) RedisLockIDCardOP(ctx context.Context, userid string) error {
-	rate := map[string][2]uint64{"rate_idcard_op_{" + userid + "}": {5, 3600}}
-	success, e := d.redis.RateLimit(ctx, rate)
-	if e == nil && !success {
-		e = ecode.ErrTooFast
-	}
-	return e
-}
-
-// 5 times per hour
 func (d *Dao) RedisLockOAuthOP(ctx context.Context, userid string) error {
 	rate := map[string][2]uint64{"rate_oauth_op_{" + userid + "}": {5, 3600}}
 	success, e := d.redis.RateLimit(ctx, rate)
@@ -77,7 +67,7 @@ func (d *Dao) RedisLockResetPassword(ctx context.Context, userid string) error {
 	return e
 }
 
-// 1 times per second
+// 1 time per second
 func (d *Dao) RedisLockDuplicateCheck(ctx context.Context, srctype, userid string) error {
 	ok, e := d.redis.SetNX(ctx, "rate_"+srctype+"_duplicate_check_{"+userid+"}", 1, time.Second).Result()
 	if e == nil && !ok {

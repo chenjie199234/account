@@ -37,11 +37,12 @@ var (
 	ErrTelAlreadyUsed          = cerror.MakeError(20003, http.StatusBadRequest, "tel already used")
 	ErrEmailAlreadyUsed        = cerror.MakeError(20004, http.StatusBadRequest, "email already used")
 	ErrIDCardAlreadyUsed       = cerror.MakeError(20005, http.StatusBadRequest, "idcard already used")
-	ErrSignCheckFailed         = cerror.MakeError(20006, http.StatusBadRequest, "sign check failed")
-	ErrOAuthWrong              = cerror.MakeError(20007, http.StatusBadRequest, "oauth wrong")
-	ErrOAuthUnknown            = cerror.MakeError(20008, http.StatusBadRequest, "oauth unknown")
-	ErrOAuthAlreadyUsed        = cerror.MakeError(20009, http.StatusBadRequest, "oauth already used")
-	ErrUnsupportedEmailService = cerror.MakeError(20009, http.StatusBadRequest, "unsupported email service")
+	ErrIDCardAlreadySetted     = cerror.MakeError(20006, http.StatusBadRequest, "idcard already setted")
+	ErrSignCheckFailed         = cerror.MakeError(20007, http.StatusBadRequest, "sign check failed")
+	ErrOAuthWrong              = cerror.MakeError(20008, http.StatusBadRequest, "oauth wrong")
+	ErrOAuthUnknown            = cerror.MakeError(20009, http.StatusBadRequest, "oauth unknown")
+	ErrOAuthAlreadyUsed        = cerror.MakeError(20010, http.StatusBadRequest, "oauth already used")
+	ErrUnsupportedEmailService = cerror.MakeError(20011, http.StatusBadRequest, "unsupported email service")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

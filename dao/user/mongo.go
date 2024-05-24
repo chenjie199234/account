@@ -449,6 +449,10 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 	if olduser.IDCard == newIDCard {
 		return
 	}
+	if olduser.IDCard != "" && newIDCard != "" {
+		e = ecode.ErrIDCardAlreadySetted
+		return
+	}
 	oldIDCard := olduser.IDCard
 	if newIDCard != "" {
 		if _, e = d.mongo.Database("account").Collection("user_idcard_index").InsertOne(sctx, bson.M{"idcard": newIDCard, "user_id": userid}); e != nil {

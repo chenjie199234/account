@@ -59,23 +59,19 @@ service base{
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
+	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
+	rpc set_idcard(set_idcard_req)returns(set_idcard_resp){
+		option (pbex.method)="post";
+		option (pbex.web_midwares)="token";
+	}
 	rpc update_oauth(update_oauth_req)returns(update_oauth_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
 	rpc del_oauth(del_oauth_req)returns(del_oauth_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc idcard_duplicate_check(idcard_duplicate_check_req)returns(idcard_duplicate_check_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc update_idcard(update_idcard_req)returns(update_idcard_resp){
-		option (pbex.method)="post";
-		option (pbex.web_midwares)="token";
-	}
-	rpc del_idcard(del_idcard_req)returns(del_idcard_resp){
 		option (pbex.method)="post";
 		option (pbex.web_midwares)="token";
 	}
@@ -193,6 +189,17 @@ message reset_static_password_resp{
 	//when step is success,ignore this
 	string receiver=2;
 }
+message idcard_duplicate_check_req{
+	string idcard=1[(pbex.string_bytes_len_gt)=0];
+}
+message idcard_duplicate_check_resp{
+	bool duplicate=1;
+}
+message set_idcard_req{
+	string idcard=1[(pbex.string_bytes_len_gt)=0];
+}
+message set_idcard_resp{
+}
 message update_oauth_req{
 	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
 	//when verify_src_type is oauth,this is the oauth service name
@@ -224,48 +231,6 @@ message del_oauth_req{
 }
 message del_oauth_resp{
 	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_oauth_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	string step=1;
-	//if this is true,means this is the last way to login this account
-	//if del this,this account will be deleted completely
-	bool final=2;
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	string receiver=3;
-}
-message idcard_duplicate_check_req{
-	string idcard=1[(pbex.string_bytes_len_gt)=0];
-}
-message idcard_duplicate_check_resp{
-	bool duplicate=1;
-}
-message update_idcard_req{
-	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when verify_src_type is oauth,this is the oauth service name
-	string verify_src_type_extra=2;
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	string verify_dynamic_password=3;
-	string new_idcard=4[(pbex.string_bytes_len_gt)=0];
-}
-message update_idcard_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the update_idcard_req's verify_src_type) and is waiting for verify
-	//success:nothing need to do
-	string step=1;
-	//send dynamic password to where,this will be masked
-	//when step is success,ignore this
-	string receiver=2;
-}
-message del_idcard_req{
-	string verify_src_type=1[(pbex.string_bytes_in)="email",(pbex.string_bytes_in)="tel",(pbex.string_bytes_in)="oauth"];
-	//when verify_src_type is oauth,this is the oauth service name
-	string verify_src_type_extra=2;
-	//if this is empty,means send dynamic password
-	//if this is not empty,means verify dynamic password
-	string verify_dynamic_password=3;
-}
-message del_idcard_resp{
-	//oldverify:server already send the dynamic password to user's email or tel(depend on the del_idcard_req's verify_src_type) and is waiting for verify
 	//success:nothing need to do
 	string step=1;
 	//if this is true,means this is the last way to login this account
