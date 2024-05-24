@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/chenjie199234/account/api"
@@ -694,6 +695,10 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 }
 
 func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.SetIdcardResp, error) {
+	match, _ := regexp.MatchString(`^[1-9]\d{5}(19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[Xx\d]$`, req.Idcard)
+	if !match {
+		return nil, ecode.ErrReq
+	}
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
