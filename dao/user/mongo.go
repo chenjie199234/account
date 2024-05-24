@@ -457,7 +457,7 @@ func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.Object
 	if newIDCard != "" {
 		if _, e = d.mongo.Database("account").Collection("user_idcard_index").InsertOne(sctx, bson.M{"idcard": newIDCard, "user_id": userid}); e != nil {
 			if mongo.IsDuplicateKeyError(e) {
-				e = ecode.ErrEmailAlreadyUsed
+				e = ecode.ErrIDCardAlreadyUsed
 			}
 			return
 		}
