@@ -200,6 +200,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 	if _, ok := ctx.(*web.Context); ok {
 		resp.Info.Email = util.MaskEmail(resp.Info.Email)
 		resp.Info.Tel = util.MaskTel(resp.Info.Tel)
+		resp.Info.Idcard = util.MaskIDCard(resp.Info.Idcard)
 	}
 	for oauth := range user.OAuths {
 		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
