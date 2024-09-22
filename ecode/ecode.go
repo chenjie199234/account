@@ -28,21 +28,22 @@ var (
 	ErrBan               = cerror.ErrBan               //10010 // http code 403
 	ErrBusy              = cerror.ErrBusy              //10011 // http code 503
 	ErrNotExist          = cerror.ErrNotExist          //10012 // http code 404
-	ErrPasswordWrong     = cerror.ErrPasswordWrong     //10013 // http code 400
-	ErrPasswordLength    = cerror.ErrPasswordLength    //10014 // http code 400
+	ErrAlreadyExist      = cerror.ErrAlreadyExist      //10013 // http code 400
+	ErrPasswordWrong     = cerror.ErrPasswordWrong     //10014 // http code 400
+	ErrPasswordLength    = cerror.ErrPasswordLength    //10015 // http code 400
 
-	ErrUnknownAction           = cerror.MakeError(20000, http.StatusInternalServerError, "unknown action")
-	ErrCodeNotExist            = cerror.MakeError(20001, http.StatusBadRequest, "dynamic password not exist,please get it again")
-	ErrUserNotExist            = cerror.MakeError(20002, http.StatusBadRequest, "user not exist")
-	ErrTelAlreadyUsed          = cerror.MakeError(20003, http.StatusBadRequest, "tel already used")
-	ErrEmailAlreadyUsed        = cerror.MakeError(20004, http.StatusBadRequest, "email already used")
-	ErrIDCardAlreadyUsed       = cerror.MakeError(20005, http.StatusBadRequest, "idcard already used")
-	ErrIDCardAlreadySetted     = cerror.MakeError(20006, http.StatusBadRequest, "idcard already setted")
-	ErrSignCheckFailed         = cerror.MakeError(20007, http.StatusBadRequest, "sign check failed")
-	ErrOAuthWrong              = cerror.MakeError(20008, http.StatusBadRequest, "oauth wrong")
-	ErrOAuthUnknown            = cerror.MakeError(20009, http.StatusBadRequest, "oauth unknown")
-	ErrOAuthAlreadyUsed        = cerror.MakeError(20010, http.StatusBadRequest, "oauth already used")
-	ErrUnsupportedEmailService = cerror.MakeError(20011, http.StatusBadRequest, "unsupported email service")
+	ErrUnknownAction           = cerror.MakeCError(20000, http.StatusInternalServerError, "unknown action")
+	ErrCodeNotExist            = cerror.MakeCError(20001, http.StatusBadRequest, "dynamic password not exist,please get it again")
+	ErrUserNotExist            = cerror.MakeCError(20002, http.StatusBadRequest, "user not exist")
+	ErrTelAlreadyUsed          = cerror.MakeCError(20003, http.StatusBadRequest, "tel already used")
+	ErrEmailAlreadyUsed        = cerror.MakeCError(20004, http.StatusBadRequest, "email already used")
+	ErrIDCardAlreadyUsed       = cerror.MakeCError(20005, http.StatusBadRequest, "idcard already used")
+	ErrIDCardAlreadySetted     = cerror.MakeCError(20006, http.StatusBadRequest, "idcard already setted")
+	ErrSignCheckFailed         = cerror.MakeCError(20007, http.StatusBadRequest, "sign check failed")
+	ErrOAuthWrong              = cerror.MakeCError(20008, http.StatusBadRequest, "oauth wrong")
+	ErrOAuthUnknown            = cerror.MakeCError(20009, http.StatusBadRequest, "oauth unknown")
+	ErrOAuthAlreadyUsed        = cerror.MakeCError(20010, http.StatusBadRequest, "oauth already used")
+	ErrUnsupportedEmailService = cerror.MakeCError(20011, http.StatusBadRequest, "unsupported email service")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

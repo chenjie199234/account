@@ -37,10 +37,10 @@ func Start() *Service {
 
 // Ping -
 func (s *Service) Ping(ctx context.Context, in *api.Pingreq) (*api.Pingresp, error) {
-	//if _, ok := ctx.(*crpc.Context); ok {
+	//if _, ok := ctx.(*crpc.NoStreamServerContext); ok {
 	//        log.Info("this is a crpc call")
 	//}
-	//if _, ok := ctx.(*cgrpc.Context); ok {
+	//if _, ok := ctx.(*cgrpc.NoStreamServerContext); ok {
 	//        log.Info("this is a cgrpc call")
 	//}
 	//if _, ok := ctx.(*web.Context); ok {
@@ -67,4 +67,3 @@ func (s *Service) Ping(ctx context.Context, in *api.Pingreq) (*api.Pingresp, err
 func (s *Service) Stop() {
 	s.stop.Close(nil, nil)
 }
-

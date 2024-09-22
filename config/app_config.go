@@ -2,10 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 
-	"github.com/chenjie199234/Corelib/log"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/util/common"
 	"github.com/chenjie199234/Corelib/util/ctime"
@@ -45,30 +45,26 @@ var watcher *fsnotify.Watcher
 func initlocalapp(notice func(*AppConfig)) {
 	data, e := os.ReadFile("./AppConfig.json")
 	if e != nil {
-		log.Error(nil, "[config.local.app] read config file failed", log.CError(e))
-		Close()
+		slog.ErrorContext(nil, "[config.local.app] read config file failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	AC = &AppConfig{}
 	if e = json.Unmarshal(data, AC); e != nil {
-		log.Error(nil, "[config.local.app] config file format wrong", log.CError(e))
-		Close()
+		slog.ErrorContext(nil, "[config.local.app] config file format wrong", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	validateAppConfig(AC)
-	log.Info(nil, "[config.local.app] update success", log.Any("config", AC))
+	slog.InfoContext(nil, "[config.local.app] update success", slog.Any("config", AC))
 	if notice != nil {
 		notice(AC)
 	}
 	watcher, e = fsnotify.NewWatcher()
 	if e != nil {
-		log.Error(nil, "[config.local.app] create watcher for hot update failed", log.CError(e))
-		Close()
+		slog.ErrorContext(nil, "[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	if e = watcher.Add("./"); e != nil {
-		log.Error(nil, "[config.local.app] create watcher for hot update failed", log.CError(e))
-		Close()
+		slog.ErrorContext(nil, "[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	go func() {
@@ -83,17 +79,17 @@ func initlocalapp(notice func(*AppConfig)) {
 				}
 				data, e := os.ReadFile("./AppConfig.json")
 				if e != nil {
-					log.Error(nil, "[config.local.app] hot update read config file failed", log.CError(e))
+					slog.ErrorContext(nil, "[config.local.app] hot update read config file failed", slog.String("error", e.Error()))
 					continue
 				}
 				c := &AppConfig{}
 				if e = json.Unmarshal(data, c); e != nil {
-					log.Error(nil, "[config.local.app] hot update config file format wrong", log.CError(e))
+					slog.ErrorContext(nil, "[config.local.app] hot update config file format wrong", slog.String("error", e.Error()))
 					continue
 				}
 				validateAppConfig(c)
 				AC = c
-				log.Info(nil, "[config.local.app] update success", log.Any("config", AC))
+				slog.InfoContext(nil, "[config.local.app] update success", slog.Any("config", AC))
 				if notice != nil {
 					notice(AC)
 				}
@@ -101,7 +97,7 @@ func initlocalapp(notice func(*AppConfig)) {
 				if !ok {
 					return
 				}
-				log.Error(nil, "[config.local.app] hot update watcher failed", log.CError(err))
+				slog.ErrorContext(nil, "[config.local.app] hot update watcher failed", slog.String("error", err.Error()))
 			}
 		}
 	}()
@@ -110,17 +106,17 @@ func initremoteapp(notice func(*AppConfig), wait chan *struct{}) (stopwatch func
 	return RemoteConfigSdk.Watch("AppConfig", func(key, keyvalue, keytype string) {
 		//only support json
 		if keytype != "json" {
-			log.Error(nil, "[config.remote.app] config data can only support json format")
+			slog.ErrorContext(nil, "[config.remote.app] config data can only support json format")
 			return
 		}
 		c := &AppConfig{}
 		if e := json.Unmarshal(common.STB(keyvalue), c); e != nil {
-			log.Error(nil, "[config.remote.app] config data format wrong", log.CError(e))
+			slog.ErrorContext(nil, "[config.remote.app] config data format wrong", slog.String("error", e.Error()))
 			return
 		}
 		validateAppConfig(c)
 		AC = c
-		log.Info(nil, "[config.remote.app] update success", log.Any("config", AC))
+		slog.InfoContext(nil, "[config.remote.app] update success", slog.Any("config", AC))
 		if notice != nil {
 			notice(AC)
 		}

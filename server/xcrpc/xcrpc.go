@@ -2,6 +2,7 @@ package xcrpc
 
 import (
 	"crypto/tls"
+	"log/slog"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/chenjie199234/Corelib/crpc"
 	"github.com/chenjie199234/Corelib/crpc/mids"
-	"github.com/chenjie199234/Corelib/log"
 	"github.com/chenjie199234/Corelib/util/ctime"
 )
 
@@ -25,7 +25,7 @@ func StartCrpcServer() {
 		for cert, key := range c.Certs {
 			temp, e := tls.LoadX509KeyPair(cert, key)
 			if e != nil {
-				log.Error(nil, "[xcrpc] load cert failed:", log.String("cert", cert), log.String("key", key), log.CError(e))
+				slog.ErrorContext(nil, "[xcrpc] load cert failed:", slog.String("cert", cert), slog.String("key", key), slog.String("error", e.Error()))
 				return
 			}
 			certificates = append(certificates, temp)
@@ -34,7 +34,7 @@ func StartCrpcServer() {
 	}
 	var e error
 	if s, e = crpc.NewCrpcServer(c.ServerConfig, model.Project, model.Group, model.Name, tlsc); e != nil {
-		log.Error(nil, "[xcrpc] new server failed", log.CError(e))
+		slog.ErrorContext(nil, "[xcrpc] new server failed", slog.String("error", e.Error()))
 		return
 	}
 	UpdateHandlerTimeout(config.AC.HandlerTimeout)
@@ -51,10 +51,10 @@ func StartCrpcServer() {
 	//api.RegisterExampleCrpcServer(s, service.SvcExample,mids.AllMids())
 
 	if e = s.StartCrpcServer(":9000"); e != nil && e != crpc.ErrServerClosed {
-		log.Error(nil, "[xcrpc] start server failed", log.CError(e))
+		slog.ErrorContext(nil, "[xcrpc] start server failed", slog.String("error", e.Error()))
 		return
 	}
-	log.Info(nil, "[xcrpc] server closed")
+	slog.InfoContext(nil, "[xcrpc] server closed")
 }
 
 // UpdateHandlerTimeout -

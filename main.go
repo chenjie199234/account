@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -13,16 +16,70 @@ import (
 	"github.com/chenjie199234/account/server/xweb"
 	"github.com/chenjie199234/account/service"
 
-	"github.com/chenjie199234/Corelib/log"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	_ "github.com/chenjie199234/Corelib/monitor"
+	"github.com/chenjie199234/Corelib/trace"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/redis/go-redis/v9"
 	_ "go.mongodb.org/mongo-driver/mongo"
 )
 
+type LogHandler struct {
+	slog.Handler
+}
+
+func (l *LogHandler) Handle(ctx context.Context, record slog.Record) error {
+	var traceattr *slog.Attr
+	if record.NumAttrs() > 0 {
+		attrs := make([]slog.Attr, 0, record.NumAttrs())
+		record.Attrs(func(a slog.Attr) bool {
+			if a.Key == "traceid" {
+				traceattr = &a
+			}
+			attrs = append(attrs, a)
+			return true
+		})
+		record = slog.NewRecord(record.Time, record.Level, record.Message, record.PC)
+		record.AddAttrs(slog.Attr{
+			Key:   "msg_kvs",
+			Value: slog.GroupValue(attrs...),
+		})
+	}
+	if trace.LogTrace() {
+		if traceattr == nil {
+			if span := trace.SpanFromContext(ctx); span != nil {
+				tmp := slog.String("traceid", span.GetSelfSpanData().GetTid().String())
+				traceattr = &tmp
+			}
+		}
+		if traceattr != nil {
+			record.AddAttrs(*traceattr)
+		}
+	}
+	return l.Handler.Handle(ctx, record)
+}
+
 func main() {
+	slog.SetDefault(slog.New(&LogHandler{
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: true,
+			ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+				if len(groups) == 0 && attr.Key == "function" {
+					return slog.Attr{}
+				}
+				if len(groups) == 0 && attr.Key == slog.SourceKey {
+					s := attr.Value.Any().(*slog.Source)
+					if index := strings.Index(s.File, "corelib@v"); index != -1 {
+						s.File = s.File[index:]
+					} else if index = strings.Index(s.File, "Corelib@v"); index != -1 {
+						s.File = s.File[index:]
+					}
+				}
+				return attr
+			},
+		}),
+	}))
 	config.Init(func(ac *config.AppConfig) {
 		//this is a notice callback every time appconfig changes
 		//this function works in sync mode
@@ -37,20 +94,19 @@ func main() {
 		publicmids.UpdateSessionConfig(ac.SessionTokenExpire.StdDuration())
 		publicmids.UpdateAccessConfig(ac.Accesses)
 	})
-	defer config.Close()
 	if rateredis := config.GetRedis("rate_redis"); rateredis != nil {
 		publicmids.UpdateRateRedisInstance(rateredis)
 	} else {
-		log.Warn(nil, "[main] rate redis missing,all rate check will be failed")
+		slog.WarnContext(nil, "[main] rate redis missing,all rate check will be failed")
 	}
 	if sessionredis := config.GetRedis("session_redis"); sessionredis != nil {
 		publicmids.UpdateSessionRedisInstance(sessionredis)
 	} else {
-		log.Warn(nil, "[main] session redis missing,all session event will be failed")
+		slog.WarnContext(nil, "[main] session redis missing,all session event will be failed")
 	}
 	//start the whole business service
 	if e := service.StartService(); e != nil {
-		log.Error(nil, "[main] start service failed", log.CError(e))
+		slog.ErrorContext(nil, "[main] start service failed", slog.String("error", e.Error()))
 		return
 	}
 	//start low level net service

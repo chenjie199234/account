@@ -2,15 +2,15 @@ package money
 
 import (
 	"context"
+	"log/slog"
 	"unsafe"
 
 	"github.com/chenjie199234/account/model"
 
-	"github.com/chenjie199234/Corelib/log"
-	"github.com/chenjie199234/Corelib/log/trace"
 	cmongo "github.com/chenjie199234/Corelib/mongo"
 	cmysql "github.com/chenjie199234/Corelib/mysql"
 	credis "github.com/chenjie199234/Corelib/redis"
+	"github.com/chenjie199234/Corelib/trace"
 	"github.com/chenjie199234/Corelib/util/oneshot"
 	gredis "github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -39,7 +39,7 @@ func NewDao(mysql *cmysql.Client, redis *credis.Client, mongo *cmongo.Client) *D
 func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opaction string, starttime, endtime, pagesize, page uint32) ([]*model.MoneyLog, uint32, uint32, error) {
 	if moneylogs, totalsize, curpage, e := d.RedisGetMoneyLogs(ctx, userid.Hex(), opaction, starttime, endtime, pagesize, page); e != nil {
 		if e != gredis.Nil {
-			log.Error(ctx, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
+			slog.ErrorContext(ctx, "[dao.GetMoneyLogs] redis op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
 		}
 	} else {
 		return moneylogs, totalsize, curpage, nil
@@ -48,14 +48,14 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opact
 	unsafeAll, e := oneshot.Do("GetMoneyLogs_"+opaction+"_"+userid.Hex(), func() (unsafe.Pointer, error) {
 		all, e := d.MongoGetMoneyLogs(ctx, userid, opaction)
 		if e != nil {
-			log.Error(nil, "[dao.GetMoneyLogs] db op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction})
+			slog.ErrorContext(nil, "[dao.GetMoneyLogs] db op failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction})
 			return nil, e
 		}
 		//update redis
 		go func() {
 			ctx := trace.CloneSpan(ctx)
 			if e := d.RedisSetMoneyLogs(ctx, userid.Hex(), opaction, all); e != nil {
-				log.Error(ctx, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
+				slog.ErrorContext(ctx, "[dao.GetMoneyLogs] update redis failed", map[string]interface{}{"user_id": userid.Hex(), "opaction": opaction, "error": e})
 			}
 		}()
 		return unsafe.Pointer(&all), nil
