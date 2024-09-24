@@ -51,8 +51,8 @@
 		}]
 	},
 	"token_secret":"test",
-	"session_token_expire":"24h",
 	"service":{
+		"token_expire":"24h",
 		"support_email_service":["@163.com","@126.com","@sina.com","@sohu.com","@qq.com","@yahoo.com","@gmail.com","@outlook.com"],
 
 		"wechat_oauth_url":"",

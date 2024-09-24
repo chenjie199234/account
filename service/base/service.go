@@ -466,7 +466,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		}
 	}
 	//TODO set the puber
-	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "")
+	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	resp := &api.LoginResp{
 		Token: token,
 		Info: &api.BaseInfo{
