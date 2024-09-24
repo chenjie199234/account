@@ -22,6 +22,7 @@ import (
 
 // sourceConfig can't hot update
 type sourceConfig struct {
+	RawServer   *RawServerConfig         `json:"raw_server"`
 	CGrpcServer *CGrpcServerConfig       `json:"cgrpc_server"`
 	CGrpcClient *CGrpcClientConfig       `json:"cgrpc_client"`
 	CrpcServer  *CrpcServerConfig        `json:"crpc_server"`
@@ -32,6 +33,24 @@ type sourceConfig struct {
 	Mysql       map[string]*MysqlConfig  `json:"mysql"` //key example:xx_mysql
 	Redis       map[string]*RedisConfig  `json:"redis"` //key example:xx_redis
 	Email       map[string]*email.Config `json:"email"` //key example:xx_email
+}
+
+// RawServerConfig -
+type RawServerConfig struct {
+	Certs map[string]string `json:"certs"` //key cert path,value private key path,if this is not empty,tls will be used
+	//time for connection establish(include dial time,handshake time and verify time)
+	ConnectTimeout ctime.Duration `json:"connect_timeout"`
+	//min 1s,default 5s,3 probe missing means disconnect
+	HeartProbe ctime.Duration `json:"heart_probe"`
+	//min 64k,default 64M
+	MaxMsgLen uint32 `json:"max_msg_len"`
+	//split connections into groups
+	//each group has an independence RWMutex to control online and offline
+	//each group's connections' heart probe check is in an independence goroutine
+	//small group num will increase to lock conflict
+	//big group num will increate the goroutine num
+	//default 100
+	GroupNum uint16 `json:"group_num"`
 }
 
 // CGrpcServerConfig
@@ -139,37 +158,14 @@ func initremotesource(wait chan *struct{}) (stopwatch func()) {
 	})
 }
 func initsource() {
+	initraw()
+	initgrpcserver()
+	initgrpcclient()
+	initcrpcserver()
+	initcrpcclient()
+	initwebserver()
+	initwebclient()
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		initgrpcserver()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		initgrpcclient()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		initcrpcserver()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		initcrpcclient()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		initwebserver()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
-		initwebclient()
-		wg.Done()
-	}()
 	wg.Add(1)
 	go func() {
 		initredis()
@@ -192,6 +188,18 @@ func initsource() {
 		wg.Done()
 	}()
 	wg.Wait()
+}
+func initraw() {
+	if sc.RawServer == nil {
+		sc.RawServer = &RawServerConfig{
+			ConnectTimeout: ctime.Duration(time.Millisecond * 500),
+			HeartProbe:     ctime.Duration(time.Second * 5),
+		}
+	} else {
+		if sc.RawServer.ConnectTimeout <= 0 {
+			sc.RawServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
+		}
+	}
 }
 func initgrpcserver() {
 	if sc.CGrpcServer == nil {
@@ -554,6 +562,11 @@ func initemail() {
 		}()
 	}
 	wg.Wait()
+}
+
+// GetRawServerConfig -
+func GetRawServerConfig() *RawServerConfig {
+	return sc.RawServer
 }
 
 // GetCGrpcServerConfig get the grpc net config
