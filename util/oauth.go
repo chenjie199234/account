@@ -48,7 +48,7 @@ func OAuthVerifyCode(ctx context.Context, caller string, oauthservicename, code 
 			return
 		}
 		if resp.ErrCode != 0 {
-			e = cerror.MakeCError(int64(resp.ErrCode), 500, resp.ErrMsg)
+			e = cerror.MakeCError(resp.ErrCode, 500, resp.ErrMsg)
 			slog.ErrorContext(ctx, "[OAuthVerifyCode] oauth server return error", slog.String("oauth_service", oauthservicename), slog.String("code", code), slog.String("error", e.Error()))
 			return
 		}
