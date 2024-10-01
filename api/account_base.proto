@@ -160,11 +160,12 @@ message login_req{
 }
 message login_resp{
 	string token=1;
-	base_info info=2;
+	uint64 tokenexpire=2;//unix nano timestamp
+	base_info info=3;
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
 	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
-	string step=3;
+	string step=4;
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password

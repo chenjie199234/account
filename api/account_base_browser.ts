@@ -289,6 +289,8 @@ export class LoginReq{
 }
 export class LoginResp{
 	token: string = ''
+	//Warning!!!Type is uint64,be careful of sign(+)
+	tokenexpire: bigint = BigInt(0)//unix nano timestamp
 	info: BaseInfo|null = null
 	//verify:server already send the dynamic password to user's email or tel(depend on the login_req's src_type and src) and is waiting for verify
 	//password:login success,but this account is new and it can be setted with a static password(optional)
@@ -297,6 +299,9 @@ export class LoginResp{
 	fromOBJ(obj:Object){
 		if(obj["token"]){
 			this.token=obj["token"]
+		}
+		if(obj["tokenexpire"]){
+			this.tokenexpire=BigInt(obj["tokenexpire"])
 		}
 		if(obj["info"]){
 			this.info=new BaseInfo()

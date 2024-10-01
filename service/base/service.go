@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -468,7 +469,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	//TODO set the puber
 	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	resp := &api.LoginResp{
-		Token: token,
+		Token:       token,
+		Tokenexpire: uint64(time.Now().Add(config.AC.Service.TokenExpire.StdDuration() - time.Second).UnixNano()),
 		Info: &api.BaseInfo{
 			UserId:     user.UserID.Hex(),
 			Idcard:     util.MaskIDCard(user.IDCard),
