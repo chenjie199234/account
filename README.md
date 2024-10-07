@@ -12,6 +12,7 @@ account是一个微服务.
 ## 服务端口
 ```
 6060                                    MONITOR AND PPROF
+7000                                    RAW TCP OR WEBSOCKET
 8000                                    WEB
 9000                                    CRPC
 10000                                   GRPC
