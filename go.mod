@@ -3,11 +3,11 @@ module github.com/chenjie199234/account
 go 1.23.2
 
 require (
-	github.com/chenjie199234/Corelib v0.0.130
-	github.com/chenjie199234/admin v0.0.130
+	github.com/chenjie199234/Corelib v0.0.131
+	github.com/chenjie199234/admin v0.0.131
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-sql-driver/mysql v1.8.1
-	github.com/redis/go-redis/v9 v9.6.2
+	github.com/redis/go-redis/v9 v9.7.0
 	go.mongodb.org/mongo-driver v1.17.1
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.1
