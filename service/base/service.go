@@ -488,7 +488,11 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		//this is a new account
 		resp.Step = "password"
 	}
-	resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step, config.AC.Service.TokenExpire.StdDuration())
+	if user.IDCard != "" {
+		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step+",true", config.AC.Service.TokenExpire.StdDuration())
+	} else {
+		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step+",false", config.AC.Service.TokenExpire.StdDuration())
+	}
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
