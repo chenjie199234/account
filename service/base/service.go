@@ -467,9 +467,8 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		}
 	}
 	//TODO set the puber
-	token := publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	resp := &api.LoginResp{
-		Token:       token,
+		Token:       "",
 		Tokenexpire: uint64(time.Now().Add(config.AC.Service.TokenExpire.StdDuration() - time.Second).UnixNano()),
 		Info: &api.BaseInfo{
 			UserId:     user.UserID.Hex(),
@@ -489,6 +488,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		//this is a new account
 		resp.Step = "password"
 	}
+	resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step, config.AC.Service.TokenExpire.StdDuration())
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
