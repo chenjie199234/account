@@ -30,16 +30,17 @@ service base{
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
-	rpc get_temporary_token(get_temporary_token_req)returns(get_temporary_token_resp){
+	rpc temporary_token(temporary_token_req)returns(temporary_token_resp){
 		option (pbex.method)="get";
 		option (pbex.web_midwares)="token";
 	}
-	//if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
+	rpc self_info(self_info_req)returns(self_info_resp){
+		option (pbex.method)="get";
+		option (pbex.web_midwares)="token";
+	}
 	rpc base_info(base_info_req)returns(base_info_resp){
-		option (pbex.method)="post";
 		option (pbex.method)="grpc";
 		option (pbex.method)="crpc";
-		option (pbex.web_midwares)="token";
 		option (pbex.crpc_midwares)="accesskey";
 		option (pbex.cgrpc_midwares)="accesskey";
 	}
@@ -171,11 +172,16 @@ message login_resp{
 	//success:nothing need to do
 	string step=4;
 }
-message get_temporary_token_req{
+message temporary_token_req{
 }
-message get_temporary_token_resp{
+message temporary_token_resp{
 	string token=1;
 	uint64 tokenexpire=2;//unix nano timestamp
+}
+message self_info_req{
+}
+message self_info_resp{
+	base_info info=1;
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password

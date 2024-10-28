@@ -14,6 +14,7 @@ import (
 	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/util"
 
+	// "github.com/chenjie199234/Corelib/web"
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
 	"github.com/chenjie199234/Corelib/cerror"
@@ -21,7 +22,6 @@ import (
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/trace"
 	"github.com/chenjie199234/Corelib/util/graceful"
-	"github.com/chenjie199234/Corelib/web"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -124,64 +124,47 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 
 func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.BaseInfoResp, error) {
 	var user *model.User
-	if _, ok := ctx.(*web.Context); ok {
-		md := metadata.GetMetadata(ctx)
-		operator, e := primitive.ObjectIDFromHex(md["Token-User"])
-		if e != nil {
-			slog.ErrorContext(ctx, "[BaseInfo] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
-			return nil, ecode.ErrToken
+	switch req.SrcType {
+	case "user_id":
+		if req.Src == "" {
+			return nil, ecode.ErrReq
 		}
-		if user, e = s.userDao.GetUser(ctx, operator); e != nil {
-			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
+		userid, e := primitive.ObjectIDFromHex(req.Src)
+		if e != nil {
+			slog.ErrorContext(ctx, "[BaseInfo] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
+			return nil, ecode.ErrReq
+		}
+		if user, e = s.userDao.GetUser(ctx, userid); e != nil {
+			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-	}
-	if user == nil {
-		switch req.SrcType {
-		case "user_id":
-			if req.Src == "" {
-				return nil, ecode.ErrReq
-			}
-			userid, e := primitive.ObjectIDFromHex(req.Src)
-			if e != nil {
-				slog.ErrorContext(ctx, "[BaseInfo] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
-				return nil, ecode.ErrReq
-			}
-			if user, e = s.userDao.GetUser(ctx, userid); e != nil {
-				slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("user_id", req.Src), slog.String("error", e.Error()))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-		case "tel":
-			if req.Src == "" {
-				return nil, ecode.ErrReq
-			}
-			var e error
-			if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
-				slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-		case "email":
-			if req.Src == "" {
-				return nil, ecode.ErrReq
-			}
-			var e error
-			if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
-				slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
-		case "idcard":
-			if req.Src == "" {
-				return nil, ecode.ErrReq
-			}
-			var e error
-			if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
-				slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
-				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
-			}
+	case "tel":
+		if req.Src == "" {
+			return nil, ecode.ErrReq
 		}
-	}
-	if user.BTime != 0 {
-		return nil, ecode.ErrBan
+		var e error
+		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+	case "email":
+		if req.Src == "" {
+			return nil, ecode.ErrReq
+		}
+		var e error
+		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
+	case "idcard":
+		if req.Src == "" {
+			return nil, ecode.ErrReq
+		}
+		var e error
+		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
+			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+		}
 	}
 	resp := &api.BaseInfoResp{
 		Info: &api.BaseInfo{
@@ -194,11 +177,6 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			Ctime:      uint32(user.UserID.Timestamp().Unix()),
 			Ban:        user.BReason,
 		},
-	}
-	if _, ok := ctx.(*web.Context); ok {
-		resp.Info.Email = util.MaskEmail(resp.Info.Email)
-		resp.Info.Tel = util.MaskTel(resp.Info.Tel)
-		resp.Info.Idcard = util.MaskIDCard(resp.Info.Idcard)
 	}
 	for oauth := range user.OAuths {
 		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
@@ -496,12 +474,44 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
-func (s *Service) GetTemporaryToken(ctx context.Context, req *api.GetTemporaryTokenReq) (*api.GetTemporaryTokenResp, error) {
+func (s *Service) TemporaryToken(ctx context.Context, req *api.TemporaryTokenReq) (*api.TemporaryTokenResp, error) {
 	md := metadata.GetMetadata(ctx)
-	return &api.GetTemporaryTokenResp{
+	return &api.TemporaryTokenResp{
 		Token:       publicmids.MakeToken(ctx, md["Token-Puber"], md["Token-DeployEnv"], md["Token-RunEnv"], md["Token-User"], md["Token-Data"], time.Minute),
 		Tokenexpire: uint64(time.Now().Add(time.Minute - time.Second).UnixNano()),
 	}, nil
+}
+func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.SelfInfoResp, error) {
+	md := metadata.GetMetadata(ctx)
+	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	if e != nil {
+		slog.ErrorContext(ctx, "[SelfInfo] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
+		return nil, ecode.ErrToken
+	}
+	var user *model.User
+	if user, e = s.userDao.GetUser(ctx, operator); e != nil {
+		slog.ErrorContext(ctx, "[SelfInfo] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
+		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
+	}
+	if user.BTime != 0 {
+		return nil, ecode.ErrBan
+	}
+	resp := &api.SelfInfoResp{
+		Info: &api.BaseInfo{
+			UserId:     user.UserID.Hex(),
+			Idcard:     util.MaskIDCard(user.IDCard),
+			Tel:        util.MaskTel(user.Tel),
+			Email:      util.MaskEmail(user.Email),
+			Money:      user.Money,
+			BindOauths: make([]string, 0, len(user.OAuths)),
+			Ctime:      uint32(user.UserID.Timestamp().Unix()),
+			Ban:        user.BReason,
+		},
+	}
+	for oauth := range user.OAuths {
+		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
+	}
+	return resp, nil
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)

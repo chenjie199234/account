@@ -50,29 +50,6 @@ export class BaseInfo{
 		}
 	}
 }
-export class BaseInfoReq{
-	src_type: string = ''
-	src: string = ''//if this is empty,means get self's baseinfo,src_type will force to user_id and the src is from token
-	toJSON(){
-		let tmp = {}
-		if(this.src_type){
-			tmp["src_type"]=this.src_type
-		}
-		if(this.src){
-			tmp["src"]=this.src
-		}
-		return tmp
-	}
-}
-export class BaseInfoResp{
-	info: BaseInfo|null = null
-	fromOBJ(obj:Object){
-		if(obj["info"]){
-			this.info=new BaseInfo()
-			this.info.fromOBJ(obj["info"])
-		}
-	}
-}
 export class DelEmailReq{
 	verify_src_type: string = ''
 	//when verify_src_type is oauth,this is the oauth service name
@@ -242,25 +219,6 @@ export class GetOauthUrlResp{
 		}
 	}
 }
-export class GetTemporaryTokenReq{
-	toFORM(){
-		let query=new Array<string>()
-		return encodeURIComponent(query.join('&'))
-	}
-}
-export class GetTemporaryTokenResp{
-	token: string = ''
-	//Warning!!!Type is uint64,be careful of sign(+)
-	tokenexpire: bigint = BigInt(0)//unix nano timestamp
-	fromOBJ(obj:Object){
-		if(obj["token"]){
-			this.token=obj["token"]
-		}
-		if(obj["tokenexpire"]){
-			this.tokenexpire=BigInt(obj["tokenexpire"])
-		}
-	}
-}
 export class IdcardDuplicateCheckReq{
 	idcard: string = ''
 	toJSON(){
@@ -368,6 +326,21 @@ export class ResetStaticPasswordResp{
 		}
 	}
 }
+export class SelfInfoReq{
+	toFORM(){
+		let query=new Array<string>()
+		return encodeURIComponent(query.join('&'))
+	}
+}
+export class SelfInfoResp{
+	info: BaseInfo|null = null
+	fromOBJ(obj:Object){
+		if(obj["info"]){
+			this.info=new BaseInfo()
+			this.info.fromOBJ(obj["info"])
+		}
+	}
+}
 export class SetIdcardReq{
 	idcard: string = ''
 	toJSON(){
@@ -397,6 +370,25 @@ export class TelDuplicateCheckResp{
 	fromOBJ(obj:Object){
 		if(obj["duplicate"]){
 			this.duplicate=obj["duplicate"]
+		}
+	}
+}
+export class TemporaryTokenReq{
+	toFORM(){
+		let query=new Array<string>()
+		return encodeURIComponent(query.join('&'))
+	}
+}
+export class TemporaryTokenResp{
+	token: string = ''
+	//Warning!!!Type is uint64,be careful of sign(+)
+	tokenexpire: bigint = BigInt(0)//unix nano timestamp
+	fromOBJ(obj:Object){
+		if(obj["token"]){
+			this.token=obj["token"]
+		}
+		if(obj["tokenexpire"]){
+			this.tokenexpire=BigInt(obj["tokenexpire"])
 		}
 	}
 }
@@ -602,8 +594,8 @@ function call(timeout: number,url: string,opts: Object,error: (arg: LogicError)=
 }
 const _WebPathBaseGetOauthUrl: string ="/account.base/get_oauth_url";
 const _WebPathBaseLogin: string ="/account.base/login";
-const _WebPathBaseGetTemporaryToken: string ="/account.base/get_temporary_token";
-const _WebPathBaseBaseInfo: string ="/account.base/base_info";
+const _WebPathBaseTemporaryToken: string ="/account.base/temporary_token";
+const _WebPathBaseSelfInfo: string ="/account.base/self_info";
 const _WebPathBaseUpdateStaticPassword: string ="/account.base/update_static_password";
 const _WebPathBaseResetStaticPassword: string ="/account.base/reset_static_password";
 const _WebPathBaseIdcardDuplicateCheck: string ="/account.base/idcard_duplicate_check";
@@ -648,25 +640,25 @@ export class BaseBrowserClient {
 		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	get_temporary_token(header: Object,req: GetTemporaryTokenReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: GetTemporaryTokenResp)=>void){
+	temporary_token(header: Object,req: TemporaryTokenReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: TemporaryTokenResp)=>void){
 		if(!header){
 			header={}
 		}
 		header["Content-Type"] = "application/x-www-form-urlencoded"
-		call(timeout,this.host+_WebPathBaseGetTemporaryToken+"?"+req.toFORM(),{method:"GET",headers:header},error,function(arg: Object){
-			let r=new GetTemporaryTokenResp()
+		call(timeout,this.host+_WebPathBaseTemporaryToken+"?"+req.toFORM(),{method:"GET",headers:header},error,function(arg: Object){
+			let r=new TemporaryTokenResp()
 			r.fromOBJ(arg)
 			success(r)
 		})
 	}
 	//timeout's unit is millisecond,it will be used when > 0
-	base_info(header: Object,req: BaseInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: BaseInfoResp)=>void){
+	self_info(header: Object,req: SelfInfoReq,timeout: number,error: (arg: LogicError)=>void,success: (arg: SelfInfoResp)=>void){
 		if(!header){
 			header={}
 		}
-		header["Content-Type"] = "application/json"
-		call(timeout,this.host+_WebPathBaseBaseInfo,{method:"POST",headers:header,body:JSON.stringify(req)},error,function(arg: Object){
-			let r=new BaseInfoResp()
+		header["Content-Type"] = "application/x-www-form-urlencoded"
+		call(timeout,this.host+_WebPathBaseSelfInfo+"?"+req.toFORM(),{method:"GET",headers:header},error,function(arg: Object){
+			let r=new SelfInfoResp()
 			r.fromOBJ(arg)
 			success(r)
 		})

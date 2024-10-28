@@ -19,7 +19,6 @@ var _CGrpcPathBaseBan = "/account.base/ban"
 var _CGrpcPathBaseUnban = "/account.base/unban"
 
 type BaseCGrpcClient interface {
-	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	Ban(context.Context, *BanReq) (*BanResp, error)
 	Unban(context.Context, *UnbanReq) (*UnbanResp, error)
@@ -77,7 +76,6 @@ func (c *baseCGrpcClient) Unban(ctx context.Context, req *UnbanReq) (*UnbanResp,
 }
 
 type BaseCGrpcServer interface {
-	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	// Context is *cgrpc.NoStreamServerContext
 	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
 	// Context is *cgrpc.NoStreamServerContext

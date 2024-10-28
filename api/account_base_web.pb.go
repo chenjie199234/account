@@ -23,8 +23,8 @@ import (
 
 var _WebPathBaseGetOauthUrl = "/account.base/get_oauth_url"
 var _WebPathBaseLogin = "/account.base/login"
-var _WebPathBaseGetTemporaryToken = "/account.base/get_temporary_token"
-var _WebPathBaseBaseInfo = "/account.base/base_info"
+var _WebPathBaseTemporaryToken = "/account.base/temporary_token"
+var _WebPathBaseSelfInfo = "/account.base/self_info"
 var _WebPathBaseUpdateStaticPassword = "/account.base/update_static_password"
 var _WebPathBaseResetStaticPassword = "/account.base/reset_static_password"
 var _WebPathBaseIdcardDuplicateCheck = "/account.base/idcard_duplicate_check"
@@ -41,9 +41,8 @@ var _WebPathBaseDelTel = "/account.base/del_tel"
 type BaseWebClient interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq, http.Header) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq, http.Header) (*LoginResp, error)
-	GetTemporaryToken(context.Context, *GetTemporaryTokenReq, http.Header) (*GetTemporaryTokenResp, error)
-	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
-	BaseInfo(context.Context, *BaseInfoReq, http.Header) (*BaseInfoResp, error)
+	TemporaryToken(context.Context, *TemporaryTokenReq, http.Header) (*TemporaryTokenResp, error)
+	SelfInfo(context.Context, *SelfInfoReq, http.Header) (*SelfInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq, http.Header) (*UpdateStaticPasswordResp, error)
 	ResetStaticPassword(context.Context, *ResetStaticPasswordReq, http.Header) (*ResetStaticPasswordResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq, http.Header) (*IdcardDuplicateCheckResp, error)
@@ -130,7 +129,7 @@ func (c *baseWebClient) Login(ctx context.Context, req *LoginReq, header http.He
 	}
 	return resp, nil
 }
-func (c *baseWebClient) GetTemporaryToken(ctx context.Context, req *GetTemporaryTokenReq, header http.Header) (*GetTemporaryTokenResp, error) {
+func (c *baseWebClient) TemporaryToken(ctx context.Context, req *TemporaryTokenReq, header http.Header) (*TemporaryTokenResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
@@ -146,7 +145,7 @@ func (c *baseWebClient) GetTemporaryToken(ctx context.Context, req *GetTemporary
 		query = query[:len(query)-1]
 	}
 	querystr := common.BTS(query)
-	r, e := c.cc.Get(ctx, _WebPathBaseGetTemporaryToken, querystr, header, metadata.GetMetadata(ctx))
+	r, e := c.cc.Get(ctx, _WebPathBaseTemporaryToken, querystr, header, metadata.GetMetadata(ctx))
 	if e != nil {
 		return nil, e
 	}
@@ -155,7 +154,7 @@ func (c *baseWebClient) GetTemporaryToken(ctx context.Context, req *GetTemporary
 	if e != nil {
 		return nil, cerror.Convert(e)
 	}
-	resp := new(GetTemporaryTokenResp)
+	resp := new(TemporaryTokenResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -168,17 +167,23 @@ func (c *baseWebClient) GetTemporaryToken(ctx context.Context, req *GetTemporary
 	}
 	return resp, nil
 }
-func (c *baseWebClient) BaseInfo(ctx context.Context, req *BaseInfoReq, header http.Header) (*BaseInfoResp, error) {
+func (c *baseWebClient) SelfInfo(ctx context.Context, req *SelfInfoReq, header http.Header) (*SelfInfoResp, error) {
 	if req == nil {
 		return nil, cerror.ErrReq
 	}
 	if header == nil {
 		header = make(http.Header)
 	}
-	header.Set("Content-Type", "application/x-protobuf")
+	header.Set("Content-Type", "application/x-www-form-urlencoded")
 	header.Set("Accept", "application/x-protobuf")
-	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseBaseInfo, "", header, metadata.GetMetadata(ctx), reqd)
+	query := bpool.Get(256)
+	defer bpool.Put(&query)
+	if len(query) > 0 {
+		// drop last &
+		query = query[:len(query)-1]
+	}
+	querystr := common.BTS(query)
+	r, e := c.cc.Get(ctx, _WebPathBaseSelfInfo, querystr, header, metadata.GetMetadata(ctx))
 	if e != nil {
 		return nil, e
 	}
@@ -187,7 +192,7 @@ func (c *baseWebClient) BaseInfo(ctx context.Context, req *BaseInfoReq, header h
 	if e != nil {
 		return nil, cerror.Convert(e)
 	}
-	resp := new(BaseInfoResp)
+	resp := new(SelfInfoResp)
 	if len(data) == 0 {
 		return resp, nil
 	}
@@ -588,9 +593,8 @@ func (c *baseWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 type BaseWebServer interface {
 	GetOauthUrl(context.Context, *GetOauthUrlReq) (*GetOauthUrlResp, error)
 	Login(context.Context, *LoginReq) (*LoginResp, error)
-	GetTemporaryToken(context.Context, *GetTemporaryTokenReq) (*GetTemporaryTokenResp, error)
-	// if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
-	BaseInfo(context.Context, *BaseInfoReq) (*BaseInfoResp, error)
+	TemporaryToken(context.Context, *TemporaryTokenReq) (*TemporaryTokenResp, error)
+	SelfInfo(context.Context, *SelfInfoReq) (*SelfInfoResp, error)
 	UpdateStaticPassword(context.Context, *UpdateStaticPasswordReq) (*UpdateStaticPasswordResp, error)
 	ResetStaticPassword(context.Context, *ResetStaticPasswordReq) (*ResetStaticPasswordResp, error)
 	IdcardDuplicateCheck(context.Context, *IdcardDuplicateCheckReq) (*IdcardDuplicateCheckResp, error)
@@ -747,9 +751,9 @@ func _Base_Login_WebHandler(handler func(context.Context, *LoginReq) (*LoginResp
 		}
 	}
 }
-func _Base_GetTemporaryToken_WebHandler(handler func(context.Context, *GetTemporaryTokenReq) (*GetTemporaryTokenResp, error)) web.OutsideHandler {
+func _Base_TemporaryToken_WebHandler(handler func(context.Context, *TemporaryTokenReq) (*TemporaryTokenResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
-		req := new(GetTemporaryTokenReq)
+		req := new(TemporaryTokenReq)
 		resp, e := handler(ctx, req)
 		ee := cerror.Convert(e)
 		if ee != nil {
@@ -757,7 +761,7 @@ func _Base_GetTemporaryToken_WebHandler(handler func(context.Context, *GetTempor
 			return
 		}
 		if resp == nil {
-			resp = new(GetTemporaryTokenResp)
+			resp = new(TemporaryTokenResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -768,57 +772,9 @@ func _Base_GetTemporaryToken_WebHandler(handler func(context.Context, *GetTempor
 		}
 	}
 }
-func _Base_BaseInfo_WebHandler(handler func(context.Context, *BaseInfoReq) (*BaseInfoResp, error)) web.OutsideHandler {
+func _Base_SelfInfo_WebHandler(handler func(context.Context, *SelfInfoReq) (*SelfInfoResp, error)) web.OutsideHandler {
 	return func(ctx *web.Context) {
-		req := new(BaseInfoReq)
-		if strings.HasPrefix(ctx.GetContentType(), "application/json") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				slog.ErrorContext(ctx, "[/account.base/base_info] get body failed", slog.String("error", e.Error()))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := (protojson.UnmarshalOptions{AllowPartial: true, DiscardUnknown: true}).Unmarshal(data, req); e != nil {
-					slog.ErrorContext(ctx, "[/account.base/base_info] unmarshal json body failed", slog.String("error", e.Error()))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else if strings.HasPrefix(ctx.GetContentType(), "application/x-protobuf") {
-			data, e := ctx.GetBody()
-			if e != nil {
-				slog.ErrorContext(ctx, "[/account.base/base_info] get body failed", slog.String("error", e.Error()))
-				ctx.Abort(e)
-				return
-			}
-			if len(data) > 0 {
-				if e := proto.Unmarshal(data, req); e != nil {
-					slog.ErrorContext(ctx, "[/account.base/base_info] unmarshal proto body failed", slog.String("error", e.Error()))
-					ctx.Abort(cerror.ErrReq)
-					return
-				}
-			}
-		} else {
-			if e := ctx.ParseForm(); e != nil {
-				slog.ErrorContext(ctx, "[/account.base/base_info] parse form failed", slog.String("error", e.Error()))
-				ctx.Abort(cerror.ErrReq)
-				return
-			}
-			// req.SrcType
-			if form := ctx.GetForm("src_type"); len(form) != 0 {
-				req.SrcType = form
-			}
-			// req.Src
-			if form := ctx.GetForm("src"); len(form) != 0 {
-				req.Src = form
-			}
-		}
-		if errstr := req.Validate(); errstr != "" {
-			slog.ErrorContext(ctx, "[/account.base/base_info] validate failed", slog.String("error", errstr))
-			ctx.Abort(cerror.ErrReq)
-			return
-		}
+		req := new(SelfInfoReq)
 		resp, e := handler(ctx, req)
 		ee := cerror.Convert(e)
 		if ee != nil {
@@ -826,7 +782,7 @@ func _Base_BaseInfo_WebHandler(handler func(context.Context, *BaseInfoReq) (*Bas
 			return
 		}
 		if resp == nil {
-			resp = new(BaseInfoResp)
+			resp = new(SelfInfoResp)
 		}
 		if strings.HasPrefix(ctx.GetAcceptType(), "application/x-protobuf") {
 			respd, _ := proto.Marshal(resp)
@@ -1720,8 +1676,8 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _Base_GetTemporaryToken_WebHandler(svc.GetTemporaryToken))
-		router.Get(_WebPathBaseGetTemporaryToken, mids...)
+		mids = append(mids, _Base_TemporaryToken_WebHandler(svc.TemporaryToken))
+		router.Get(_WebPathBaseTemporaryToken, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
@@ -1733,8 +1689,8 @@ func RegisterBaseWebServer(router *web.Router, svc BaseWebServer, allmids map[st
 				panic("missing midware:" + v)
 			}
 		}
-		mids = append(mids, _Base_BaseInfo_WebHandler(svc.BaseInfo))
-		router.Post(_WebPathBaseBaseInfo, mids...)
+		mids = append(mids, _Base_SelfInfo_WebHandler(svc.SelfInfo))
+		router.Get(_WebPathBaseSelfInfo, mids...)
 	}
 	{
 		requiredMids := []string{"token"}
