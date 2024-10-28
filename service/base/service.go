@@ -489,14 +489,20 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		resp.Step = "password"
 	}
 	if user.IDCard != "" {
-		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step+",true", config.AC.Service.TokenExpire.StdDuration())
+		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	} else {
-		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), resp.Step+",false", config.AC.Service.TokenExpire.StdDuration())
+		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	}
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
-
+func (s *Service) GetTemporaryToken(ctx context.Context, req *api.GetTemporaryTokenReq) (*api.GetTemporaryTokenResp, error) {
+	md := metadata.GetMetadata(ctx)
+	return &api.GetTemporaryTokenResp{
+		Token:       publicmids.MakeToken(ctx, md["Token-Puber"], md["Token-DeployEnv"], md["Token-RunEnv"], md["Token-User"], md["Token-Data"], time.Minute),
+		Tokenexpire: uint64(time.Now().Add(time.Minute - time.Second).UnixNano()),
+	}, nil
+}
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
 	operator, e := primitive.ObjectIDFromHex(md["Token-User"])

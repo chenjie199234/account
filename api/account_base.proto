@@ -30,6 +30,10 @@ service base{
 	rpc login(login_req)returns(login_resp){
 		option (pbex.method)="post";
 	}
+	rpc get_temporary_token(get_temporary_token_req)returns(get_temporary_token_resp){
+		option (pbex.method)="get";
+		option (pbex.web_midwares)="token";
+	}
 	//if the request if from web,only can get self's info,the src_type and src in request will be ignored,the user_id in token will be used
 	rpc base_info(base_info_req)returns(base_info_resp){
 		option (pbex.method)="post";
@@ -166,6 +170,12 @@ message login_resp{
 	//password:login success,but this account is new and it can be setted with a static password(optional)
 	//success:nothing need to do
 	string step=4;
+}
+message get_temporary_token_req{
+}
+message get_temporary_token_resp{
+	string token=1;
+	uint64 tokenexpire=2;//unix nano timestamp
 }
 message update_static_password_req{
 	//if this is empty,means this is the first time to set the static password
