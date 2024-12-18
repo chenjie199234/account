@@ -462,15 +462,10 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	for oauth := range user.OAuths {
 		resp.Info.BindOauths = append(resp.Info.BindOauths, oauth)
 	}
-	if req.PasswordType == "dynamic" && util.SignCheck("", user.Password) == nil {
-		//this is a new account
+	if req.PasswordType == "dynamic" && (req.SrcType == "email" || req.SrcType == "tel") && util.SignCheck("", user.Password) == nil {
 		resp.Step = "password"
 	}
-	if user.IDCard != "" {
-		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
-	} else {
-		resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
-	}
+	resp.Token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
