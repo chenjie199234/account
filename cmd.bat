@@ -1,36 +1,38 @@
 @echo off
 REM      Warning!!!!!!!!!!!This file is readonly!Don't modify this file!
 
+for /f "tokens=2 delims=:." %%a in ('chcp') do set codepage=%%a
+
 cd %~dp0
 
 where /q git.exe
 if %errorlevel% == 1 (
 	echo "missing dependence: git"
-	goto :end
+	exit /b 1
 )
 
 where /q go.exe
 if %errorlevel% == 1 (
 	echo "missing dependence: golang"
-	goto :end
+	exit /b 1
 )
 
 where /q protoc.exe
 if %errorlevel% == 1 (
 	echo "missing dependence: protoc"
-	goto :end
+	exit /b 1
 )
 
 where /q protoc-gen-go.exe
 if %errorlevel% == 1 (
 	echo "missing dependence: protoc-gen-go"
-	goto :end
+	exit /b 1
 )
 
 where /q codegen.exe
 if %errorlevel% == 1 (
 	echo "missing dependence: codegen"
-	goto :end
+	exit /b 1
 )
 
 if "%1" == "" (
@@ -107,7 +109,11 @@ goto :help
 	del >nul 2>nul .\api\*.md
 	del >nul 2>nul .\api\*.ts
 	go mod tidy
-	codegen -update
+	if %errorlevel% == 1 (
+		echo "go mod tidy failed"
+		exit /b 1
+	)
+	call :update
 	for /f %%a in ('go list -m -f "{{.Dir}}" github.com/chenjie199234/Corelib') do set corelib=%%a
 	protoc -I ./ -I %corelib% --go_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I %corelib% --go-pbex_out=paths=source_relative:. ./api/*.proto
@@ -121,26 +127,51 @@ goto :end
 
 :kube
 	go mod tidy
-	codegen -update
+	if %errorlevel% == 1 (
+		echo "go mod tidy failed"
+		exit /b 1
+	)
+	call :update
 	codegen -n account -p github.com/chenjie199234/account -kube
 goto :end
 
 :html
 	go mod tidy
-	codegen -update
+	if %errorlevel% == 1 (
+		echo "go mod tidy failed"
+		exit /b 1
+	)
+	call :update
 	codegen -n account -p github.com/chenjie199234/account -html
 goto :end
 
 :sub
 	go mod tidy
-	codegen -update
+	if %errorlevel% == 1 (
+		echo "go mod tidy failed"
+		exit /b 1
+	)
+	call :update
 	codegen -n account -p github.com/chenjie199234/account -sub %2
 goto :end
+
+:update
+	chcp 65001 >NUL 2>&1
+	echo "start update corelib tools"
+	for /f %%a in ('go list -m -f "{{.Dir}}" github.com/chenjie199234/Corelib') do set corelib=%%a
+	set workdir=%cd%
+	cd %corelib%
+	go install ./...
+	cd %workdir%
+	echo "update corelib tools success"
+	pause
+	chcp %codepage% >NUL 2>&1
+goto :eof
 
 :help
 	echo cmd.bat - every thing you need
 	echo           please install git
-	echo           please install golang(1.21+)
+	echo           please install golang(1.24+)
 	echo           please install protoc           (github.com/protocolbuffers/protobuf)
 	echo           please install protoc-gen-go    (github.com/protocolbuffers/protobuf-go)
 	echo           please install codegen          (github.com/chenjie199234/Corelib)
@@ -155,5 +186,4 @@ goto :end
 	echo    html                      Create html template.
 	echo    h/-h/help/-help/--help    Show this message.
 :end
-pause
 exit /b 0

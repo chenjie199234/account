@@ -3,10 +3,11 @@ package xcrpc
 import (
 	"crypto/tls"
 	"log/slog"
+	"sync/atomic"
+	"unsafe"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
-	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/service"
 
 	"github.com/chenjie199234/Corelib/crpc"
@@ -32,25 +33,26 @@ func StartCrpcServer() {
 		}
 		tlsc = &tls.Config{Certificates: certificates}
 	}
-	var e error
-	if s, e = crpc.NewCrpcServer(c.ServerConfig, model.Project, model.Group, model.Name, tlsc); e != nil {
+	server, e := crpc.NewCrpcServer(c.ServerConfig, tlsc)
+	if e != nil {
 		slog.ErrorContext(nil, "[xcrpc] new server failed", slog.String("error", e.Error()))
 		return
 	}
+	//avoid race when build/run in -race mode
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&s)), unsafe.Pointer(server))
 	UpdateHandlerTimeout(config.AC.HandlerTimeout)
 
 	//this place can register global midwares
-	//s.Use(globalmidwares)
+	//server.Use(globalmidwares)
 
 	//you just need to register your service here
-	api.RegisterStatusCrpcServer(s, service.SvcStatus, mids.AllMids())
-	api.RegisterBaseCrpcServer(s, service.SvcBase, mids.AllMids())
-	api.RegisterMoneyCrpcServer(s, service.SvcMoney, mids.AllMids())
-
+	api.RegisterStatusCrpcServer(server, service.SvcStatus, mids.AllMids())
+	api.RegisterBaseCrpcServer(server, service.SvcBase, mids.AllMids())
+	api.RegisterMoneyCrpcServer(server, service.SvcMoney, mids.AllMids())
 	//example
-	//api.RegisterExampleCrpcServer(s, service.SvcExample,mids.AllMids())
+	//api.RegisterExampleCrpcServer(server, service.SvcExample,mids.AllMids())
 
-	if e = s.StartCrpcServer(":9000"); e != nil && e != crpc.ErrServerClosed {
+	if e = server.StartCrpcServer(":9000"); e != nil && e != crpc.ErrServerClosed {
 		slog.ErrorContext(nil, "[xcrpc] start server failed", slog.String("error", e.Error()))
 		return
 	}
@@ -60,14 +62,18 @@ func StartCrpcServer() {
 // UpdateHandlerTimeout -
 // first key path,second key method,value timeout duration
 func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
-	if s != nil {
-		s.UpdateHandlerTimeout(timeout)
+	//avoid race when build/run in -race mode
+	tmps := (*crpc.CrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
+	if tmps != nil {
+		tmps.UpdateHandlerTimeout(timeout)
 	}
 }
 
 // StopCrpcServer force - false(graceful),true(not graceful)
 func StopCrpcServer(force bool) {
-	if s != nil {
-		s.StopCrpcServer(force)
+	//avoid race when build/run in -race mode
+	tmps := (*crpc.CrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
+	if tmps != nil {
+		tmps.StopCrpcServer(force)
 	}
 }

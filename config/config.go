@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chenjie199234/account/model"
-
 	configsdk "github.com/chenjie199234/admin/sdk/config"
 )
 
@@ -72,7 +70,7 @@ func initenv() {
 	}
 	if EC.ConfigType != nil && *EC.ConfigType == 1 {
 		var e error
-		if RemoteConfigSdk, e = configsdk.NewConfigSdk(model.Project, model.Group, model.Name, nil); e != nil {
+		if RemoteConfigSdk, e = configsdk.NewConfigSdk(nil); e != nil {
 			slog.ErrorContext(nil, "[config.initenv] new remote config sdk failed", slog.String("error", e.Error()))
 			os.Exit(1)
 		}

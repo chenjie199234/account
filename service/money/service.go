@@ -15,7 +15,7 @@ import (
 	// "github.com/chenjie199234/Corelib/web"
 	"github.com/chenjie199234/Corelib/metadata"
 	"github.com/chenjie199234/Corelib/util/graceful"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Service subservice for money business
@@ -39,11 +39,11 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 	if req.EndTime < req.StartTime {
 		return nil, ecode.ErrReq
 	}
-	var userid primitive.ObjectID
+	var userid bson.ObjectID
 	switch req.SrcType {
 	case "user_id":
 		var e error
-		if userid, e = primitive.ObjectIDFromHex(req.Src); e != nil {
+		if userid, e = bson.ObjectIDFromHex(req.Src); e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
 		}
@@ -53,7 +53,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
@@ -63,7 +63,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
@@ -73,7 +73,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		if userid, e = primitive.ObjectIDFromHex(useridstr); e != nil {
+		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
@@ -110,7 +110,7 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		return nil, ecode.ErrReq
 	}
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SelfMoneyLogs] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken

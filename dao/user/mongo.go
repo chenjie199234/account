@@ -9,23 +9,22 @@ import (
 	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/util"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readconcern"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -52,7 +51,7 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
 		return
 	}
-	user.UserID = r.InsertedID.(primitive.ObjectID)
+	user.UserID = r.InsertedID.(bson.ObjectID)
 	_, e = d.mongo.Database("account").Collection("user_tel_index").InsertOne(sctx, &model.UserTelIndex{
 		Tel:    tel,
 		UserID: user.UserID,
@@ -60,14 +59,14 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 	return
 }
 func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -94,7 +93,7 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
 		return
 	}
-	user.UserID = r.InsertedID.(primitive.ObjectID)
+	user.UserID = r.InsertedID.(bson.ObjectID)
 	_, e = d.mongo.Database("account").Collection("user_email_index").InsertOne(sctx, &model.UserEmailIndex{
 		Email:  email,
 		UserID: user.UserID,
@@ -102,14 +101,14 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 	return
 }
 func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oauthid string) (user *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -136,14 +135,14 @@ func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 	if r, e = d.mongo.Database("account").Collection("user").InsertOne(sctx, user); e != nil {
 		return
 	}
-	user.UserID = r.InsertedID.(primitive.ObjectID)
+	user.UserID = r.InsertedID.(bson.ObjectID)
 	_, e = d.mongo.Database("account").Collection("user_oauth_index").InsertOne(sctx, &model.UserOAuthIndex{
 		Service: oauthservicename + "|" + oauthid,
 		UserID:  user.UserID,
 	})
 	return
 }
-func (d *Dao) MongoGetUser(ctx context.Context, userid primitive.ObjectID) (*model.User, error) {
+func (d *Dao) MongoGetUser(ctx context.Context, userid bson.ObjectID) (*model.User, error) {
 	user := &model.User{}
 	if e := d.mongo.Database("account").Collection("user").FindOne(ctx, bson.M{"_id": userid}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
@@ -229,15 +228,15 @@ func (d *Dao) MongoGetUserByOAuth(ctx context.Context, oauthservicename, oauthid
 	}
 	return user, nil
 }
-func (d *Dao) MongoUpdateUserOAuth(ctx context.Context, userid primitive.ObjectID, oauthservicename, newoauthid string) (olduser *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+func (d *Dao) MongoUpdateUserOAuth(ctx context.Context, userid bson.ObjectID, oauthservicename, newoauthid string) (olduser *model.User, e error) {
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -303,15 +302,15 @@ func (d *Dao) MongoGetUserOAuthIndex(ctx context.Context, oauthservicename, oaut
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid primitive.ObjectID, newTel string) (olduser *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+func (d *Dao) MongoUpdateUserTel(ctx context.Context, userid bson.ObjectID, newTel string) (olduser *model.User, e error) {
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -362,15 +361,15 @@ func (d *Dao) MongoGetUserTelIndex(ctx context.Context, tel string) (*model.User
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid primitive.ObjectID, newEmail string) (olduser *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+func (d *Dao) MongoUpdateUserEmail(ctx context.Context, userid bson.ObjectID, newEmail string) (olduser *model.User, e error) {
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -421,15 +420,15 @@ func (d *Dao) MongoGetUserEmailIndex(ctx context.Context, email string) (*model.
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid primitive.ObjectID, newIDCard string) (olduser *model.User, e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+func (d *Dao) MongoUpdateUserIDCard(ctx context.Context, userid bson.ObjectID, newIDCard string) (olduser *model.User, e error) {
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -484,15 +483,15 @@ func (d *Dao) MongoGetUserIDCardIndex(ctx context.Context, idcard string) (*mode
 	}
 	return index, nil
 }
-func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.ObjectID, oldpassword, newpassword string) (e error) {
-	var s mongo.Session
-	s, e = d.mongo.StartSession(options.Session().SetDefaultReadPreference(readpref.Primary()).SetDefaultReadConcern(readconcern.Local()))
+func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid bson.ObjectID, oldpassword, newpassword string) (e error) {
+	var s *mongo.Session
+	s, e = d.mongo.StartSession()
 	if e != nil {
 		return
 	}
 	defer s.EndSession(ctx)
 	sctx := mongo.NewSessionContext(ctx, s)
-	if e = s.StartTransaction(); e != nil {
+	if e = s.StartTransaction(options.Transaction().SetReadPreference(readpref.Primary()).SetReadConcern(readconcern.Local())); e != nil {
 		return
 	}
 	defer func() {
@@ -519,7 +518,7 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid primitive.Obje
 	}
 	return
 }
-func (d *Dao) MongoResetUserPassword(ctx context.Context, userid primitive.ObjectID) error {
+func (d *Dao) MongoResetUserPassword(ctx context.Context, userid bson.ObjectID) error {
 	nonce := make([]byte, 16)
 	rand.Read(nonce)
 	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"password": util.SignMake("", nonce)}})
@@ -531,7 +530,7 @@ func (d *Dao) MongoResetUserPassword(ctx context.Context, userid primitive.Objec
 	}
 	return nil
 }
-func (d *Dao) MongoBanUser(ctx context.Context, userid primitive.ObjectID, reason string) error {
+func (d *Dao) MongoBanUser(ctx context.Context, userid bson.ObjectID, reason string) error {
 	filter := bson.M{"_id": userid}
 	updater := bson.M{"btime": time.Now().UnixNano(), "breason": reason}
 	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, filter, bson.M{"$set": updater})
@@ -543,7 +542,7 @@ func (d *Dao) MongoBanUser(ctx context.Context, userid primitive.ObjectID, reaso
 	}
 	return nil
 }
-func (d *Dao) MongoUnBanUser(ctx context.Context, userid primitive.ObjectID) error {
+func (d *Dao) MongoUnBanUser(ctx context.Context, userid bson.ObjectID) error {
 	filter := bson.M{"_id": userid}
 	updater := bson.M{"btime": 0, "breason": ""}
 	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, filter, bson.M{"$set": updater})

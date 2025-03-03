@@ -6,14 +6,13 @@ import (
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // action: spend/recharge/refund/all
-func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, opaction string) ([]*model.MoneyLog, error) {
+func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid bson.ObjectID, opaction string) ([]*model.MoneyLog, error) {
 	filter := bson.M{"user_id": userid}
 	if opaction == "spend" || opaction == "recharge" || opaction == "refund" {
 		filter["action"] = opaction
@@ -30,7 +29,7 @@ func (d *Dao) MongoGetMoneyLogs(ctx context.Context, userid primitive.ObjectID, 
 func (d *Dao) MongoInsertMoneyLogs(ctx context.Context, log *model.MoneyLog) error {
 	r, e := d.mongo.Database("account").Collection("money_log").InsertOne(ctx, log)
 	if e == nil {
-		log.LogID = r.InsertedID.(primitive.ObjectID)
+		log.LogID = r.InsertedID.(bson.ObjectID)
 		return nil
 	}
 	if !mongo.IsDuplicateKeyError(e) {

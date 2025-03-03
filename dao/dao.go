@@ -3,13 +3,14 @@ package dao
 import (
 	"crypto/tls"
 
-	// discoversdk "github.com/chenjie199234/admin/sdk/discover"
+	// "github.com/chenjie199234/account/model"
+	"github.com/chenjie199234/account/config"
+
+	// admindiscover "github.com/chenjie199234/admin/sdk/discover"
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
 	"github.com/chenjie199234/Corelib/discover"
 	"github.com/chenjie199234/Corelib/web"
-	"github.com/chenjie199234/account/config"
-	"github.com/chenjie199234/account/model"
 )
 
 //var ExampleCGrpcApi example.ExampleCGrpcClient
@@ -45,7 +46,7 @@ func NewApi() error {
 	//	admintlsc = &tlsc.Config{}
 	//	...
 	//}
-	//exampleAdminDiscover, e := discoversdk.NewAdminDiscover(model.Project, model.Group, model.Name, "exampleproject", "examplegroup", "examplename", admintlsc)
+	//exampleAdminDiscover, e := admindiscover.NewAdminDiscover("exampleproject", "examplegroup", "examplename", admintlsc)
 	//if e != nil {
 	//	return e
 	//}
@@ -91,7 +92,7 @@ func NewApi() error {
 	if e != nil {
 		return e
 	}
-	WeChatWebApi, e = web.NewWebClient(webc, WeChatStaticDiscover, model.Project, model.Group, model.Name, "tencent", "wechat", "oauth2", &tls.Config{})
+	WeChatWebApi, e = web.NewWebClient(webc, WeChatStaticDiscover, "tencent", "wechat", "oauth2", &tls.Config{})
 	if e != nil {
 		return e
 	}

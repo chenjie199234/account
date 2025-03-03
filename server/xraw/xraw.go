@@ -3,6 +3,8 @@ package xraw
 import (
 	"crypto/tls"
 	"log/slog"
+	"sync/atomic"
+	"unsafe"
 
 	"github.com/chenjie199234/account/config"
 	"github.com/chenjie199234/account/service"
@@ -12,6 +14,7 @@ import (
 
 var s *stream.Instance
 
+// StartRawServer -
 func StartRawServer() {
 	c := config.GetRawServerConfig()
 	var tlsc *tls.Config
@@ -27,7 +30,7 @@ func StartRawServer() {
 		}
 		tlsc = &tls.Config{Certificates: certificates}
 	}
-	s, _ = stream.NewInstance(&stream.InstanceConfig{
+	server, _ := stream.NewInstance(&stream.InstanceConfig{
 		TcpC:               &stream.TcpConfig{ConnectTimeout: c.ConnectTimeout.StdDuration(), MaxMsgLen: c.MaxMsgLen},
 		HeartprobeInterval: c.HeartProbe.StdDuration(),
 		GroupNum:           c.GroupNum,
@@ -37,18 +40,23 @@ func StartRawServer() {
 		UserdataFunc:       service.SvcRaw.RawUser,
 		OfflineFunc:        service.SvcRaw.RawOffline,
 	})
+	//avoid race when build/run in -race mode
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&s)), unsafe.Pointer(server))
 
-	service.SvcRaw.SetStreamInstance(s)
+	service.SvcRaw.SetStreamInstance(server)
 
-	if e := s.StartServer(":7000", tlsc); e != nil && e != stream.ErrServerClosed {
+	if e := server.StartServer(":7000", tlsc); e != nil && e != stream.ErrServerClosed {
 		slog.ErrorContext(nil, "[xraw] start server failed", slog.String("error", e.Error()))
 		return
 	}
 	slog.InfoContext(nil, "[xraw] server closed")
 }
 
+// StopRawServer -
 func StopRawServer() {
-	if s != nil {
-		s.Stop()
+	//avoid race when build/run in -race mode
+	tmps := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
+	if tmps != nil {
+		tmps.Stop()
 	}
 }

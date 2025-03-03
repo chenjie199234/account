@@ -2,6 +2,8 @@ package raw
 
 import (
 	"context"
+	"sync/atomic"
+	"unsafe"
 	// "log/slog"
 
 	// "github.com/chenjie199234/account/config"
@@ -32,24 +34,35 @@ func Start() *Service {
 }
 
 func (s *Service) SetStreamInstance(instance *stream.Instance) {
-	s.instance = instance
+	//avoid race when build/run in -race mode
+	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance)), unsafe.Pointer(instance))
 }
 
 func (s *Service) RawVerify(ctx context.Context, peerVerifyData []byte) (response []byte, uniqueid string, success bool) {
+	//avoid race when build/run in -race mode
+	// instance := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance))))
 	return nil, "", false
 }
 
 func (s *Service) RawOnline(ctx context.Context, p *stream.Peer) (success bool) {
+	//avoid race when build/run in -race mode
+	// instance := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance))))
 	return false
 }
 
 func (s *Service) RawPingPong(p *stream.Peer) {
+	//avoid race when build/run in -race mode
+	// instance := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance))))
 }
 
 func (s *Service) RawUser(p *stream.Peer, userdata []byte) {
+	//avoid race when build/run in -race mode
+	// instance := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance))))
 }
 
 func (s *Service) RawOffline(p *stream.Peer) {
+	//avoid race when build/run in -race mode
+	// instance := (*stream.Instance)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.instance))))
 }
 
 // Stop -

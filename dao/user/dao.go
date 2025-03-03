@@ -9,13 +9,13 @@ import (
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
 
+	"github.com/chenjie199234/Corelib/cotel"
 	cmongo "github.com/chenjie199234/Corelib/mongo"
 	cmysql "github.com/chenjie199234/Corelib/mysql"
 	credis "github.com/chenjie199234/Corelib/redis"
-	"github.com/chenjie199234/Corelib/trace"
 	"github.com/chenjie199234/Corelib/util/oneshot"
 	gredis "github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Dao this is a data operation layer to operate user service's data
@@ -38,7 +38,7 @@ func NewDao(mysql *cmysql.Client, redis *credis.Client, mongo *cmongo.Client) *D
 
 // user
 
-func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.User, error) {
+func (d *Dao) GetUser(ctx context.Context, userid bson.ObjectID) (*model.User, error) {
 	if user, e := d.RedisGetUser(ctx, userid.Hex()); e == nil || e == ecode.ErrUserNotExist {
 		return user, e
 	} else if e != gredis.Nil {
@@ -56,7 +56,7 @@ func (d *Dao) GetUser(ctx context.Context, userid primitive.ObjectID) (*model.Us
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, userid.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUser] update redis failed", slog.String("user_id", userid.Hex()), slog.String("error", e.Error()))
 			}
@@ -89,7 +89,7 @@ func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid stri
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						ctx := trace.CloneSpan(ctx)
+						ctx := cotel.CloneTrace(ctx)
 						if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, ""); e != nil {
 							slog.ErrorContext(ctx, "[dao.GetUserByOAuth] update redis failed", slog.String(oauthservicename, oauthid), slog.String("error", e.Error()))
 						}
@@ -101,13 +101,13 @@ func (d *Dao) GetUserByOAuth(ctx context.Context, oauthservicename, oauthid stri
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByOAuth] update redis failed", slog.String(oauthservicename, oauthid), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByOAuth] update redis failed", slog.String(oauthservicename, oauthid), slog.String("error", e.Error()))
 			}
@@ -143,13 +143,13 @@ func (d *Dao) GetOrCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByOAuth] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByOAuth] update redis failed", slog.String(oauthservicename, oauthid), slog.String("error", e.Error()))
 			}
@@ -182,7 +182,7 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						ctx := trace.CloneSpan(ctx)
+						ctx := cotel.CloneTrace(ctx)
 						if e := d.RedisSetUserTelIndex(ctx, tel, ""); e != nil {
 							slog.ErrorContext(ctx, "[dao.GetUserByTel] update redis failed", slog.String("tel", tel), slog.String("error", e.Error()))
 						}
@@ -194,13 +194,13 @@ func (d *Dao) GetUserByTel(ctx context.Context, tel string) (*model.User, error)
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByTel] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserTelIndex(ctx, user.Tel, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByTel] update redis failed", slog.String("tel", user.Tel), slog.String("error", e.Error()))
 			}
@@ -236,13 +236,13 @@ func (d *Dao) GetOrCreateUserByTel(ctx context.Context, tel string) (*model.User
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByTel] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserTelIndex(ctx, user.Tel, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByTel] update redis failed", slog.String("tel", user.Tel), slog.String("error", e.Error()))
 			}
@@ -275,7 +275,7 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						ctx := trace.CloneSpan(ctx)
+						ctx := cotel.CloneTrace(ctx)
 						if e := d.RedisSetUserEmailIndex(ctx, email, ""); e != nil {
 							slog.ErrorContext(ctx, "[dao.GetUserByEmail] update redis failed", slog.String("email", email), slog.String("error", e.Error()))
 						}
@@ -287,13 +287,13 @@ func (d *Dao) GetUserByEmail(ctx context.Context, email string) (*model.User, er
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByEmail] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserEmailIndex(ctx, user.Email, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByEmail] update redis failed", slog.String("email", user.Email), slog.String("error", e.Error()))
 			}
@@ -329,13 +329,13 @@ func (d *Dao) GetOrCreateUserByEmail(ctx context.Context, email string) (*model.
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByEmail] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserEmailIndex(ctx, user.Email, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetOrCreateUserByEmail] update redis failed", slog.String("email", user.Email), slog.String("error", e.Error()))
 			}
@@ -368,7 +368,7 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 				if e == ecode.ErrUserNotExist {
 					//set redis empty key
 					go func() {
-						ctx := trace.CloneSpan(ctx)
+						ctx := cotel.CloneTrace(ctx)
 						if e := d.RedisSetUserIDCardIndex(ctx, idcard, ""); e != nil {
 							slog.ErrorContext(ctx, "[dao.GetUserByIDCard] update redis failed", slog.String("idcard", idcard), slog.String("error", e.Error()))
 						}
@@ -380,13 +380,13 @@ func (d *Dao) GetUserByIDCard(ctx context.Context, idcard string) (*model.User, 
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUser(ctx, user.UserID.Hex(), user); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByIDCard] update redis failed", slog.String("user_id", user.UserID.Hex()), slog.String("error", e.Error()))
 			}
 		}()
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserIDCardIndex(ctx, user.IDCard, user.UserID.Hex()); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserByIDCard] update redis failed", slog.String("idcard", user.IDCard), slog.String("error", e.Error()))
 			}
@@ -421,7 +421,7 @@ func (d *Dao) GetUserOAuthIndex(ctx context.Context, oauthservicename, oauthid s
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserOAuthIndex(ctx, oauthservicename, oauthid, userid); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserOAuthIndex] update redis failed", slog.String(oauthservicename, oauthid), slog.String("error", e.Error()))
 			}
@@ -457,7 +457,7 @@ func (d *Dao) GetUserTelIndex(ctx context.Context, tel string) (string, error) {
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserTelIndex(ctx, tel, userid); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserTelIndex] update redis failed", slog.String("tel", tel), slog.String("error", e.Error()))
 			}
@@ -493,7 +493,7 @@ func (d *Dao) GetUserEmailIndex(ctx context.Context, email string) (string, erro
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserEmailIndex(ctx, email, userid); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserEmailIndex] update redis failed", slog.String("email", email), slog.String("error", e.Error()))
 			}
@@ -529,7 +529,7 @@ func (d *Dao) GetUserIDCardIndex(ctx context.Context, idcard string) (string, er
 		}
 		//update redis
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := d.RedisSetUserIDCardIndex(ctx, idcard, userid); e != nil {
 				slog.ErrorContext(ctx, "[dao.GetUserIDCardIndex] update redis failed", slog.String("idcard", idcard), slog.String("error", e.Error()))
 			}

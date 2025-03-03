@@ -18,11 +18,11 @@ import (
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
 	"github.com/chenjie199234/Corelib/cerror"
+	"github.com/chenjie199234/Corelib/cotel"
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
-	"github.com/chenjie199234/Corelib/trace"
 	"github.com/chenjie199234/Corelib/util/graceful"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Service subservice for user business
@@ -108,7 +108,7 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	//if rate check failed or send failed,clean redis code
 	if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
 				slog.ErrorContext(ctx, "["+callerName+"] del redis code failed", slog.String("operator", operator), slog.String(srctype, src), slog.String("error", ee.Error()))
 			}
@@ -129,7 +129,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 		if req.Src == "" {
 			return nil, ecode.ErrReq
 		}
-		userid, e := primitive.ObjectIDFromHex(req.Src)
+		userid, e := bson.ObjectIDFromHex(req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[BaseInfo] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
@@ -185,11 +185,11 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 }
 
 func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error) {
-	var userid primitive.ObjectID
+	var userid bson.ObjectID
 	switch req.SrcType {
 	case "user_id":
 		var e error
-		userid, e = primitive.ObjectIDFromHex(req.Src)
+		userid, e = bson.ObjectIDFromHex(req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[Ban] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
@@ -245,7 +245,7 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 		slog.InfoContext(ctx, "[Ban] success", slog.String(req.SrcType, req.Src), slog.String("user_id", userid.Hex()))
 	}
 	go func() {
-		ctx := trace.CloneSpan(ctx)
+		ctx := cotel.CloneTrace(ctx)
 		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
 			if req.SrcType == "user_id" {
 				slog.ErrorContext(ctx, "[Ban] clean redis failed", slog.String(req.SrcType, req.Src), slog.String("error", e.Error()))
@@ -259,11 +259,11 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 }
 
 func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp, error) {
-	var userid primitive.ObjectID
+	var userid bson.ObjectID
 	switch req.SrcType {
 	case "user_id":
 		var e error
-		userid, e = primitive.ObjectIDFromHex(req.Src)
+		userid, e = bson.ObjectIDFromHex(req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[Unban] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
@@ -319,7 +319,7 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 		slog.InfoContext(ctx, "[Unban] success", slog.String(req.SrcType, req.Src), slog.String("user_id", userid.Hex()))
 	}
 	go func() {
-		ctx := trace.CloneSpan(ctx)
+		ctx := cotel.CloneTrace(ctx)
 		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
 			if req.SrcType == "user_id" {
 				slog.ErrorContext(ctx, "[Unban] clean redis failed", slog.String("user_id", userid.Hex()), slog.String("error", e.Error()))
@@ -478,7 +478,7 @@ func (s *Service) TemporaryToken(ctx context.Context, req *api.TemporaryTokenReq
 }
 func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.SelfInfoResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SelfInfo] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -510,7 +510,7 @@ func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.Self
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -544,7 +544,7 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	}
 	slog.InfoContext(ctx, "[UpdateStaticPassword] success", slog.String("operator", md["Token-User"]))
 	go func() {
-		ctx := trace.CloneSpan(ctx)
+		ctx := cotel.CloneTrace(ctx)
 		if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateStaticPassword] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		}
@@ -563,7 +563,7 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticPasswordReq) (*api.ResetStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[ResetStaticPassword] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -585,7 +585,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		}
 		slog.InfoContext(ctx, "[ResetStaticPassword] success", slog.String("operator", md["Token-User"]))
 		go func() {
-			ctx := trace.CloneSpan(ctx)
+			ctx := cotel.CloneTrace(ctx)
 			if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 				slog.ErrorContext(ctx, "[ResetStaticPassword] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 			}
@@ -687,7 +687,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 
 func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDuplicateCheckReq) (*api.IdcardDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -717,7 +717,7 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 		return nil, ecode.ErrReq
 	}
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SetIdcard] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -754,14 +754,14 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 	}
 	slog.InfoContext(ctx, "[UpdateIdcard] success", slog.String("operator", md["Token-User"]), slog.String("new_idcard", req.Idcard))
 	go func() {
-		ctx := trace.CloneSpan(ctx)
+		ctx := cotel.CloneTrace(ctx)
 		if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateIdcard] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		}
 		s.stop.DoneOne()
 	}()
 	go func() {
-		ctx := trace.CloneSpan(ctx)
+		ctx := cotel.CloneTrace(ctx)
 		if e := s.userDao.RedisDelUserIDCardIndex(ctx, req.Idcard); e != nil {
 			slog.ErrorContext(ctx, "[UpdateIdcard] clean redis failed", slog.String("idcard", req.Idcard), slog.String("error", e.Error()))
 		}
@@ -780,7 +780,7 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 //	Step 2:verify old email's or tel's dynamic password and verify the new oauth
 func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*api.UpdateOauthResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateOauth] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -807,7 +807,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		oldoauthid := olduser.OAuths[req.NewOauthServiceName]
 		if oldoauthid != newoauthid {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
@@ -815,7 +815,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			}()
 			go func() {
 				if oldoauthid != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, oldoauthid); e != nil {
 						slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String(req.NewOauthServiceName, oldoauthid), slog.String("error", e.Error()))
 					}
@@ -824,7 +824,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			}()
 			go func() {
 				if newoauthid != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, newoauthid); e != nil {
 						slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String(req.NewOauthServiceName, newoauthid), slog.String("error", e.Error()))
 					}
@@ -949,7 +949,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelOauthResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelOauth] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -973,14 +973,14 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		}
 		if oauthid := olduser.OAuths[req.DelOauthServiceName]; oauthid != "" {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelOauth] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.DelOauthServiceName, oauthid); e != nil {
 					slog.ErrorContext(ctx, "[DelOauth] clean redis failed", slog.String(req.DelOauthServiceName, oauthid), slog.String("error", e.Error()))
 				}
@@ -1109,7 +1109,7 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 		return nil, ecode.ErrUnsupportedEmailService
 	}
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1157,7 +1157,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ErrUnsupportedEmailService
 	}
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateEmail] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1193,7 +1193,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		slog.InfoContext(ctx, "[UpdateEmail] success", slog.String("operator", md["Token-User"]), slog.String("new_email", req.NewEmail))
 		if olduser.Email != req.NewEmail {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
@@ -1201,7 +1201,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			}()
 			go func() {
 				if olduser.Email != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 						slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("email", olduser.Email), slog.String("error", e.Error()))
 					}
@@ -1210,7 +1210,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			}()
 			go func() {
 				if req.NewEmail != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserEmailIndex(ctx, req.NewEmail); e != nil {
 						slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("email", req.NewEmail), slog.String("error", e.Error()))
 					}
@@ -1334,7 +1334,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelEmail] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1358,14 +1358,14 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		}
 		if olduser.Email != "" {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelEmail] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 					slog.ErrorContext(ctx, "[DelEmail] clean redis failed", slog.String("email", olduser.Email), slog.String("error", e.Error()))
 				}
@@ -1482,7 +1482,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 
 func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCheckReq) (*api.TelDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1518,7 +1518,7 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 //	Step final:verify new tel's dynamic password and update
 func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.UpdateTelResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateTel] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1554,7 +1554,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		slog.InfoContext(ctx, "[UpdateTel] success", slog.String("operator", md["Token-User"]), slog.String("new_tel", req.NewTel))
 		if olduser.Tel != req.NewTel {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
@@ -1562,7 +1562,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			}()
 			go func() {
 				if olduser.Tel != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 						slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("tel", olduser.Tel), slog.String("error", e.Error()))
 					}
@@ -1571,7 +1571,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			}()
 			go func() {
 				if req.NewTel != "" {
-					ctx := trace.CloneSpan(ctx)
+					ctx := cotel.CloneTrace(ctx)
 					if e := s.userDao.RedisDelUserTelIndex(ctx, req.NewTel); e != nil {
 						slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("tel", req.NewTel), slog.String("error", e.Error()))
 					}
@@ -1695,7 +1695,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelResp, error) {
 	md := metadata.GetMetadata(ctx)
-	operator, e := primitive.ObjectIDFromHex(md["Token-User"])
+	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelTel] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
@@ -1719,14 +1719,14 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		}
 		if olduser.Tel != "" {
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelTel] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
-				ctx := trace.CloneSpan(ctx)
+				ctx := cotel.CloneTrace(ctx)
 				if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 					slog.ErrorContext(ctx, "[DelTel] clean redis failed", slog.String("tel", olduser.Tel), slog.String("error", e.Error()))
 				}
