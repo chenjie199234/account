@@ -3,8 +3,8 @@ module github.com/chenjie199234/account
 go 1.24.0
 
 require (
-	github.com/chenjie199234/Corelib v0.0.133-0.20250303055651-c7574ee29ada
-	github.com/chenjie199234/admin v0.0.133-0.20250303061637-16676e7db402
+	github.com/chenjie199234/Corelib v0.0.133-0.20250304074529-bd22fc47430e
+	github.com/chenjie199234/admin v0.0.133-0.20250304080124-8df45b634aa2
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/redis/go-redis/v9 v9.7.1
