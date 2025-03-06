@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/chenjie199234/Corelib/util/name"
+
+	adminsdk "github.com/chenjie199234/admin/sdk"
 )
 
 // Warning!!!!!!!!!!!
@@ -26,5 +28,5 @@ func init() {
 	if e := name.SetSelfFullName(Project, Group, Name); e != nil {
 		panic(e)
 	}
+	adminsdk.Init(Project, Group, Name)
 }
-
