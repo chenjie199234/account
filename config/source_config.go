@@ -287,7 +287,6 @@ func initcrpcclient() {
 			sc.CrpcClient.HeartProbe = ctime.Duration(time.Second * 5)
 		}
 	}
-
 }
 func initwebserver() {
 	if sc.WebServer == nil {
@@ -357,9 +356,6 @@ func initredis() {
 		if redisc.MaxConnIdletime <= 0 {
 			redisc.MaxConnIdletime = ctime.Duration(time.Minute * 5)
 		}
-		if redisc.IOTimeout <= 0 {
-			redisc.IOTimeout = ctime.Duration(time.Millisecond * 500)
-		}
 		if redisc.DialTimeout <= 0 {
 			redisc.DialTimeout = ctime.Duration(time.Millisecond * 250)
 		}
@@ -420,9 +416,6 @@ func initmongo() {
 		if mongoc.MaxConnIdletime <= 0 {
 			mongoc.MaxConnIdletime = ctime.Duration(time.Minute * 5)
 		}
-		if mongoc.IOTimeout <= 0 {
-			mongoc.IOTimeout = ctime.Duration(time.Millisecond * 500)
-		}
 		if mongoc.DialTimeout <= 0 {
 			mongoc.DialTimeout = ctime.Duration(time.Millisecond * 250)
 		}
@@ -478,9 +471,6 @@ func initmysql() {
 		mysqlc.MysqlName = k
 		if mysqlc.MaxConnIdletime <= 0 {
 			mysqlc.MaxConnIdletime = ctime.Duration(time.Minute * 5)
-		}
-		if mysqlc.IOTimeout <= 0 {
-			mysqlc.IOTimeout = ctime.Duration(time.Millisecond * 500)
 		}
 		if mysqlc.DialTimeout <= 0 {
 			mysqlc.DialTimeout = ctime.Duration(time.Millisecond * 250)
