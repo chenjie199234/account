@@ -116,8 +116,8 @@ func initremoteapp(notice func(*AppConfig), wait chan *struct{}) (stopwatch func
 			return
 		}
 		validateAppConfig(c)
+		slog.InfoContext(nil, "[config.remote.app] update success", slog.Any("config", c))
 		AC = c
-		slog.InfoContext(nil, "[config.remote.app] update success", slog.Any("config", AC))
 		if notice != nil {
 			notice(AC)
 		}
