@@ -27,13 +27,13 @@ type Service struct {
 }
 
 // Start -
-func Start() *Service {
+func Start() (*Service, error) {
 	return &Service{
 		stop: graceful.New(),
 
 		userDao:  userdao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 		moneyDao: moneydao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
-	}
+	}, nil
 }
 func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*api.GetMoneyLogsResp, error) {
 	if req.EndTime < req.StartTime {

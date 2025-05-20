@@ -19,14 +19,23 @@ var SvcMoney *money.Service
 
 // StartService start the whole service
 func StartService() error {
-	if e := dao.NewApi(); e != nil {
+	var e error
+	if e = dao.NewApi(); e != nil {
 		return e
 	}
 	//start sub service
-	SvcStatus = status.Start()
-	SvcRaw = raw.Start()
-	SvcBase = base.Start()
-	SvcMoney = money.Start()
+	if SvcStatus, e = status.Start(); e != nil {
+		return e
+	}
+	if SvcRaw, e = raw.Start(); e != nil {
+		return e
+	}
+	if SvcBase, e = base.Start(); e != nil {
+		return e
+	}
+	if SvcMoney, e = money.Start(); e != nil {
+		return e
+	}
 	return nil
 }
 
