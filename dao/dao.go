@@ -100,6 +100,6 @@ func NewApi() error {
 	return nil
 }
 
-func UpdateAPI(ac *config.AppConfig) {
+func UpdateAppConfig(ac *config.AppConfig) {
 
 }
