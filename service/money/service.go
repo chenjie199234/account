@@ -6,8 +6,8 @@ import (
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
+	basedao "github.com/chenjie199234/account/dao/base"
 	moneydao "github.com/chenjie199234/account/dao/money"
-	userdao "github.com/chenjie199234/account/dao/user"
 	"github.com/chenjie199234/account/ecode"
 
 	// "github.com/chenjie199234/Corelib/cgrpc"
@@ -22,7 +22,7 @@ import (
 type Service struct {
 	stop *graceful.Graceful
 
-	userDao  *userdao.Dao
+	baseDao  *basedao.Dao
 	moneyDao *moneydao.Dao
 }
 
@@ -31,7 +31,7 @@ func Start() (*Service, error) {
 	return &Service{
 		stop: graceful.New(),
 
-		userDao:  userdao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
+		baseDao:  basedao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 		moneyDao: moneydao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 	}, nil
 }
@@ -48,7 +48,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			return nil, ecode.ErrReq
 		}
 	case "tel":
-		useridstr, e := s.userDao.GetUserTelIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserTelIndex(ctx, req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -58,7 +58,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			return nil, ecode.ErrSystem
 		}
 	case "email":
-		useridstr, e := s.userDao.GetUserEmailIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserEmailIndex(ctx, req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -68,7 +68,7 @@ func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*
 			return nil, ecode.ErrSystem
 		}
 	case "idcard":
-		useridstr, e := s.userDao.GetUserIDCardIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserIDCardIndex(ctx, req.Src)
 		if e != nil {
 			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)

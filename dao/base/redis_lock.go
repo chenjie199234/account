@@ -1,4 +1,4 @@
-package user
+package base
 
 import (
 	"context"

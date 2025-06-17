@@ -9,7 +9,7 @@ import (
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
-	userdao "github.com/chenjie199234/account/dao/user"
+	basedao "github.com/chenjie199234/account/dao/base"
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/util"
@@ -29,7 +29,7 @@ import (
 type Service struct {
 	stop *graceful.Graceful
 
-	userDao *userdao.Dao
+	baseDao *basedao.Dao
 }
 
 // Start -
@@ -37,7 +37,7 @@ func Start() (*Service, error) {
 	return &Service{
 		stop: graceful.New(),
 
-		userDao: userdao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
+		baseDao: basedao.NewDao(nil, config.GetRedis("account_redis"), config.GetMongo("account_mongo")),
 	}, nil
 }
 
@@ -55,7 +55,7 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 		}
 		return ecode.ErrBusy
 	}
-	code, dup, e := s.userDao.RedisSetCode(ctx, operator, action, src)
+	code, dup, e := s.baseDao.RedisSetCode(ctx, operator, action, src)
 	if e != nil {
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "["+callerName+"] redis op failed", slog.String("operator", operator), slog.String(srctype, src), slog.String("error", e.Error()))
@@ -68,25 +68,25 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 	}
 	switch action {
 	case util.Login:
-		e = s.userDao.RedisLockLoginDynamic(ctx, operator)
+		e = s.baseDao.RedisLockLoginDynamic(ctx, operator)
 	case util.DelEmail:
 		fallthrough
 	case util.UpdateEmailStep1:
-		e = s.userDao.RedisLockEmailOP(ctx, operator)
+		e = s.baseDao.RedisLockEmailOP(ctx, operator)
 	case util.UpdateEmailStep2:
 		//this is controled by step1
 	case util.DelTel:
 		fallthrough
 	case util.UpdateTelStep1:
-		e = s.userDao.RedisLockTelOP(ctx, operator)
+		e = s.baseDao.RedisLockTelOP(ctx, operator)
 	case util.UpdateTelStep2:
 		//this is controled by step1
 	case util.DelOAuth:
 		fallthrough
 	case util.UpdateOAuth:
-		e = s.userDao.RedisLockOAuthOP(ctx, operator)
+		e = s.baseDao.RedisLockOAuthOP(ctx, operator)
 	case util.ResetPassword:
-		e = s.userDao.RedisLockResetPassword(ctx, operator)
+		e = s.baseDao.RedisLockResetPassword(ctx, operator)
 	default:
 		s.stop.DoneOne()
 		return ecode.ErrUnknownAction
@@ -106,10 +106,10 @@ func (s *Service) sendcode(ctx context.Context, callerName, srctype, src, operat
 		return nil
 	}
 	//if rate check failed or send failed,clean redis code
-	if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
+	if ee := s.baseDao.RedisDelCode(ctx, operator, action); ee != nil {
 		go func() {
 			ctx := cotel.CloneTrace(ctx)
-			if ee := s.userDao.RedisDelCode(ctx, operator, action); ee != nil {
+			if ee := s.baseDao.RedisDelCode(ctx, operator, action); ee != nil {
 				slog.ErrorContext(ctx, "["+callerName+"] del redis code failed", slog.String("operator", operator), slog.String(srctype, src), slog.String("error", ee.Error()))
 			}
 			s.stop.DoneOne()
@@ -134,7 +134,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			slog.ErrorContext(ctx, "[BaseInfo] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
 		}
-		if user, e = s.userDao.GetUser(ctx, userid); e != nil {
+		if user, e = s.baseDao.GetUser(ctx, userid); e != nil {
 			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -143,7 +143,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			return nil, ecode.ErrReq
 		}
 		var e error
-		if user, e = s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+		if user, e = s.baseDao.GetUserByTel(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -152,7 +152,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			return nil, ecode.ErrReq
 		}
 		var e error
-		if user, e = s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+		if user, e = s.baseDao.GetUserByEmail(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -161,7 +161,7 @@ func (s *Service) BaseInfo(ctx context.Context, req *api.BaseInfoReq) (*api.Base
 			return nil, ecode.ErrReq
 		}
 		var e error
-		if user, e = s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+		if user, e = s.baseDao.GetUserByIDCard(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[BaseInfo] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -194,14 +194,14 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 			slog.ErrorContext(ctx, "[Ban] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
 		}
-		if user, e := s.userDao.GetUser(ctx, userid); e != nil {
+		if user, e := s.baseDao.GetUser(ctx, userid); e != nil {
 			slog.ErrorContext(ctx, "[Ban] dao op failed", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BReason == req.Reason {
 			return &api.BanResp{}, nil
 		}
 	case "tel":
-		if user, e := s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByTel(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Ban] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BReason == req.Reason {
@@ -210,7 +210,7 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 			userid = user.UserID
 		}
 	case "email":
-		if user, e := s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByEmail(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Ban] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BReason == req.Reason {
@@ -219,7 +219,7 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 			userid = user.UserID
 		}
 	case "idcard":
-		if user, e := s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByIDCard(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Ban] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BReason == req.Reason {
@@ -234,7 +234,7 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 		}
 		return nil, ecode.ErrBusy
 	}
-	if e := s.userDao.MongoBanUser(ctx, userid, req.Reason); e != nil {
+	if e := s.baseDao.MongoBanUser(ctx, userid, req.Reason); e != nil {
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "[Ban] db op failed", slog.String(req.SrcType, req.Src), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -246,7 +246,7 @@ func (s *Service) Ban(ctx context.Context, req *api.BanReq) (*api.BanResp, error
 	}
 	go func() {
 		ctx := cotel.CloneTrace(ctx)
-		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
+		if e := s.baseDao.RedisDelUser(ctx, userid.Hex()); e != nil {
 			if req.SrcType == "user_id" {
 				slog.ErrorContext(ctx, "[Ban] clean redis failed", slog.String(req.SrcType, req.Src), slog.String("error", e.Error()))
 			} else {
@@ -268,14 +268,14 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 			slog.ErrorContext(ctx, "[Unban] user_id format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
 		}
-		if user, e := s.userDao.GetUser(ctx, userid); e != nil {
+		if user, e := s.baseDao.GetUser(ctx, userid); e != nil {
 			slog.ErrorContext(ctx, "[Unban] dao op failed", slog.String("user_id", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BTime == 0 {
 			return &api.UnbanResp{}, nil
 		}
 	case "tel":
-		if user, e := s.userDao.GetUserByTel(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByTel(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Unban] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BTime == 0 {
@@ -284,7 +284,7 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 			userid = user.UserID
 		}
 	case "email":
-		if user, e := s.userDao.GetUserByEmail(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByEmail(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Unban] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BTime == 0 {
@@ -293,7 +293,7 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 			userid = user.UserID
 		}
 	case "idcard":
-		if user, e := s.userDao.GetUserByIDCard(ctx, req.Src); e != nil {
+		if user, e := s.baseDao.GetUserByIDCard(ctx, req.Src); e != nil {
 			slog.ErrorContext(ctx, "[Unban] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		} else if user.BTime == 0 {
@@ -308,7 +308,7 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 		}
 		return nil, ecode.ErrBusy
 	}
-	if e := s.userDao.MongoUnBanUser(ctx, userid); e != nil {
+	if e := s.baseDao.MongoUnBanUser(ctx, userid); e != nil {
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "[Unban] db op failed", slog.String(req.SrcType, req.Src), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -320,7 +320,7 @@ func (s *Service) Unban(ctx context.Context, req *api.UnbanReq) (*api.UnbanResp,
 	}
 	go func() {
 		ctx := cotel.CloneTrace(ctx)
-		if e := s.userDao.RedisDelUser(ctx, userid.Hex()); e != nil {
+		if e := s.baseDao.RedisDelUser(ctx, userid.Hex()); e != nil {
 			if req.SrcType == "user_id" {
 				slog.ErrorContext(ctx, "[Unban] clean redis failed", slog.String("user_id", userid.Hex()), slog.String("error", e.Error()))
 			} else {
@@ -357,13 +357,13 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrReq
 		}
 		//static
-		if user, e = s.userDao.GetUserByIDCard(ctx, req.SrcTypeExtra); e != nil {
+		if user, e = s.baseDao.GetUserByIDCard(ctx, req.SrcTypeExtra); e != nil {
 			slog.ErrorContext(ctx, "[Login] dao op failed", slog.String("idcard", req.SrcTypeExtra), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 	case "tel":
 		if req.PasswordType == "static" {
-			if user, e = s.userDao.GetUserByTel(ctx, req.SrcTypeExtra); e != nil {
+			if user, e = s.baseDao.GetUserByTel(ctx, req.SrcTypeExtra); e != nil {
 				slog.ErrorContext(ctx, "[Login] dao op failed", slog.String("tel", req.SrcTypeExtra), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -373,11 +373,11 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.userDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
+			if e = s.baseDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
 				slog.ErrorContext(ctx, "[Login] redis op failed", slog.String("tel", req.SrcTypeExtra), slog.String("code", req.Password), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-			if user, e = s.userDao.GetOrCreateUserByTel(ctx, req.SrcTypeExtra); e != nil {
+			if user, e = s.baseDao.GetOrCreateUserByTel(ctx, req.SrcTypeExtra); e != nil {
 				slog.ErrorContext(ctx, "[Login] dao op failed", slog.String("tel", req.SrcTypeExtra), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -396,7 +396,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			return nil, ecode.ErrUnsupportedEmailService
 		}
 		if req.PasswordType == "static" {
-			if user, e = s.userDao.GetUserByEmail(ctx, req.SrcTypeExtra); e != nil {
+			if user, e = s.baseDao.GetUserByEmail(ctx, req.SrcTypeExtra); e != nil {
 				slog.ErrorContext(ctx, "[Login] dao op failed", slog.String("email", req.SrcTypeExtra), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -406,11 +406,11 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 			}
 			return &api.LoginResp{Step: "verify"}, nil
 		} else {
-			if e = s.userDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
+			if e = s.baseDao.RedisCheckCode(ctx, req.SrcTypeExtra, util.Login, req.Password, ""); e != nil {
 				slog.ErrorContext(ctx, "[Login] redis op failed", slog.String("email", req.SrcTypeExtra), slog.String("code", req.Password), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
-			if user, e = s.userDao.GetOrCreateUserByEmail(ctx, req.SrcTypeExtra); e != nil {
+			if user, e = s.baseDao.GetOrCreateUserByEmail(ctx, req.SrcTypeExtra); e != nil {
 				slog.ErrorContext(ctx, "[Login] dao op failed", slog.String("email", req.SrcTypeExtra), slog.String("error", e.Error()))
 				return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 			}
@@ -427,7 +427,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		if user, e = s.userDao.GetOrCreateUserByOAuth(ctx, req.SrcTypeExtra, oauthid); e != nil {
+		if user, e = s.baseDao.GetOrCreateUserByOAuth(ctx, req.SrcTypeExtra, oauthid); e != nil {
 			slog.ErrorContext(ctx, "[Login] dao op failed", slog.String(req.SrcTypeExtra, oauthid), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
@@ -484,7 +484,7 @@ func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.Self
 		return nil, ecode.ErrToken
 	}
 	var user *model.User
-	if user, e = s.userDao.GetUser(ctx, operator); e != nil {
+	if user, e = s.baseDao.GetUser(ctx, operator); e != nil {
 		slog.ErrorContext(ctx, "[SelfInfo] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
@@ -515,7 +515,7 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+	if user, e := s.baseDao.GetUser(ctx, operator); e != nil {
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if user.BTime != 0 {
@@ -531,13 +531,13 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 		return nil, ecode.ErrBusy
 	}
 	//redis lock
-	if e := s.userDao.RedisLockUpdatePassword(ctx, md["Token-User"]); e != nil {
+	if e := s.baseDao.RedisLockUpdatePassword(ctx, md["Token-User"]); e != nil {
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
 
-	if e := s.userDao.MongoUpdateUserPassword(ctx, operator, req.OldStaticPassword, req.NewStaticPassword); e != nil {
+	if e := s.baseDao.MongoUpdateUserPassword(ctx, operator, req.OldStaticPassword, req.NewStaticPassword); e != nil {
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -545,7 +545,7 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 	slog.InfoContext(ctx, "[UpdateStaticPassword] success", slog.String("operator", md["Token-User"]))
 	go func() {
 		ctx := cotel.CloneTrace(ctx)
-		if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateStaticPassword] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		}
 		s.stop.DoneOne()
@@ -578,7 +578,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 			}
 			return ecode.ErrBusy
 		}
-		if e := s.userDao.MongoResetUserPassword(ctx, operator); e != nil {
+		if e := s.baseDao.MongoResetUserPassword(ctx, operator); e != nil {
 			slog.ErrorContext(ctx, "[ResetStaticPassword] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 			s.stop.DoneOne()
 			return e
@@ -586,7 +586,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		slog.InfoContext(ctx, "[ResetStaticPassword] success", slog.String("operator", md["Token-User"]))
 		go func() {
 			ctx := cotel.CloneTrace(ctx)
-			if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+			if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 				slog.ErrorContext(ctx, "[ResetStaticPassword] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 			}
 			s.stop.DoneOne()
@@ -597,7 +597,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockResetPassword(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockResetPassword(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[ResetStaticPassword] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -608,7 +608,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[ResetStaticPassword] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -636,7 +636,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.ResetPassword, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.ResetPassword, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[ResetStaticPassword] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -650,7 +650,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		return &api.ResetStaticPasswordResp{Step: "success"}, nil
 	}
 	//step1
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[ResetStaticPassword] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -692,18 +692,18 @@ func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDupli
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+	if user, e := s.baseDao.GetUser(ctx, operator); e != nil {
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if user.BTime != 0 {
 		return nil, ecode.ErrBan
 	}
 	//redis lock
-	if e := s.userDao.RedisLockDuplicateCheck(ctx, "idcard", md["Token-User"]); e != nil {
+	if e := s.baseDao.RedisLockDuplicateCheck(ctx, "idcard", md["Token-User"]); e != nil {
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserIDCardIndex(ctx, req.Idcard)
+	userid, e := s.baseDao.GetUserIDCardIndex(ctx, req.Idcard)
 	if e != nil && e != ecode.ErrUserNotExist {
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("idcard", req.Idcard), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -722,7 +722,7 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 		slog.ErrorContext(ctx, "[SetIdcard] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[SetIdcard] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -746,7 +746,7 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 		return nil, ecode.ErrBusy
 	}
 
-	if _, e = s.userDao.MongoUpdateUserIDCard(ctx, operator, req.Idcard); e != nil {
+	if _, e = s.baseDao.MongoUpdateUserIDCard(ctx, operator, req.Idcard); e != nil {
 		s.stop.DoneOne()
 		s.stop.DoneOne()
 		slog.ErrorContext(ctx, "[UpdateIdcard] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -755,14 +755,14 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 	slog.InfoContext(ctx, "[UpdateIdcard] success", slog.String("operator", md["Token-User"]), slog.String("new_idcard", req.Idcard))
 	go func() {
 		ctx := cotel.CloneTrace(ctx)
-		if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateIdcard] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		}
 		s.stop.DoneOne()
 	}()
 	go func() {
 		ctx := cotel.CloneTrace(ctx)
-		if e := s.userDao.RedisDelUserIDCardIndex(ctx, req.Idcard); e != nil {
+		if e := s.baseDao.RedisDelUserIDCardIndex(ctx, req.Idcard); e != nil {
 			slog.ErrorContext(ctx, "[UpdateIdcard] clean redis failed", slog.String("idcard", req.Idcard), slog.String("error", e.Error()))
 		}
 		s.stop.DoneOne()
@@ -796,7 +796,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			return ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserOAuth(ctx, operator, req.NewOauthServiceName, newoauthid); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserOAuth(ctx, operator, req.NewOauthServiceName, newoauthid); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
@@ -808,7 +808,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		if oldoauthid != newoauthid {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -816,7 +816,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			go func() {
 				if oldoauthid != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, oldoauthid); e != nil {
+					if e := s.baseDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, oldoauthid); e != nil {
 						slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String(req.NewOauthServiceName, oldoauthid), slog.String("error", e.Error()))
 					}
 				}
@@ -825,7 +825,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 			go func() {
 				if newoauthid != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, newoauthid); e != nil {
+					if e := s.baseDao.RedisDelUserOAuthIndex(ctx, req.NewOauthServiceName, newoauthid); e != nil {
 						slog.ErrorContext(ctx, "[UpdateOauth] clean redis failed", slog.String(req.NewOauthServiceName, newoauthid), slog.String("error", e.Error()))
 					}
 				}
@@ -842,7 +842,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" || req.NewOauthServiceName == "" || req.NewOauthDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockOAuthOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockOAuthOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateOauth] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -853,7 +853,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[UpdateOauth] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -888,7 +888,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		if req.NewOauthServiceName == "" || req.NewOauthDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateOAuth, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateOAuth, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[UpdateOauth] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -907,7 +907,7 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 		return &api.UpdateOauthResp{Step: "success"}, nil
 	}
 	//send dynamic password
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateOauth] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -965,7 +965,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserOAuth(ctx, operator, req.DelOauthServiceName, ""); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserOAuth(ctx, operator, req.DelOauthServiceName, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			slog.ErrorContext(ctx, "[DelOauth] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -974,14 +974,14 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if oauthid := olduser.OAuths[req.DelOauthServiceName]; oauthid != "" {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelOauth] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUserOAuthIndex(ctx, req.DelOauthServiceName, oauthid); e != nil {
+				if e := s.baseDao.RedisDelUserOAuthIndex(ctx, req.DelOauthServiceName, oauthid); e != nil {
 					slog.ErrorContext(ctx, "[DelOauth] clean redis failed", slog.String(req.DelOauthServiceName, oauthid), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -1001,7 +1001,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockOAuthOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockOAuthOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[DelOauth] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -1012,7 +1012,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[DelOauth] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -1041,7 +1041,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelOAuth, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.DelOAuth, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[DelOauth] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -1056,7 +1056,7 @@ func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelO
 		return &api.DelOauthResp{Step: "success", Final: final}, nil
 	}
 	//step1
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelOauth] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1114,18 +1114,18 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+	if user, e := s.baseDao.GetUser(ctx, operator); e != nil {
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if user.BTime != 0 {
 		return nil, ecode.ErrBan
 	}
 	//redis lock
-	if e := s.userDao.RedisLockDuplicateCheck(ctx, "email", md["Token-User"]); e != nil {
+	if e := s.baseDao.RedisLockDuplicateCheck(ctx, "email", md["Token-User"]); e != nil {
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserEmailIndex(ctx, req.Email)
+	userid, e := s.baseDao.GetUserEmailIndex(ctx, req.Email)
 	if e != nil && e != ecode.ErrUserNotExist {
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("email", req.Email), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1164,7 +1164,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 	if req.NewEmailDynamicPassword != "" {
 		//step final
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmailDynamicPassword, req.NewEmail); e != nil {
 			slog.ErrorContext(ctx, "[UpdateEmail] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.NewEmailDynamicPassword),
@@ -1183,7 +1183,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			return nil, ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserEmail(ctx, operator, req.NewEmail); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserEmail(ctx, operator, req.NewEmail); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
@@ -1194,7 +1194,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		if olduser.Email != req.NewEmail {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -1202,7 +1202,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			go func() {
 				if olduser.Email != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
+					if e := s.baseDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 						slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("email", olduser.Email), slog.String("error", e.Error()))
 					}
 				}
@@ -1211,7 +1211,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 			go func() {
 				if req.NewEmail != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserEmailIndex(ctx, req.NewEmail); e != nil {
+					if e := s.baseDao.RedisDelUserEmailIndex(ctx, req.NewEmail); e != nil {
 						slog.ErrorContext(ctx, "[UpdateEmail] clean redis failed", slog.String("email", req.NewEmail), slog.String("error", e.Error()))
 					}
 				}
@@ -1224,7 +1224,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		}
 		return &api.UpdateEmailResp{Step: "success"}, nil
 	}
-	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
+	if e := s.baseDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateEmailStep2, req.NewEmail); e != nil && e != ecode.ErrCodeNotExist {
 		slog.ErrorContext(ctx, "[UpdateEmail] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if e == nil {
@@ -1236,7 +1236,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateEmail] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -1247,7 +1247,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[UpdateEmail] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -1275,7 +1275,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step 2 when update by dynamic password
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateEmailStep1, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[UpdateEmail] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -1289,7 +1289,7 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return &api.UpdateEmailResp{Step: "newverify", Receiver: util.MaskEmail(req.NewEmail)}, nil
 	}
 	//step 1 when update by dynamic password
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateEmail] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1350,7 +1350,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserEmail(ctx, operator, ""); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserEmail(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			slog.ErrorContext(ctx, "[DelEmail] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1359,14 +1359,14 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if olduser.Email != "" {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelEmail] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
+				if e := s.baseDao.RedisDelUserEmailIndex(ctx, olduser.Email); e != nil {
 					slog.ErrorContext(ctx, "[DelEmail] clean redis failed", slog.String("email", olduser.Email), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -1386,7 +1386,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockEmailOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[DelEmail] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -1397,7 +1397,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[DelEmail] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -1426,7 +1426,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.DelEmail, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[DelEmail] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -1441,7 +1441,7 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 		return &api.DelEmailResp{Step: "success", Final: final}, nil
 	}
 	//step1
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelEmail] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1487,18 +1487,18 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	if user, e := s.userDao.GetUser(ctx, operator); e != nil {
+	if user, e := s.baseDao.GetUser(ctx, operator); e != nil {
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if user.BTime != 0 {
 		return nil, ecode.ErrBan
 	}
 	//redis lock
-	if e := s.userDao.RedisLockDuplicateCheck(ctx, "tel", md["Token-User"]); e != nil {
+	if e := s.baseDao.RedisLockDuplicateCheck(ctx, "tel", md["Token-User"]); e != nil {
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	userid, e := s.userDao.GetUserTelIndex(ctx, req.Tel)
+	userid, e := s.baseDao.GetUserTelIndex(ctx, req.Tel)
 	if e != nil && e != ecode.ErrUserNotExist {
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] dao op failed", slog.String("operator", md["Token-User"]), slog.String("tel", req.Tel), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1525,7 +1525,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 	if req.NewTelDynamicPassword != "" {
 		//step final
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTelDynamicPassword, req.NewTel); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTelDynamicPassword, req.NewTel); e != nil {
 			slog.ErrorContext(ctx, "[UpdateTel] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.NewTelDynamicPassword),
@@ -1544,7 +1544,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			return nil, ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserTel(ctx, operator, req.NewTel); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserTel(ctx, operator, req.NewTel); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			s.stop.DoneOne()
@@ -1555,7 +1555,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		if olduser.Tel != req.NewTel {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -1563,7 +1563,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			go func() {
 				if olduser.Tel != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
+					if e := s.baseDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 						slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("tel", olduser.Tel), slog.String("error", e.Error()))
 					}
 				}
@@ -1572,7 +1572,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 			go func() {
 				if req.NewTel != "" {
 					ctx := cotel.CloneTrace(ctx)
-					if e := s.userDao.RedisDelUserTelIndex(ctx, req.NewTel); e != nil {
+					if e := s.baseDao.RedisDelUserTelIndex(ctx, req.NewTel); e != nil {
 						slog.ErrorContext(ctx, "[UpdateTel] clean redis failed", slog.String("tel", req.NewTel), slog.String("error", e.Error()))
 					}
 				}
@@ -1585,7 +1585,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		}
 		return &api.UpdateTelResp{Step: "success"}, nil
 	}
-	if e := s.userDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
+	if e := s.baseDao.RedisCodeCheckTimes(ctx, md["Token-User"], util.UpdateTelStep2, req.NewTel); e != nil && e != ecode.ErrCodeNotExist {
 		slog.ErrorContext(ctx, "[UpdateTel] redis op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	} else if e == nil {
@@ -1597,7 +1597,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[UpdateTel] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -1608,7 +1608,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[UpdateTel] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -1636,7 +1636,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step 2 when update by dynamic password
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.UpdateTelStep1, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[UpdateTel] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -1650,7 +1650,7 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 		return &api.UpdateTelResp{Step: "newverify", Receiver: util.MaskTel(req.NewTel)}, nil
 	}
 	//step 1 when update by dynamic password
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateTel] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -1711,7 +1711,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 			return false, ecode.ErrBusy
 		}
 		var olduser *model.User
-		if olduser, e = s.userDao.MongoUpdateUserTel(ctx, operator, ""); e != nil {
+		if olduser, e = s.baseDao.MongoUpdateUserTel(ctx, operator, ""); e != nil {
 			s.stop.DoneOne()
 			s.stop.DoneOne()
 			slog.ErrorContext(ctx, "[DelTel] db op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1720,14 +1720,14 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if olduser.Tel != "" {
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
+				if e := s.baseDao.RedisDelUser(ctx, md["Token-User"]); e != nil {
 					slog.ErrorContext(ctx, "[DelTel] clean redis failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
 			}()
 			go func() {
 				ctx := cotel.CloneTrace(ctx)
-				if e := s.userDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
+				if e := s.baseDao.RedisDelUserTelIndex(ctx, olduser.Tel); e != nil {
 					slog.ErrorContext(ctx, "[DelTel] clean redis failed", slog.String("tel", olduser.Tel), slog.String("error", e.Error()))
 				}
 				s.stop.DoneOne()
@@ -1747,7 +1747,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if req.VerifySrcTypeExtra == "" || req.VerifyDynamicPassword == "" {
 			return nil, ecode.ErrReq
 		}
-		if e := s.userDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
+		if e := s.baseDao.RedisLockTelOP(ctx, md["Token-User"]); e != nil {
 			slog.ErrorContext(ctx, "[DelTel] rate check failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String(req.VerifySrcTypeExtra, req.VerifyDynamicPassword),
@@ -1758,7 +1758,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		if e != nil {
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
-		user, e := s.userDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
+		user, e := s.baseDao.GetUserByOAuth(ctx, req.VerifySrcTypeExtra, oauthid)
 		if e != nil {
 			slog.ErrorContext(ctx, "[DelTel] dao op failed",
 				slog.String("operator", md["Token-User"]),
@@ -1787,7 +1787,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 	}
 	if req.VerifyDynamicPassword != "" {
 		//step2
-		if e := s.userDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.VerifyDynamicPassword, ""); e != nil {
+		if e := s.baseDao.RedisCheckCode(ctx, md["Token-User"], util.DelTel, req.VerifyDynamicPassword, ""); e != nil {
 			slog.ErrorContext(ctx, "[DelTel] redis op failed",
 				slog.String("operator", md["Token-User"]),
 				slog.String("code", req.VerifyDynamicPassword),
@@ -1802,7 +1802,7 @@ func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelRe
 		return &api.DelTelResp{Step: "success", Final: final}, nil
 	}
 	//step1
-	user, e := s.userDao.GetUser(ctx, operator)
+	user, e := s.baseDao.GetUser(ctx, operator)
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelTel] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
