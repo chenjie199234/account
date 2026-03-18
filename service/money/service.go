@@ -36,77 +36,85 @@ func Start() (*Service, error) {
 	}, nil
 }
 func (s *Service) GetMoneyLogs(ctx context.Context, req *api.GetMoneyLogsReq) (*api.GetMoneyLogsResp, error) {
-	if req.EndTime < req.StartTime {
+	if req.GetEndTime() < req.GetStartTime() {
 		return nil, ecode.ErrReq
 	}
 	var userid bson.ObjectID
-	switch req.SrcType {
+	switch req.GetSrcType() {
 	case "user_id":
 		var e error
-		if userid, e = bson.ObjectIDFromHex(req.Src); e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("user_id", req.Src), slog.String("error", e.Error()))
+		if userid, e = bson.ObjectIDFromHex(req.GetSrc()); e != nil {
+			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong",
+				slog.String("user_id", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ErrReq
 		}
 	case "tel":
-		useridstr, e := s.baseDao.GetUserTelIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserTelIndex(ctx, req.GetSrc())
 		if e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("tel", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed",
+				slog.String("tel", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("tel", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong",
+				slog.String("tel", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
 	case "email":
-		useridstr, e := s.baseDao.GetUserEmailIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserEmailIndex(ctx, req.GetSrc())
 		if e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("email", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed",
+				slog.String("email", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("email", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong",
+				slog.String("email", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
 	case "idcard":
-		useridstr, e := s.baseDao.GetUserIDCardIndex(ctx, req.Src)
+		useridstr, e := s.baseDao.GetUserIDCardIndex(ctx, req.GetSrc())
 		if e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String("idcard", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed",
+				slog.String("idcard", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 		}
 		if userid, e = bson.ObjectIDFromHex(useridstr); e != nil {
-			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong", slog.String("idcard", req.Src), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[GetMoneyLogs] userid format wrong",
+				slog.String("idcard", req.GetSrc()), slog.String("error", e.Error()))
 			return nil, ecode.ErrSystem
 		}
 	}
-	logs, totalsize, page, e := s.moneyDao.GetMoneyLogs(ctx, userid, req.Action, req.StartTime, req.EndTime, moneydao.DefaultMoneyLogsPageSize, req.Page)
+	logs, totalsize, page, e := s.moneyDao.GetMoneyLogs(ctx, userid, req.GetAction(), req.GetStartTime(), req.GetEndTime(), moneydao.DefaultMoneyLogsPageSize, req.GetPage())
 	if e != nil {
-		slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String(req.SrcType, req.Src), slog.String("error", e.Error()))
+		slog.ErrorContext(ctx, "[GetMoneyLogs] dao op failed", slog.String(req.GetSrcType(), req.GetSrc()), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	resp := &api.GetMoneyLogsResp{
-		Page:      page,
-		Pagesize:  moneydao.DefaultMoneyLogsPageSize,
-		Totalsize: totalsize,
-		Logs:      make([]*api.MoneyLog, 0, len(logs)),
+	resp := &api.GetMoneyLogsResp{}
+	resp.SetPage(page)
+	if page == 0 {
+		resp.SetPagesize(totalsize)
+	} else {
+		resp.SetPagesize(moneydao.DefaultMoneyLogsPageSize)
 	}
-	if resp.Page == 0 {
-		resp.Pagesize = resp.Totalsize
-	}
+	resp.SetTotalsize(totalsize)
+	rlogs := make([]*api.MoneyLog, 0, len(logs))
 	for _, v := range logs {
-		resp.Logs = append(resp.Logs, &api.MoneyLog{
-			UserId:      v.UserID.Hex(),
-			Action:      v.Action,
-			UniqueId:    v.UniqueID,
-			SrcDst:      v.SrcDst,
-			MoneyType:   v.MoneyType,
-			MoneyAmount: v.MoneyAmount,
-			Ctime:       uint32(v.LogID.Timestamp().Unix()),
-		})
+		l := &api.MoneyLog{}
+		l.SetUserId(v.UserID.Hex())
+		l.SetAction(v.Action)
+		l.SetUniqueId(v.UniqueID)
+		l.SetSrcDst(v.SrcDst)
+		l.SetMoneyType(v.MoneyType)
+		l.SetMoneyAmount(v.MoneyAmount)
+		l.SetCtime(uint32(v.LogID.Timestamp().Unix()))
+		rlogs = append(rlogs, l)
 	}
+	resp.SetLogs(rlogs)
 	return resp, nil
 }
 func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) (*api.SelfMoneyLogsResp, error) {
-	if req.EndTime < req.StartTime {
+	if req.GetEndTime() < req.GetStartTime() {
 		return nil, ecode.ErrReq
 	}
 	md := metadata.GetMetadata(ctx)
@@ -115,31 +123,32 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		slog.ErrorContext(ctx, "[SelfMoneyLogs] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ErrToken
 	}
-	logs, totalsize, page, e := s.moneyDao.GetMoneyLogs(ctx, operator, req.Action, req.StartTime, req.EndTime, moneydao.DefaultMoneyLogsPageSize, req.Page)
+	logs, totalsize, page, e := s.moneyDao.GetMoneyLogs(ctx, operator, req.GetAction(), req.GetStartTime(), req.GetEndTime(), moneydao.DefaultMoneyLogsPageSize, req.GetPage())
 	if e != nil {
 		slog.ErrorContext(ctx, "[SelfMoneyLogs] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	resp := &api.SelfMoneyLogsResp{
-		Page:      page,
-		Pagesize:  moneydao.DefaultMoneyLogsPageSize,
-		Totalsize: totalsize,
-		Logs:      make([]*api.MoneyLog, 0, len(logs)),
+	resp := &api.SelfMoneyLogsResp{}
+	resp.SetPage(page)
+	if page == 0 {
+		resp.SetPagesize(totalsize)
+	} else {
+		resp.SetPagesize(moneydao.DefaultMoneyLogsPageSize)
 	}
-	if resp.Page == 0 {
-		resp.Pagesize = resp.Totalsize
-	}
+	resp.SetTotalsize(totalsize)
+	rlogs := make([]*api.MoneyLog, 0, len(logs))
 	for _, v := range logs {
-		resp.Logs = append(resp.Logs, &api.MoneyLog{
-			UserId:      v.UserID.Hex(),
-			Action:      v.Action,
-			UniqueId:    v.UniqueID,
-			SrcDst:      v.SrcDst,
-			MoneyType:   v.MoneyType,
-			MoneyAmount: v.MoneyAmount,
-			Ctime:       uint32(v.LogID.Timestamp().Unix()),
-		})
+		l := &api.MoneyLog{}
+		l.SetUserId(v.UserID.Hex())
+		l.SetAction(v.Action)
+		l.SetUniqueId(v.UniqueID)
+		l.SetSrcDst(v.SrcDst)
+		l.SetMoneyType(v.MoneyType)
+		l.SetMoneyAmount(v.MoneyAmount)
+		l.SetCtime(uint32(v.LogID.Timestamp().Unix()))
+		rlogs = append(rlogs, l)
 	}
+	resp.SetLogs(rlogs)
 	return resp, nil
 }
 func (s *Service) RechargeMoney(ctx context.Context, req *api.RechargeMoneyReq) (*api.RechargeMoneyResp, error) {

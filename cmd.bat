@@ -38,71 +38,51 @@ if %errorlevel% == 1 (
 if "%1" == "" (
 	goto :help
 )
-if %1 == "" (
-	goto :help
-)
-if %1 == "h" (
-	goto :help
-)
 if "%1" == "h" (
-	goto :help
-)
-if %1 == "-h" (
 	goto :help
 )
 if "%1" == "-h" (
 	goto :help
 )
-if %1 == "help" (
-	goto :help
-)
 if "%1" == "help" (
-	goto :help
-)
-if %1 == "-help" (
 	goto :help
 )
 if "%1" == "-help" (
 	goto :help
 )
-if %1 == "pb" (
-	goto :pb
+if "%1" == "run" (
+	goto :run
+)
+if "%1" == "build" (
+	goto :build
 )
 if "%1" == "pb" (
 	goto :pb
 )
-if %1 == "kube" (
+if "%1" == "kube" (
 	goto :kube
 )
-if "%1" ==  "kube" (
-	goto :kube
-)
-if %1 == "html" (
+if "%1" == "html" (
 	goto :html
-)
-if "%1" ==  "html" (
-	goto :html
-)
-if %1 == "sub" (
-	if "%2" == "" (
-		goto :help
-	)
-	if %2 == "" (
-		goto :help
-	)
-	goto :sub
 )
 if "%1" == "sub" (
 	if "%2" == "" (
-		goto :help
-	)
-	if %2 == "" (
 		goto :help
 	)
 	goto :sub
 )
 
 goto :help
+
+:run
+	for /f "delims=" %%i in ('powershell -Command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set "dt=%%i"
+	go run -ldflags="-X 'main.version=%dt%'" main.go
+goto :end
+
+:build
+	for /f "delims=" %%i in ('powershell -Command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set "dt=%%i"
+	go build -ldflags="-X 'main.version=%dt%'" main.go
+goto :end
 
 :pb
 	del >nul 2>nul .\api\*.pb.go
@@ -120,8 +100,7 @@ goto :help
 	protoc -I ./ -I %corelib% --go-cgrpc_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I %corelib% --go-crpc_out=paths=source_relative:. ./api/*.proto
 	protoc -I ./ -I %corelib% --go-web_out=paths=source_relative:. ./api/*.proto
-	protoc -I ./ -I %corelib% --browser_out=paths=source_relative:. ./api/*.proto
-	protoc -I ./ -I %corelib% --markdown_out=paths=source_relative:. ./api/*.proto
+	protoc -I ./ -I %corelib% --browser_out=outdir=api:. ./api/*.proto
 	go mod tidy
 goto :end
 
@@ -171,7 +150,7 @@ goto :eof
 :help
 	echo cmd.bat - every thing you need
 	echo           please install git
-	echo           please install golang(1.24.1+)
+	echo           please install golang(1.26.1+)
 	echo           please install protoc           (github.com/protocolbuffers/protobuf)
 	echo           please install protoc-gen-go    (github.com/protocolbuffers/protobuf-go)
 	echo           please install codegen          (github.com/chenjie199234/Corelib)
@@ -180,6 +159,8 @@ goto :eof
 	echo    ./cmd.bat ^<option^>
 	echo.
 	echo Options:
+	echo    run                       go run with -ldflags.
+	echo    build                     go build with -ldflags.
 	echo    pb                        Generate the proto in this program.
 	echo    sub ^<sub service name^>    Create a new sub service.
 	echo    kube                      Update kubernetes config.

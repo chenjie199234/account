@@ -29,13 +29,17 @@ type ServiceConfig struct {
 	SupportEmailService []string `json:"support_email_service"`
 
 	//https://open.weixin.qq.com/connect/qrconnect?appid={APPID}&redirect_uri={REDIRECT_URI}&response_type=code&scope=snsapi_login&state={STATE}#wechat_redirect
-	WeChatOauthUrl string `json:"wechat_oauth_url"`
-	WeChatAppID    string `json:"wechat_appid"`
-	WeChatSecret   string `json:"wechat_secret"`
+	WeChatOauth2    string `json:"wechat_oauth2"`
+	WeChatAppID     string `json:"wechat_app_id"`
+	WeChatAppSecret string `json:"wechat_app_secret"`
 }
 
 // every time update AppConfig will call this function
 func validateAppConfig(ac *AppConfig) {
+	if ac.Service.WeChatOauth2 != "" && (ac.Service.WeChatAppID == "" || ac.Service.WeChatAppSecret == "") {
+		slog.Error("[config.validateAppConfig] missing wechat_app_id or wechat_app_secret")
+		os.Exit(1)
+	}
 }
 
 // AC -
@@ -46,26 +50,26 @@ var watcher *fsnotify.Watcher
 func initlocalapp(notice func(*AppConfig)) {
 	data, e := os.ReadFile("./AppConfig.json")
 	if e != nil {
-		slog.ErrorContext(nil, "[config.local.app] read config file failed", slog.String("error", e.Error()))
+		slog.Error("[config.local.app] read config file failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	AC = &AppConfig{}
 	if e = json.Unmarshal(data, AC); e != nil {
-		slog.ErrorContext(nil, "[config.local.app] config file format wrong", slog.String("error", e.Error()))
+		slog.Error("[config.local.app] config file format wrong", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	validateAppConfig(AC)
-	slog.InfoContext(nil, "[config.local.app] update success", slog.Any("config", AC))
+	slog.Info("[config.local.app] update success", slog.Any("config", AC))
 	if notice != nil {
 		notice(AC)
 	}
 	watcher, e = fsnotify.NewWatcher()
 	if e != nil {
-		slog.ErrorContext(nil, "[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
+		slog.Error("[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	if e = watcher.Add("./"); e != nil {
-		slog.ErrorContext(nil, "[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
+		slog.Error("[config.local.app] create watcher for hot update failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	go func() {
@@ -80,17 +84,17 @@ func initlocalapp(notice func(*AppConfig)) {
 				}
 				data, e := os.ReadFile("./AppConfig.json")
 				if e != nil {
-					slog.ErrorContext(nil, "[config.local.app] hot update read config file failed", slog.String("error", e.Error()))
+					slog.Error("[config.local.app] hot update read config file failed", slog.String("error", e.Error()))
 					continue
 				}
 				c := &AppConfig{}
 				if e = json.Unmarshal(data, c); e != nil {
-					slog.ErrorContext(nil, "[config.local.app] hot update config file format wrong", slog.String("error", e.Error()))
+					slog.Error("[config.local.app] hot update config file format wrong", slog.String("error", e.Error()))
 					continue
 				}
 				validateAppConfig(c)
 				AC = c
-				slog.InfoContext(nil, "[config.local.app] update success", slog.Any("config", AC))
+				slog.Info("[config.local.app] update success", slog.Any("config", AC))
 				if notice != nil {
 					notice(AC)
 				}
@@ -98,7 +102,7 @@ func initlocalapp(notice func(*AppConfig)) {
 				if !ok {
 					return
 				}
-				slog.ErrorContext(nil, "[config.local.app] hot update watcher failed", slog.String("error", err.Error()))
+				slog.Error("[config.local.app] hot update watcher failed", slog.String("error", err.Error()))
 			}
 		}
 	}()
@@ -107,16 +111,16 @@ func initremoteapp(notice func(*AppConfig), wait chan *struct{}) (stopwatch func
 	return RemoteConfigSdk.Watch("AppConfig", func(key, keyvalue, keytype string) {
 		//only support json
 		if keytype != "json" {
-			slog.ErrorContext(nil, "[config.remote.app] config data can only support json format")
+			slog.Error("[config.remote.app] config data can only support json format")
 			return
 		}
 		c := &AppConfig{}
 		if e := json.Unmarshal(common.STB(keyvalue), c); e != nil {
-			slog.ErrorContext(nil, "[config.remote.app] config data format wrong", slog.String("error", e.Error()))
+			slog.Error("[config.remote.app] config data format wrong", slog.String("error", e.Error()))
 			return
 		}
 		validateAppConfig(c)
-		slog.InfoContext(nil, "[config.remote.app] update success", slog.Any("config", c))
+		slog.Info("[config.remote.app] update success", slog.Any("config", c))
 		AC = c
 		if notice != nil {
 			notice(AC)

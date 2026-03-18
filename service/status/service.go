@@ -7,6 +7,7 @@ import (
 	// "github.com/chenjie199234/account/config"
 	"github.com/chenjie199234/account/api"
 	statusdao "github.com/chenjie199234/account/dao/status"
+	"github.com/chenjie199234/account/model"
 	// "github.com/chenjie199234/account/ecode"
 
 	"github.com/chenjie199234/Corelib/cotel"
@@ -37,30 +38,29 @@ func Start() (*Service, error) {
 
 // Ping -
 func (s *Service) Ping(ctx context.Context, in *api.Pingreq) (*api.Pingresp, error) {
-	//if _, ok := ctx.(*crpc.NoStreamServerContext); ok {
+	//if _, ok := ctx.(crpc.NoStreamServerContext); ok {
 	//        log.Info("this is a crpc call")
 	//}
-	//if _, ok := ctx.(*cgrpc.NoStreamServerContext); ok {
+	//if _, ok := ctx.(cgrpc.NoStreamServerContext); ok {
 	//        log.Info("this is a cgrpc call")
 	//}
-	//if _, ok := ctx.(*web.Context); ok {
+	//if _, ok := ctx.(web.NoStreamServerContext); ok {
 	//        log.Info("this is a web call")
 	//}
-	totalmem, lastmem, maxmem := cotel.GetMEM()
-	lastcpu, maxcpu, avgcpu := cotel.GetCPU()
-	return &api.Pingresp{
-		ClientTimestamp: in.Timestamp,
-		ServerTimestamp: time.Now().UnixNano(),
-		TotalMem:        totalmem,
-		CurMemUsage:     lastmem,
-		MaxMemUsage:     maxmem,
-		CpuNum:          cotel.CPUNum,
-		CurCpuUsage:     lastcpu,
-		AvgCpuUsage:     avgcpu,
-		MaxCpuUsage:     maxcpu,
-		Host:            host.Hostname,
-		Ip:              host.Hostip,
-	}, nil
+	cpu, cpuu, cput, mem, memu, memt := cotel.GetCpuMemUsage()
+	resp := &api.Pingresp{}
+	resp.SetClientTimestamp(in.GetTimestamp())
+	resp.SetServerTimestamp(time.Now().UnixNano())
+	resp.SetHost(host.Hostname)
+	resp.SetIp(host.Hostip)
+	resp.SetCpuNum(cpu)
+	resp.SetCpuUsage(cpuu)
+	resp.SetCpuType(cput)
+	resp.SetMemTotal(mem)
+	resp.SetMemUsage(memu)
+	resp.SetMemType(memt)
+	resp.SetVersion(model.Version)
+	return resp, nil
 }
 
 // Stop -

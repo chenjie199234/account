@@ -21,16 +21,15 @@ func (d *Dao) RedisSetCode(ctx context.Context, target, action, receiver string)
 }
 func (d *Dao) RedisCheckCode(ctx context.Context, target, action, code, mustreceiver string) error {
 	e := d.redis.CheckVerifyCode(ctx, target, action, code, mustreceiver)
-	if e != nil {
-		if e == credis.ErrVerifyCodeMissing {
-			e = ecode.ErrCodeNotExist
-		} else if e == credis.ErrVerifyCodeReceiverMissing {
-			e = ecode.ErrPasswordWrong
-		} else if e == credis.ErrVerifyCodeWrong {
-			e = ecode.ErrPasswordWrong
-		} else if e == credis.ErrVerifyCodeCheckTimesUsedup {
-			e = ecode.ErrBan
-		}
+	switch e {
+	case credis.ErrVerifyCodeMissing:
+		e = ecode.ErrCodeNotExist
+	case credis.ErrVerifyCodeReceiverMissing:
+		e = ecode.ErrPasswordWrong
+	case credis.ErrVerifyCodeWrong:
+		e = ecode.ErrPasswordWrong
+	case credis.ErrVerifyCodeCheckTimesUsedup:
+		e = ecode.ErrBan
 	}
 	return e
 }
@@ -39,14 +38,13 @@ func (d *Dao) RedisDelCode(ctx context.Context, target, action string) error {
 }
 func (d *Dao) RedisCodeCheckTimes(ctx context.Context, target, action, mustreceiver string) error {
 	e := d.redis.HasCheckTimes(ctx, target, action, mustreceiver)
-	if e != nil {
-		if e == credis.ErrVerifyCodeMissing {
-			e = ecode.ErrCodeNotExist
-		} else if e == credis.ErrVerifyCodeReceiverMissing {
-			e = ecode.ErrCodeNotExist
-		} else if e == credis.ErrVerifyCodeCheckTimesUsedup {
-			e = ecode.ErrBan
-		}
+	switch e {
+	case credis.ErrVerifyCodeMissing:
+		e = ecode.ErrCodeNotExist
+	case credis.ErrVerifyCodeReceiverMissing:
+		e = ecode.ErrCodeNotExist
+	case credis.ErrVerifyCodeCheckTimesUsedup:
+		e = ecode.ErrBan
 	}
 	return e
 }

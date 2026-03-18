@@ -14,7 +14,7 @@ import (
 
 	"github.com/chenjie199234/account/config"
 	"github.com/chenjie199234/account/dao"
-	_ "github.com/chenjie199234/account/model"
+	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/server/xcrpc"
 	"github.com/chenjie199234/account/server/xgrpc"
 	"github.com/chenjie199234/account/server/xraw"
@@ -55,7 +55,11 @@ func (l *LogHandler) Handle(ctx context.Context, record slog.Record) error {
 	return l.Handler.Handle(ctx, record)
 }
 
+// inject by go build -ldflags "-X"
+var version string
+
 func main() {
+	model.Version = version
 	p, e := os.Executable()
 	if e != nil {
 		slog.Error("[main] get the executable file path failed", slog.String("error", e.Error()))
@@ -109,62 +113,53 @@ func main() {
 	if rateredis := config.GetRedis("rate_redis"); rateredis != nil {
 		publicmids.UpdateRateRedisInstance(rateredis)
 	} else {
-		slog.WarnContext(nil, "[main] rate redis missing,all rate check will be failed")
+		slog.Warn("[main] rate redis missing,all rate check will be failed")
 	}
 	if sessionredis := config.GetRedis("session_redis"); sessionredis != nil {
 		publicmids.UpdateSessionRedisInstance(sessionredis)
 	} else {
-		slog.WarnContext(nil, "[main] session redis missing,all session event will be failed")
+		slog.Warn("[main] session redis missing,all session event will be failed")
 	}
 	//start the whole business service
 	if e := service.StartService(); e != nil {
-		slog.ErrorContext(nil, "[main] start service failed", slog.String("error", e.Error()))
+		slog.Error("[main] start service failed", slog.String("error", e.Error()))
 		return
 	}
 	//start low level net service
 	ch := make(chan os.Signal, 1)
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		xcrpc.StartCrpcServer()
 		select {
 		case ch <- syscall.SIGTERM:
 		default:
 		}
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xweb.StartWebServer()
 		select {
 		case ch <- syscall.SIGTERM:
 		default:
 		}
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xgrpc.StartCGrpcServer()
 		select {
 		case ch <- syscall.SIGTERM:
 		default:
 		}
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xraw.StartRawServer()
 		select {
 		case ch <- syscall.SIGTERM:
 		default:
 		}
-		wg.Done()
-	}()
+	})
 	//this is the server for pprof and prometheus(if METRIC env is prometheus)
 	//this server should not be exposed to the public internet
 	pserver := &http.Server{Addr: ":6060"}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		if h := cotel.GetPrometheusHandler(); h != nil {
 			http.Handle("/metrics", h)
 		}
@@ -173,37 +168,26 @@ func main() {
 		case ch <- syscall.SIGTERM:
 		default:
 		}
-		wg.Done()
-	}()
+	})
 	signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-ch
 	//stop the whole business service
 	service.StopService()
 	//stop low level net service
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		xcrpc.StopCrpcServer(false)
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xweb.StopWebServer(false)
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xgrpc.StopCGrpcServer(false)
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		xraw.StopRawServer()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		pserver.Shutdown(context.Background())
-		wg.Done()
-	}()
+	})
 	wg.Wait()
 }

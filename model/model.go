@@ -12,11 +12,12 @@ import (
 // This file is readonly!
 // Don't modify this file!
 
-const pkg = "github.com/chenjie199234/account"
 const Name = "account"
 
 var Group = os.Getenv("GROUP")
 var Project = os.Getenv("PROJECT")
+
+var Version = ""
 
 func init() {
 	if Group == "" || Group == "<GROUP>" {

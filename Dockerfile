@@ -1,4 +1,4 @@
-FROM golang:1.24.1 as builder
+FROM golang:1.26.1 as builder
 ENV GOSUMDB='off' \
 	GOOS='linux' \
 	GOARCH='amd64' \
@@ -7,10 +7,10 @@ ENV GOSUMDB='off' \
 RUN mkdir /code
 ADD . /code
 WORKDIR /code
-RUN echo "start build" && go mod tidy && go build -o main && echo "end build"
+RUN echo "start build" && go mod tidy && go build -ldflags="-X 'main.version=$(date -u '+%Y-%m-%d %H:%M:%S')'" main.go && echo "end build"
 
-FROM debian:buster
-RUN apt-get update && apt-get install -y ca-certificates curl inetutils-telnet inetutils-ping inetutils-traceroute dnsutils iproute2 procps net-tools neovim && mkdir /root/app
+FROM alpine:3.23.3
+RUN mkdir /root/app
 WORKDIR /root/app
 EXPOSE 6060 7000 8000 9000 10000
 COPY --from=builder /code/main /code/AppConfig.json /code/SourceConfig.json ./

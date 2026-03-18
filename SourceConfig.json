@@ -61,14 +61,13 @@
 			"tls":false,
 			"specific_ca_paths":["./example.pem"],
 			"mongodb_srv":false,
-			"addrs":["localhost:27017"],
+			"addrs":["127.0.0.1:27017"],
 			"user_name":"",
 			"password":"",
 			"auth_db":"",
 			"replica_set":"rs",
 			"max_open":256,
 			"max_conn_idletime":"5m",
-			"io_timeout":"500ms",
 			"dial_timeout":"250ms"
 		}
 	},
@@ -88,7 +87,7 @@
 			},
 			"max_open":256,
 			"max_conn_idletime":"5m",
-			"io_timeout":"500ms",
+			"io_timeout":"3s",
 			"dial_timeout":"250ms",
 			"charset":"",
 			"collation":"",
@@ -107,7 +106,7 @@
 			"read_write_split":true,
 			"max_open":256,
 			"max_conn_idletime":"5m",
-			"io_timeout":"500ms",
+			"io_timeout":"1s",
 			"dial_timeout":"250ms"
 		}
 	},

@@ -48,7 +48,7 @@ func (d *Dao) GetMoneyLogs(ctx context.Context, userid bson.ObjectID, opaction s
 	unsafeAll, e := oneshot.Do("GetMoneyLogs_"+opaction+"_"+userid.Hex(), func() (unsafe.Pointer, error) {
 		all, e := d.MongoGetMoneyLogs(ctx, userid, opaction)
 		if e != nil {
-			slog.ErrorContext(nil, "[dao.GetMoneyLogs] db op failed", slog.String("user_id", userid.Hex()), slog.String("opaction", opaction), slog.String("error", e.Error()))
+			slog.ErrorContext(ctx, "[dao.GetMoneyLogs] db op failed", slog.String("user_id", userid.Hex()), slog.String("opaction", opaction), slog.String("error", e.Error()))
 			return nil, e
 		}
 		//update redis

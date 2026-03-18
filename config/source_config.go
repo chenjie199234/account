@@ -121,22 +121,22 @@ var emails map[string]*email.Client
 func initlocalsource() {
 	data, e := os.ReadFile("./SourceConfig.json")
 	if e != nil {
-		slog.ErrorContext(nil, "[config.local.source] read config file failed", slog.String("error", e.Error()))
+		slog.Error("[config.local.source] read config file failed", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
 	sc = &sourceConfig{}
 	if e = json.Unmarshal(data, sc); e != nil {
-		slog.ErrorContext(nil, "[config.local.source] config file format wrong", slog.String("error", e.Error()))
+		slog.Error("[config.local.source] config file format wrong", slog.String("error", e.Error()))
 		os.Exit(1)
 	}
-	slog.InfoContext(nil, "[config.local.source] update success", slog.Any("config", sc))
+	slog.Info("[config.local.source] update success", slog.Any("config", sc))
 	initsource()
 }
 func initremotesource(wait chan *struct{}) (stopwatch func()) {
 	return RemoteConfigSdk.Watch("SourceConfig", func(key, keyvalue, keytype string) {
 		//only support json
 		if keytype != "json" {
-			slog.ErrorContext(nil, "[config.remote.source] config data can only support json format")
+			slog.Error("[config.remote.source] config data can only support json format")
 			return
 		}
 		//source config only init once
@@ -145,11 +145,11 @@ func initremotesource(wait chan *struct{}) (stopwatch func()) {
 		}
 		c := &sourceConfig{}
 		if e := json.Unmarshal(common.STB(keyvalue), c); e != nil {
-			slog.ErrorContext(nil, "[config.remote.source] config data format wrong", slog.String("error", e.Error()))
+			slog.Error("[config.remote.source] config data format wrong", slog.String("error", e.Error()))
 			return
 		}
 		sc = c
-		slog.InfoContext(nil, "[config.remote.source] update success", slog.Any("config", sc))
+		slog.Info("[config.remote.source] update success", slog.Any("config", sc))
 		initsource()
 		select {
 		case wait <- nil:
@@ -166,26 +166,18 @@ func initsource() {
 	initwebserver()
 	initwebclient()
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		initredis()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		initmongo()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		initmysql()
-		wg.Done()
-	}()
-	wg.Add(1)
-	go func() {
+	})
+	wg.Go(func() {
 		initemail()
-		wg.Done()
-	}()
+	})
 	wg.Wait()
 }
 func initraw() {
@@ -214,9 +206,6 @@ func initgrpcserver() {
 		if sc.CGrpcServer.ConnectTimeout <= 0 {
 			sc.CGrpcServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
 		}
-		if sc.CGrpcServer.GlobalTimeout <= 0 {
-			sc.CGrpcServer.GlobalTimeout = ctime.Duration(time.Millisecond * 500)
-		}
 		if sc.CGrpcServer.HeartProbe <= 0 {
 			sc.CGrpcServer.HeartProbe = ctime.Duration(time.Second * 5)
 		}
@@ -235,9 +224,6 @@ func initgrpcclient() {
 	} else {
 		if sc.CGrpcClient.ConnectTimeout <= 0 {
 			sc.CGrpcClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CGrpcClient.GlobalTimeout < 0 {
-			sc.CGrpcClient.GlobalTimeout = 0
 		}
 		if sc.CGrpcClient.HeartProbe <= 0 {
 			sc.CGrpcClient.HeartProbe = ctime.Duration(time.Second * 5)
@@ -258,9 +244,6 @@ func initcrpcserver() {
 		if sc.CrpcServer.ConnectTimeout <= 0 {
 			sc.CrpcServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
 		}
-		if sc.CrpcServer.GlobalTimeout <= 0 {
-			sc.CrpcServer.GlobalTimeout = ctime.Duration(time.Millisecond * 500)
-		}
 		if sc.CrpcServer.HeartProbe <= 0 {
 			sc.CrpcServer.HeartProbe = ctime.Duration(time.Second * 5)
 		}
@@ -279,9 +262,6 @@ func initcrpcclient() {
 	} else {
 		if sc.CrpcClient.ConnectTimeout <= 0 {
 			sc.CrpcClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CrpcClient.GlobalTimeout < 0 {
-			sc.CrpcClient.GlobalTimeout = 0
 		}
 		if sc.CrpcClient.HeartProbe <= 0 {
 			sc.CrpcClient.HeartProbe = ctime.Duration(time.Second * 5)
@@ -308,14 +288,11 @@ func initwebserver() {
 		}
 	} else {
 		if sc.WebServer.WaitCloseMode != 0 && sc.WebServer.WaitCloseMode != 1 {
-			slog.ErrorContext(nil, "[config.initwebserver] wait_close_mode must be 0 or 1")
+			slog.Error("[config.initwebserver] wait_close_mode must be 0 or 1")
 			os.Exit(1)
 		}
 		if sc.WebServer.ConnectTimeout <= 0 {
 			sc.WebServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.WebServer.GlobalTimeout <= 0 {
-			sc.WebServer.GlobalTimeout = ctime.Duration(time.Millisecond * 500)
 		}
 		if sc.WebServer.IdleTimeout <= 0 {
 			sc.WebServer.IdleTimeout = ctime.Duration(time.Second * 5)
@@ -335,9 +312,6 @@ func initwebclient() {
 	} else {
 		if sc.WebClient.ConnectTimeout <= 0 {
 			sc.WebClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.WebClient.GlobalTimeout < 0 {
-			sc.WebClient.GlobalTimeout = 0
 		}
 		if sc.WebClient.IdleTimeout <= 0 {
 			sc.WebClient.IdleTimeout = ctime.Duration(time.Second * 5)
@@ -368,9 +342,7 @@ func initredis() {
 			continue
 		}
 		redisc := v
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			var tlsc *tls.Config
 			if redisc.TLS {
 				tlsc = &tls.Config{}
@@ -379,13 +351,13 @@ func initredis() {
 					for _, certpath := range redisc.SpecificCAPaths {
 						cert, e := os.ReadFile(certpath)
 						if e != nil {
-							slog.ErrorContext(nil, "[config.initredis] read specific cert failed",
+							slog.Error("[config.initredis] read specific cert failed",
 								slog.String("redis", redisc.RedisName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
 							os.Exit(1)
 						}
 						if ok := tlsc.RootCAs.AppendCertsFromPEM(cert); !ok {
-							slog.ErrorContext(nil, "[config.initredis] specific cert load failed",
-								slog.String("redis", redisc.RedisName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
+							slog.Error("[config.initredis] specific cert load failed",
+								slog.String("redis", redisc.RedisName), slog.String("cert_path", certpath))
 							os.Exit(1)
 						}
 					}
@@ -393,14 +365,14 @@ func initredis() {
 			}
 			c, e := redis.NewRedis(redisc.Config, tlsc)
 			if e != nil {
-				slog.ErrorContext(nil, "[config.initredis] failed",
+				slog.Error("[config.initredis] failed",
 					slog.String("redis", redisc.RedisName), slog.String("error", e.Error()))
 				os.Exit(1)
 			}
 			lker.Lock()
 			rediss[redisc.RedisName] = c
 			lker.Unlock()
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -428,9 +400,7 @@ func initmongo() {
 			continue
 		}
 		mongoc := v
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			var tlsc *tls.Config
 			if mongoc.TLS {
 				tlsc = &tls.Config{}
@@ -439,13 +409,13 @@ func initmongo() {
 					for _, certpath := range mongoc.SpecificCAPaths {
 						cert, e := os.ReadFile(certpath)
 						if e != nil {
-							slog.ErrorContext(nil, "[config.initmongo] read specific cert failed",
+							slog.Error("[config.initmongo] read specific cert failed",
 								slog.String("mongo", mongoc.MongoName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
 							os.Exit(1)
 						}
 						if ok := tlsc.RootCAs.AppendCertsFromPEM(cert); !ok {
-							slog.ErrorContext(nil, "[config.initmongo] specific cert load failed",
-								slog.String("mongo", mongoc.MongoName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
+							slog.Error("[config.initmongo] specific cert load failed",
+								slog.String("mongo", mongoc.MongoName), slog.String("cert_path", certpath))
 							os.Exit(1)
 						}
 					}
@@ -453,13 +423,13 @@ func initmongo() {
 			}
 			c, e := mongo.NewMongo(mongoc.Config, tlsc)
 			if e != nil {
-				slog.ErrorContext(nil, "[config.initmongo] failed", slog.String("mongo", mongoc.MongoName), slog.String("error", e.Error()))
+				slog.Error("[config.initmongo] failed", slog.String("mongo", mongoc.MongoName), slog.String("error", e.Error()))
 				os.Exit(1)
 			}
 			lker.Lock()
 			mongos[mongoc.MongoName] = c
 			lker.Unlock()
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -484,9 +454,7 @@ func initmysql() {
 			continue
 		}
 		mysqlc := v
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			var tlsc *tls.Config
 			if mysqlc.TLS {
 				tlsc = &tls.Config{}
@@ -495,13 +463,13 @@ func initmysql() {
 					for _, certpath := range mysqlc.SpecificCAPaths {
 						cert, e := os.ReadFile(certpath)
 						if e != nil {
-							slog.ErrorContext(nil, "[config.initmysql] read specific cert failed",
+							slog.Error("[config.initmysql] read specific cert failed",
 								slog.String("mysql", mysqlc.MysqlName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
 							os.Exit(1)
 						}
 						if ok := tlsc.RootCAs.AppendCertsFromPEM(cert); !ok {
-							slog.ErrorContext(nil, "[config.initmysql] specific cert load failed",
-								slog.String("mysql", mysqlc.MysqlName), slog.String("cert_path", certpath), slog.String("error", e.Error()))
+							slog.Error("[config.initmysql] specific cert load failed",
+								slog.String("mysql", mysqlc.MysqlName), slog.String("cert_path", certpath))
 							os.Exit(1)
 						}
 					}
@@ -509,13 +477,13 @@ func initmysql() {
 			}
 			c, e := mysql.NewMysql(mysqlc.Config, tlsc)
 			if e != nil {
-				slog.ErrorContext(nil, "[config.initmysql] failed", slog.String("mysql", mysqlc.MysqlName), slog.String("error", e.Error()))
+				slog.Error("[config.initmysql] failed", slog.String("mysql", mysqlc.MysqlName), slog.String("error", e.Error()))
 				os.Exit(1)
 			}
 			lker.Lock()
 			mysqls[mysqlc.MysqlName] = c
 			lker.Unlock()
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -537,18 +505,16 @@ func initemail() {
 			continue
 		}
 		emailc := v
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			c, e := email.NewEmail(emailc)
 			if e != nil {
-				slog.ErrorContext(nil, "[config.initemail] failed", slog.String("email", emailc.EmailName), slog.String("error", e.Error()))
+				slog.Error("[config.initemail] failed", slog.String("email", emailc.EmailName), slog.String("error", e.Error()))
 				os.Exit(1)
 			}
 			lker.Lock()
 			emails[emailc.EmailName] = c
 			lker.Unlock()
-		}()
+		})
 	}
 	wg.Wait()
 }

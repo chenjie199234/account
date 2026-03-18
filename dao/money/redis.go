@@ -86,7 +86,7 @@ return result`)
 }
 
 func (d *Dao) RedisSetMoneyLogs(ctx context.Context, userid, opaction string, logs []*model.MoneyLog) error {
-	args := make([]interface{}, 0, len(logs)*2+1)
+	args := make([]any, 0, len(logs)*2+1)
 	args = append(args, int64(30*24*time.Hour.Seconds())) //first arg is the expire time
 	for _, log := range logs {
 		if log == nil || log.LogID.IsZero() {

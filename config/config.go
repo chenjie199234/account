@@ -43,7 +43,7 @@ func Init(notice func(c *AppConfig)) {
 				sourceinit = true
 				stopwatchsource()
 			case <-tmer.C:
-				slog.ErrorContext(nil, "[config.Init] timeout")
+				slog.Error("[config.Init] timeout")
 				os.Exit(1)
 			}
 			if appinit && sourceinit {
@@ -61,28 +61,28 @@ func initenv() {
 	if str, ok := os.LookupEnv("CONFIG_TYPE"); ok && str != "<CONFIG_TYPE>" && str != "" {
 		configtype, e := strconv.Atoi(str)
 		if e != nil || (configtype != 0 && configtype != 1 && configtype != 2) {
-			slog.ErrorContext(nil, "[config.initenv] env CONFIG_TYPE must be number in [0,1,2]")
+			slog.Error("[config.initenv] env CONFIG_TYPE must be number in [0,1,2]")
 			os.Exit(1)
 		}
 		EC.ConfigType = &configtype
 	} else {
-		slog.WarnContext(nil, "[config.initenv] missing env CONFIG_TYPE")
+		slog.Warn("[config.initenv] missing env CONFIG_TYPE")
 	}
 	if EC.ConfigType != nil && *EC.ConfigType == 1 {
 		var e error
 		if RemoteConfigSdk, e = configsdk.NewConfigSdk(nil); e != nil {
-			slog.ErrorContext(nil, "[config.initenv] new remote config sdk failed", slog.String("error", e.Error()))
+			slog.Error("[config.initenv] new remote config sdk failed", slog.String("error", e.Error()))
 			os.Exit(1)
 		}
 	}
 	if str, ok := os.LookupEnv("RUN_ENV"); ok && str != "<RUN_ENV>" && str != "" {
 		EC.RunEnv = &str
 	} else {
-		slog.WarnContext(nil, "[config.initenv] missing env RUN_ENV")
+		slog.Warn("[config.initenv] missing env RUN_ENV")
 	}
 	if str, ok := os.LookupEnv("DEPLOY_ENV"); ok && str != "<DEPLOY_ENV>" && str != "" {
 		EC.DeployEnv = &str
 	} else {
-		slog.WarnContext(nil, "[config.initenv] missing env DEPLOY_ENV")
+		slog.Warn("[config.initenv] missing env DEPLOY_ENV")
 	}
 }

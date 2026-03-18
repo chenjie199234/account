@@ -1,6 +1,6 @@
 {
 	"handler_timeout":{
-		"/account.status/ping":{
+		"/account.Status/Ping":{
 			"GET":"200ms",
 			"CRPC":"200ms",
 			"GRPC":"200ms"
@@ -26,28 +26,23 @@
 	},
 	"accesses":{
 		"/account.exampleservice/examplemethod":[{
-			"methods":["GET","GRPC","CRPC"],
-			"accesses":{
-				"accessid":"accesskey"
-			}
-		}],
-		"/account.base/base_info":[{
+			"methods":["GET"],
+			"accesses":["accesskey1","accesskey2"]
+		},{
 			"methods":["CRPC","GRPC"],
-			"accesses":{
-				"accessid":"accesskey"
-			}
+			"accesses":["accesskey3","accesskey4"]
 		}],
-		"/account.base/ban":[{
+		"/account.Base/BaseInfo":[{
 			"methods":["CRPC","GRPC"],
-			"accesses":{
-				"accessid":"accesskey"
-			}
+			"accesses":["accesskey_base_info"]
 		}],
-		"/account.base/unban":[{
+		"/account.Base/Ban":[{
 			"methods":["CRPC","GRPC"],
-			"accesses":{
-				"accessid":"accesskey"
-			}
+			"accesses":["accesskey_ban"]
+		}],
+		"/account.Base/Unban":[{
+			"methods":["CRPC","GRPC"],
+			"accesses":["accesskey_unban"]
 		}]
 	},
 	"token_secret":"test",
@@ -55,8 +50,8 @@
 		"token_expire":"24h",
 		"support_email_service":["@163.com","@126.com","@sina.com","@sohu.com","@qq.com","@yahoo.com","@gmail.com","@outlook.com"],
 
-		"wechat_oauth_url":"",
-		"wechat_appid":"",
-		"wechat_secret":""
+		"wechat_oauth2":"",
+		"wechat_app_id":"",
+		"wechat_app_secret":""
 	}
 }
