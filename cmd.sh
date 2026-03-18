@@ -25,11 +25,19 @@ help() {
 }
 
 run(){
+	if ! go mod tidy;then
+		echo "go mod tidy failed"
+		exit 1
+	fi
 	dt=$(date -u '+%Y-%m-%d %H:%M:%S')
 	go run -ldflags="-X 'main.version=${dt}'" main.go
 }
 
 build(){
+	if ! go mod tidy;then
+		echo "go mod tidy failed"
+		exit 1
+	fi
 	dt=$(date -u '+%Y-%m-%d %H:%M:%S')
 	go build -ldflags="-X 'main.version=${dt}'" main.go
 }
