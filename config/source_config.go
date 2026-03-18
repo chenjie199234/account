@@ -49,7 +49,6 @@ type RawServerConfig struct {
 	//each group's connections' heart probe check is in an independence goroutine
 	//small group num will increase to lock conflict
 	//big group num will increate the goroutine num
-	//default 100
 	GroupNum uint16 `json:"group_num"`
 }
 
@@ -166,18 +165,10 @@ func initsource() {
 	initwebserver()
 	initwebclient()
 	wg := &sync.WaitGroup{}
-	wg.Go(func() {
-		initredis()
-	})
-	wg.Go(func() {
-		initmongo()
-	})
-	wg.Go(func() {
-		initmysql()
-	})
-	wg.Go(func() {
-		initemail()
-	})
+	wg.Go(initredis)
+	wg.Go(initmongo)
+	wg.Go(initmysql)
+	wg.Go(initemail)
 	wg.Wait()
 }
 func initraw() {
