@@ -17,7 +17,6 @@ import (
 
 var s *cgrpc.CGrpcServer
 
-// StartCGrpcServer -
 func StartCGrpcServer() {
 	c := config.GetCGrpcServerConfig()
 	var tlsc *tls.Config
@@ -45,12 +44,12 @@ func StartCGrpcServer() {
 	//this place can register global midwares
 	//server.Use(globalmidwares)
 
-	//you just need to register your service here
+	//example
+	//api.RegisterExampleCGrpcServer(server, service.SvcExample, mids.AllMids())
+	//you need to register your service here
 	api.RegisterStatusCGrpcServer(server, service.SvcStatus, mids.AllMids())
 	api.RegisterBaseCGrpcServer(server, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyCGrpcServer(server, service.SvcMoney, mids.AllMids())
-	//example
-	//api.RegisterExampleCGrpcServer(server, service.SvcExample, mids.AllMids())
 
 	if e = server.StartCGrpcServer(":10000"); e != nil && e != cgrpc.ErrServerClosed {
 		slog.Error("[xgrpc] start server failed", slog.String("error", e.Error()))
@@ -59,8 +58,7 @@ func StartCGrpcServer() {
 	slog.Info("[xgrpc] server closed")
 }
 
-// UpdateHandlerTimeout -
-// first key path,second key method,value timeout duration
+// first key:path,second key:method
 func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
 	//avoid race when build/run in -race mode
 	tmps := (*cgrpc.CGrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
@@ -69,7 +67,6 @@ func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
 	}
 }
 
-// StopCGrpcServer force - false(graceful),true(not graceful)
 func StopCGrpcServer(force bool) {
 	//avoid race when build/run in -race mode
 	tmps := (*cgrpc.CGrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))

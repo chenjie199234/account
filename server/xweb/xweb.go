@@ -17,7 +17,6 @@ import (
 
 var s *web.WebServer
 
-// StartWebServer -
 func StartWebServer() {
 	c := config.GetWebServerConfig()
 	var tlsc *tls.Config
@@ -52,12 +51,12 @@ func StartWebServer() {
 	//this place can register global midwares
 	//r.Use(globalmidwares)
 
-	//you just need to register your service here
+	//example
+	//api.RegisterExampleWebServer(r, service.SvcExample, mids.AllMids())
+	//you need to register your service here
 	api.RegisterStatusWebServer(r, service.SvcStatus, mids.AllMids())
 	api.RegisterBaseWebServer(r, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyWebServer(r, service.SvcMoney, mids.AllMids())
-	//example
-	//api.RegisterExampleWebServer(r, service.SvcExample, mids.AllMids())
 
 	server.SetRouter(r)
 	if e = server.StartWebServer(":8000"); e != nil && e != web.ErrServerClosed {
@@ -67,8 +66,7 @@ func StartWebServer() {
 	slog.Info("[xweb] server closed")
 }
 
-// UpdateHandlerTimeout -
-// first key path,second key method,value timeout duration
+// first key:path,second key:method
 func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
 	//avoid race when build/run in -race mode
 	tmps := (*web.WebServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
@@ -77,8 +75,7 @@ func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
 	}
 }
 
-// UpdateWebPathRewrite -
-// first key method,second key origin url,value rewrite url
+// first key:method,second key:origin url,value:new url
 func UpdateWebPathRewrite(rewrite map[string]map[string]string) {
 	//avoid race when build/run in -race mode
 	tmps := (*web.WebServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
@@ -87,7 +84,6 @@ func UpdateWebPathRewrite(rewrite map[string]map[string]string) {
 	}
 }
 
-// StopWebServer force - false(graceful),true(not graceful)
 func StopWebServer(force bool) {
 	//avoid race when build/run in -race mode
 	tmps := (*web.WebServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
