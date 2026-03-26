@@ -90,7 +90,7 @@ func (c *baseWebClient) GetOauthUrl(ctx context.Context, req *GetOauthUrlReq, he
 		query = query[:len(query)-1]
 	}
 	querystr := common.BTS(query)
-	r, e := c.cc.Get(ctx, _WebPathBaseGetOauthUrl, querystr, header, metadata.GetMetadata(ctx))
+	r, e := c.cc.Get(ctx, _WebPathBaseGetOauthUrl, querystr, header, metadata.GetMetadata(ctx), nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/GetOauthUrl] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -130,7 +130,7 @@ func (c *baseWebClient) Login(ctx context.Context, req *LoginReq, header http.He
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseLogin, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseLogin, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/Login] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -170,7 +170,7 @@ func (c *baseWebClient) TemporaryToken(ctx context.Context, req *TemporaryTokenR
 		query = query[:len(query)-1]
 	}
 	querystr := common.BTS(query)
-	r, e := c.cc.Get(ctx, _WebPathBaseTemporaryToken, querystr, header, metadata.GetMetadata(ctx))
+	r, e := c.cc.Get(ctx, _WebPathBaseTemporaryToken, querystr, header, metadata.GetMetadata(ctx), nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/TemporaryToken] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -210,7 +210,7 @@ func (c *baseWebClient) SelfInfo(ctx context.Context, req *SelfInfoReq, header h
 		query = query[:len(query)-1]
 	}
 	querystr := common.BTS(query)
-	r, e := c.cc.Get(ctx, _WebPathBaseSelfInfo, querystr, header, metadata.GetMetadata(ctx))
+	r, e := c.cc.Get(ctx, _WebPathBaseSelfInfo, querystr, header, metadata.GetMetadata(ctx), nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/SelfInfo] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -250,7 +250,7 @@ func (c *baseWebClient) UpdateStaticPassword(ctx context.Context, req *UpdateSta
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseUpdateStaticPassword, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateStaticPassword, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/UpdateStaticPassword] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -290,7 +290,7 @@ func (c *baseWebClient) ResetStaticPassword(ctx context.Context, req *ResetStati
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseResetStaticPassword, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseResetStaticPassword, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/ResetStaticPassword] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -330,7 +330,7 @@ func (c *baseWebClient) IdcardDuplicateCheck(ctx context.Context, req *IdcardDup
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseIdcardDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/IdcardDuplicateCheck] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -370,7 +370,7 @@ func (c *baseWebClient) SetIdcard(ctx context.Context, req *SetIdcardReq, header
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseSetIdcard, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseSetIdcard, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/SetIdcard] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -410,7 +410,7 @@ func (c *baseWebClient) UpdateOauth(ctx context.Context, req *UpdateOauthReq, he
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseUpdateOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateOauth, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/UpdateOauth] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -450,7 +450,7 @@ func (c *baseWebClient) DelOauth(ctx context.Context, req *DelOauthReq, header h
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseDelOauth, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelOauth, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/DelOauth] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -490,7 +490,7 @@ func (c *baseWebClient) EmailDuplicateCheck(ctx context.Context, req *EmailDupli
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseEmailDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseEmailDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/EmailDuplicateCheck] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -530,7 +530,7 @@ func (c *baseWebClient) UpdateEmail(ctx context.Context, req *UpdateEmailReq, he
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseUpdateEmail, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateEmail, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/UpdateEmail] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -570,7 +570,7 @@ func (c *baseWebClient) DelEmail(ctx context.Context, req *DelEmailReq, header h
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseDelEmail, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelEmail, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/DelEmail] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -610,7 +610,7 @@ func (c *baseWebClient) TelDuplicateCheck(ctx context.Context, req *TelDuplicate
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseTelDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseTelDuplicateCheck, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/TelDuplicateCheck] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -650,7 +650,7 @@ func (c *baseWebClient) UpdateTel(ctx context.Context, req *UpdateTelReq, header
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseUpdateTel, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseUpdateTel, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/UpdateTel] send request failed", slog.String("error", e.Error()))
 		return nil, e
@@ -690,7 +690,7 @@ func (c *baseWebClient) DelTel(ctx context.Context, req *DelTelReq, header http.
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathBaseDelTel, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathBaseDelTel, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Base/DelTel] send request failed", slog.String("error", e.Error()))
 		return nil, e

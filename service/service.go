@@ -25,10 +25,10 @@ func StartService() error {
 	if e = dao.NewApi(); e != nil {
 		return e
 	}
-	if SvcStatus, e = status.Start(); e != nil {
+	if SvcRaw, e = raw.Start(); e != nil {
 		return e
 	}
-	if SvcRaw, e = raw.Start(); e != nil {
+	if SvcStatus, e = status.Start(); e != nil {
 		return e
 	}
 	if SvcBase, e = base.Start(); e != nil {
@@ -41,8 +41,8 @@ func StartService() error {
 }
 
 func StopService() {
+	SvcMoney.Stop()
+	SvcBase.Stop()
 	SvcStatus.Stop()
 	SvcRaw.Stop()
-	SvcBase.Stop()
-	SvcMoney.Stop()
 }

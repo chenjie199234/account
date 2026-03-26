@@ -58,7 +58,7 @@ func (c *statusWebClient) Ping(ctx context.Context, req *Pingreq, header http.He
 		query = query[:len(query)-1]
 	}
 	querystr := common.BTS(query)
-	r, e := c.cc.Get(ctx, _WebPathStatusPing, querystr, header, metadata.GetMetadata(ctx))
+	r, e := c.cc.Get(ctx, _WebPathStatusPing, querystr, header, metadata.GetMetadata(ctx), nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Status/Ping] send request failed", slog.String("error", e.Error()))
 		return nil, e

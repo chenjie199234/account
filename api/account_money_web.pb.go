@@ -48,7 +48,7 @@ func (c *moneyWebClient) SelfMoneyLogs(ctx context.Context, req *SelfMoneyLogsRe
 	header.Set("Content-Type", "application/x-protobuf")
 	header.Set("Accept", "application/x-protobuf")
 	reqd, _ := proto.Marshal(req)
-	r, e := c.cc.Post(ctx, _WebPathMoneySelfMoneyLogs, "", header, metadata.GetMetadata(ctx), reqd)
+	r, e := c.cc.Post(ctx, _WebPathMoneySelfMoneyLogs, "", header, metadata.GetMetadata(ctx), reqd, nil)
 	if e != nil {
 		slog.ErrorContext(ctx, "[/account.Money/SelfMoneyLogs] send request failed", slog.String("error", e.Error()))
 		return nil, e

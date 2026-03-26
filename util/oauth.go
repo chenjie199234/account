@@ -19,7 +19,7 @@ type WeChatResponse struct {
 
 func OAuthWeChatVerifyCode(ctx context.Context, appid, appsecret, code string) (oauthid string, e error) {
 	query := "appid=" + appid + "&secret=" + appsecret + "&code=" + code + "&grant_type=authorization_code"
-	r, err := dao.WeChatWebApi.Get(ctx, "/sns/oauth2/access_token", query, nil, nil)
+	r, err := dao.WeChatWebApi.Get(ctx, "/sns/oauth2/access_token", query, nil, nil, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "[OAuthWeChatVerifyCode] send request failed", slog.String("code", code), slog.String("error", err.Error()))
 		e = err
