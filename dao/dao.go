@@ -3,7 +3,6 @@ package dao
 import (
 	"crypto/tls"
 
-	// "github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/config"
 
 	// admindiscover "github.com/chenjie199234/admin/sdk/discover"
@@ -62,7 +61,7 @@ func NewApi() error {
 	_ = cgrpcc //avoid unuse
 
 	//init cgrpc client below
-	//examplecgrpc, e := cgrpc.NewCGrpcClient(cgrpcc, examplediscover, model.Project, model.Group, model.Name, "exampleproject", "examplegroup", "examplename", exampletlsc)
+	//examplecgrpc, e := cgrpc.NewCGrpcClient(cgrpcc, examplediscover,  "exampleproject", "examplegroup", "examplename", exampletlsc)
 	//if e != nil {
 	//         return e
 	//}
@@ -72,7 +71,7 @@ func NewApi() error {
 	_ = crpcc //avoid unuse
 
 	//init crpc client below
-	//examplecrpc, e := crpc.NewCrpcClient(crpcc, examplediscover, model.Project, model.Group, model.Name, "exampleproject", "examplegroup", "examplename", exampletlsc)
+	//examplecrpc, e := crpc.NewCrpcClient(crpcc, examplediscover,  "exampleproject", "examplegroup", "examplename", exampletlsc)
 	//if e != nil {
 	// 	return e
 	//}
@@ -82,7 +81,7 @@ func NewApi() error {
 	_ = webc //avoid unuse
 
 	//init web client below
-	//exampleweb, e := web.NewWebClient(webc, examplediscover, model.Project, model.Group, model.Name, "exampleproject", "examplegroup", "examplename", exampletlsc)
+	//exampleweb, e := web.NewWebClient(webc, examplediscover, "exampleproject", "examplegroup", "examplename", exampletlsc)
 	//if e != nil {
 	// 	return e
 	//}
