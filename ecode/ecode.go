@@ -30,7 +30,6 @@ var (
 	ErrNotExist          = cerror.ErrNotExist          //10012 // http code 404
 	ErrAlreadyExist      = cerror.ErrAlreadyExist      //10013 // http code 400
 	ErrPasswordWrong     = cerror.ErrPasswordWrong     //10014 // http code 400
-	ErrPasswordLength    = cerror.ErrPasswordLength    //10015 // http code 400
 
 	ErrUnknownAction           = cerror.MakeCError(20000, http.StatusInternalServerError, "unknown action")
 	ErrCodeNotExist            = cerror.MakeCError(20001, http.StatusBadRequest, "dynamic password not exist,please get it again")
