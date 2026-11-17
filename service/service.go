@@ -1,9 +1,5 @@
 package service
 
-//Warning!!Don't add comments in this file
-//this file will be updated automaticly when create sub service
-//however,golang's ast package can't handle ast tree with comments well(checked 1.26.0)
-
 import (
 	"github.com/chenjie199234/account/dao"
 	"github.com/chenjie199234/account/service/base"

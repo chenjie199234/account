@@ -14,7 +14,6 @@ import (
 	"github.com/chenjie199234/account/model"
 	"github.com/chenjie199234/account/util"
 
-	// "github.com/chenjie199234/Corelib/web"
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
 	"github.com/chenjie199234/Corelib/cerror"
@@ -22,6 +21,7 @@ import (
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
 	"github.com/chenjie199234/Corelib/util/graceful"
+	"github.com/chenjie199234/Corelib/web"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -507,20 +507,46 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	} else {
 		resp.SetStep("success")
 	}
-	resp.SetToken(publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration()))
+	var token string
+	if req.GetBindip() {
+		wctx := ctx.(web.NoStreamServerContext)
+		token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), wctx.GetRealPeerIp(), config.AC.Service.TokenExpire.StdDuration())
+	} else {
+		token = publicmids.MakeToken(ctx, "", *config.EC.DeployEnv, *config.EC.RunEnv, user.UserID.Hex(), "", config.AC.Service.TokenExpire.StdDuration())
+	}
+	resp.SetToken(token)
 	resp.SetTokenexpire(uint64(time.Now().Add(config.AC.Service.TokenExpire.StdDuration() - time.Second).UnixNano()))
 	slog.InfoContext(ctx, "[Login] success", slog.String("operator", user.UserID.Hex()))
 	return resp, nil
 }
 func (s *Service) TemporaryToken(ctx context.Context, req *api.TemporaryTokenReq) (*api.TemporaryTokenResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	resp := &api.TemporaryTokenResp{}
 	resp.SetToken(publicmids.MakeToken(ctx, md["Token-Puber"], md["Token-DeployEnv"], md["Token-RunEnv"], md["Token-User"], md["Token-Data"], time.Minute))
 	resp.SetTokenexpire(uint64(time.Now().Add(time.Minute - time.Second).UnixNano()))
 	return resp, nil
 }
+func (s *Service) VerifyToken(ctx context.Context, req *api.VerifyTokenReq) (*api.VerifyTokenResp, error) {
+	t := publicmids.VerifyToken(ctx, req.GetToken())
+	if t == nil || (t.Data != "" && t.Data != req.GetBindip()) {
+		return nil, cerror.ErrToken
+	}
+	return &api.VerifyTokenResp{}, nil
+}
 func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.SelfInfoResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SelfInfo] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -553,6 +579,12 @@ func (s *Service) SelfInfo(ctx context.Context, req *api.SelfInfoReq) (*api.Self
 }
 func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStaticPasswordReq) (*api.UpdateStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateStaticPassword] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -606,6 +638,12 @@ func (s *Service) UpdateStaticPassword(ctx context.Context, req *api.UpdateStati
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticPasswordReq) (*api.ResetStaticPasswordResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[ResetStaticPassword] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -749,6 +787,12 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 
 func (s *Service) IdcardDuplicateCheck(ctx context.Context, req *api.IdcardDuplicateCheckReq) (*api.IdcardDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[IdcardDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -782,6 +826,12 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 		return nil, ecode.ErrReq
 	}
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SetIdcard] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -845,6 +895,12 @@ func (s *Service) SetIdcard(ctx context.Context, req *api.SetIdcardReq) (*api.Se
 //	Step 2:verify old email's or tel's dynamic password and verify the new oauth
 func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*api.UpdateOauthResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateOauth] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1047,6 +1103,12 @@ func (s *Service) UpdateOauth(ctx context.Context, req *api.UpdateOauthReq) (*ap
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelOauth(ctx context.Context, req *api.DelOauthReq) (*api.DelOauthResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelOauth] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1237,6 +1299,12 @@ func (s *Service) EmailDuplicateCheck(ctx context.Context, req *api.EmailDuplica
 		return nil, ecode.ErrUnsupportedEmailService
 	}
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[EmailDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1288,6 +1356,12 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 		return nil, ecode.ErrUnsupportedEmailService
 	}
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateEmail] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1495,6 +1569,12 @@ func (s *Service) UpdateEmail(ctx context.Context, req *api.UpdateEmailReq) (*ap
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelEmailResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelEmail] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1667,6 +1747,12 @@ func (s *Service) DelEmail(ctx context.Context, req *api.DelEmailReq) (*api.DelE
 
 func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCheckReq) (*api.TelDuplicateCheckResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[TelDuplicateCheck] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1706,6 +1792,12 @@ func (s *Service) TelDuplicateCheck(ctx context.Context, req *api.TelDuplicateCh
 //	Step final:verify new tel's dynamic password and update
 func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.UpdateTelResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[UpdateTel] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
@@ -1913,6 +2005,12 @@ func (s *Service) UpdateTel(ctx context.Context, req *api.UpdateTelReq) (*api.Up
 //	Step 2:verify email's or tel's dynamic password
 func (s *Service) DelTel(ctx context.Context, req *api.DelTelReq) (*api.DelTelResp, error) {
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[DelTel] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))

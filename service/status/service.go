@@ -2,6 +2,7 @@ package status
 
 import (
 	"context"
+	// "log/slog"
 	"time"
 
 	// "github.com/chenjie199234/account/config"
@@ -15,7 +16,6 @@ import (
 	"github.com/chenjie199234/Corelib/util/host"
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
-	// "github.com/chenjie199234/Corelib/log"
 	// "github.com/chenjie199234/Corelib/web"
 )
 
@@ -31,7 +31,7 @@ func Start() (*Service, error) {
 	return &Service{
 		stop: graceful.New(),
 
-		//statusDao: statusdao.NewDao(config.GetSql("status_sql"), config.GetRedis("status_redis"), config.GetMongo("status_mongo")),
+		//statusDao: statusdao.NewDao(config.GetMysql("status_mysql"), config.GetRedis("status_redis"), config.GetMongo("status_mongo")),
 		statusDao: statusdao.NewDao(nil, nil, nil),
 	}, nil
 }
@@ -39,13 +39,13 @@ func Start() (*Service, error) {
 // Ping -
 func (s *Service) Ping(ctx context.Context, in *api.Pingreq) (*api.Pingresp, error) {
 	//if _, ok := ctx.(crpc.NoStreamServerContext); ok {
-	//        log.Info("this is a crpc call")
+	//        slog.InfoContext(ctx, "this is a crpc call")
 	//}
 	//if _, ok := ctx.(cgrpc.NoStreamServerContext); ok {
-	//        log.Info("this is a cgrpc call")
+	//        slog.InfoContext(ctx, "this is a cgrpc call")
 	//}
 	//if _, ok := ctx.(web.NoStreamServerContext); ok {
-	//        log.Info("this is a web call")
+	//        slog.InfoContext(ctx, "this is a web call")
 	//}
 	cpu, cpuu, cput, mem, memu, memt := cotel.GetCpuMemUsage()
 	resp := &api.Pingresp{}

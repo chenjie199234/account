@@ -12,9 +12,10 @@ import (
 
 	// "github.com/chenjie199234/Corelib/cgrpc"
 	// "github.com/chenjie199234/Corelib/crpc"
-	// "github.com/chenjie199234/Corelib/web"
+	"github.com/chenjie199234/Corelib/cerror"
 	"github.com/chenjie199234/Corelib/metadata"
 	"github.com/chenjie199234/Corelib/util/graceful"
+	"github.com/chenjie199234/Corelib/web"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -118,6 +119,12 @@ func (s *Service) SelfMoneyLogs(ctx context.Context, req *api.SelfMoneyLogsReq) 
 		return nil, ecode.ErrReq
 	}
 	md := metadata.GetMetadata(ctx)
+	if bindip := md["Token-Data"]; bindip != "" {
+		wctx := ctx.(web.NoStreamServerContext)
+		if wctx.GetRealPeerIp() != bindip {
+			return nil, cerror.ErrToken
+		}
+	}
 	operator, e := bson.ObjectIDFromHex(md["Token-User"])
 	if e != nil {
 		slog.ErrorContext(ctx, "[SelfMoneyLogs] operator's token format wrong", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))

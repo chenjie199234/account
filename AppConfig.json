@@ -8,7 +8,7 @@
 	},
 	"web_path_rewrite":{
 		"GET":{
-			"/origin/url":"/account.exampleservice/examplemethod"
+			"/example/origin/url":"/account.exampleservice/examplemethod"
 		}
 	},
 	"handler_rate":{

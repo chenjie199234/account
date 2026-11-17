@@ -61,7 +61,7 @@ func NewApi() error {
 	_ = cgrpcc //avoid unuse
 
 	//init cgrpc client below
-	//examplecgrpc, e := cgrpc.NewCGrpcClient(cgrpcc, examplediscover,  "exampleproject", "examplegroup", "examplename", exampletlsc)
+	//examplecgrpc, e := cgrpc.NewCGrpcClient(cgrpcc, examplediscover, "exampleproject", "examplegroup", "examplename", exampletlsc)
 	//if e != nil {
 	//         return e
 	//}
@@ -71,7 +71,7 @@ func NewApi() error {
 	_ = crpcc //avoid unuse
 
 	//init crpc client below
-	//examplecrpc, e := crpc.NewCrpcClient(crpcc, examplediscover,  "exampleproject", "examplegroup", "examplename", exampletlsc)
+	//examplecrpc, e := crpc.NewCrpcClient(crpcc, examplediscover, "exampleproject", "examplegroup", "examplename", exampletlsc)
 	//if e != nil {
 	// 	return e
 	//}

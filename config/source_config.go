@@ -40,6 +40,21 @@ type RawServerConfig struct {
 	Certs map[string]string `json:"certs"` //key cert path,value private key path,if this is not empty,tls will be used
 	//time for connection establish(include dial time,handshake time and verify time)
 	ConnectTimeout ctime.Duration `json:"connect_timeout"`
+	//time for read one complete message,start from read the first byte of the message
+	//this can be used to prevent client's slow send attack
+	//(send a big message,but every time send 1 byte,the connection is alive and works well,attacker can create lots of this kind of connections)
+	//<=0 means no timeout
+	ReadTimeout ctime.Duration `json:"read_timeout"`
+	//time for write one piece of the complete message(big message will split to many pieces to send,one piece's max len is 65536)
+	//the connection's write deadline will be resetted every time start to write a piece of data
+	//this can be used to prevent client's slow read attack
+	//(attacker set tcp a small window,and read slowly,this will block the server's Send action,attacker can create lots of this kind of connections)
+	//<=0 means no timeout
+	WriteTimeout ctime.Duration `json:"write_timeout"`
+	//time for waiting the next user message,it will be reset when starting to read next message
+	//expired without next message,the connection will be closed
+	//<=0 means no timeout
+	IdleTimeout ctime.Duration `json:"idle_timeout"`
 	//min 1s,default 5s,3 probe missing means disconnect
 	HeartProbe ctime.Duration `json:"heart_probe"`
 	//min 64k,default 64M
@@ -175,6 +190,9 @@ func initraw() {
 	if sc.RawServer == nil {
 		sc.RawServer = &RawServerConfig{
 			ConnectTimeout: ctime.Duration(time.Millisecond * 500),
+			ReadTimeout:    ctime.Duration(time.Second),
+			WriteTimeout:   ctime.Duration(time.Second),
+			IdleTimeout:    0,
 			HeartProbe:     ctime.Duration(time.Second * 5),
 		}
 	} else {
@@ -187,18 +205,15 @@ func initgrpcserver() {
 	if sc.CGrpcServer == nil {
 		sc.CGrpcServer = &CGrpcServerConfig{
 			ServerConfig: &cgrpc.ServerConfig{
-				ConnectTimeout: ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:  ctime.Duration(time.Millisecond * 500),
-				HeartProbe:     ctime.Duration(time.Second * 5),
-				IdleTimeout:    0,
+				ConnectTimeout:        ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				HeartProbe:            ctime.Duration(time.Second * 5),
+				IdleTimeout:           0,
 			},
 		}
 	} else {
 		if sc.CGrpcServer.ConnectTimeout <= 0 {
 			sc.CGrpcServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CGrpcServer.HeartProbe <= 0 {
-			sc.CGrpcServer.HeartProbe = ctime.Duration(time.Second * 5)
 		}
 	}
 }
@@ -206,18 +221,15 @@ func initgrpcclient() {
 	if sc.CGrpcClient == nil {
 		sc.CGrpcClient = &CGrpcClientConfig{
 			ClientConfig: &cgrpc.ClientConfig{
-				ConnectTimeout: ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:  ctime.Duration(time.Millisecond * 500),
-				HeartProbe:     ctime.Duration(time.Second * 5),
-				IdleTimeout:    0,
+				ConnectTimeout:        ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				HeartProbe:            ctime.Duration(time.Second * 5),
+				IdleTimeout:           0,
 			},
 		}
 	} else {
 		if sc.CGrpcClient.ConnectTimeout <= 0 {
 			sc.CGrpcClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CGrpcClient.HeartProbe <= 0 {
-			sc.CGrpcClient.HeartProbe = ctime.Duration(time.Second * 5)
 		}
 	}
 }
@@ -225,18 +237,17 @@ func initcrpcserver() {
 	if sc.CrpcServer == nil {
 		sc.CrpcServer = &CrpcServerConfig{
 			ServerConfig: &crpc.ServerConfig{
-				ConnectTimeout: ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:  ctime.Duration(time.Millisecond * 500),
-				HeartProbe:     ctime.Duration(time.Second * 5),
-				IdleTimeout:    0,
+				ConnectTimeout:        ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				ReadTimeout:           ctime.Duration(time.Second),
+				WriteTimeout:          ctime.Duration(time.Second),
+				IdleTimeout:           0,
+				HeartProbe:            ctime.Duration(time.Second * 5),
 			},
 		}
 	} else {
 		if sc.CrpcServer.ConnectTimeout <= 0 {
 			sc.CrpcServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CrpcServer.HeartProbe <= 0 {
-			sc.CrpcServer.HeartProbe = ctime.Duration(time.Second * 5)
 		}
 	}
 }
@@ -244,18 +255,17 @@ func initcrpcclient() {
 	if sc.CrpcClient == nil {
 		sc.CrpcClient = &CrpcClientConfig{
 			ClientConfig: &crpc.ClientConfig{
-				ConnectTimeout: ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:  ctime.Duration(time.Millisecond * 500),
-				HeartProbe:     ctime.Duration(time.Second * 5),
-				IdleTimeout:    0,
+				ConnectTimeout:        ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				ReadTimeout:           ctime.Duration(time.Second),
+				WriteTimeout:          ctime.Duration(time.Second),
+				IdleTimeout:           0,
+				HeartProbe:            ctime.Duration(time.Second * 5),
 			},
 		}
 	} else {
 		if sc.CrpcClient.ConnectTimeout <= 0 {
 			sc.CrpcClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.CrpcClient.HeartProbe <= 0 {
-			sc.CrpcClient.HeartProbe = ctime.Duration(time.Second * 5)
 		}
 	}
 }
@@ -263,18 +273,18 @@ func initwebserver() {
 	if sc.WebServer == nil {
 		sc.WebServer = &WebServerConfig{
 			ServerConfig: &web.ServerConfig{
-				WaitCloseMode:        0,
-				WaitCloseTime:        ctime.Duration(time.Second),
-				ConnectTimeout:       ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:        ctime.Duration(time.Millisecond * 500),
-				IdleTimeout:          ctime.Duration(time.Second * 5),
-				MaxRequestHeader:     2048,
-				CorsAllowedOrigins:   []string{"*"},
-				CorsAllowedHeaders:   []string{"*"},
-				CorsExposeHeaders:    []string{"*"},
-				CorsAllowCredentials: false,
-				CorsMaxAge:           ctime.Duration(time.Minute * 30),
-				SrcRootPath:          "./src",
+				WaitCloseMode:         0,
+				WaitCloseTime:         ctime.Duration(time.Second),
+				ReadTimeout:           ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				IdleTimeout:           ctime.Duration(time.Second * 5),
+				MaxRequestHeader:      2048,
+				CorsAllowedOrigins:    []string{"*"},
+				CorsAllowedHeaders:    []string{"*"},
+				CorsExposeHeaders:     []string{"*"},
+				CorsAllowCredentials:  false,
+				CorsMaxAge:            ctime.Duration(time.Minute * 30),
+				SrcRootPath:           "./src",
 			},
 		}
 	} else {
@@ -282,11 +292,8 @@ func initwebserver() {
 			slog.Error("[config.initwebserver] wait_close_mode must be 0 or 1")
 			os.Exit(1)
 		}
-		if sc.WebServer.ConnectTimeout <= 0 {
-			sc.WebServer.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.WebServer.IdleTimeout <= 0 {
-			sc.WebServer.IdleTimeout = ctime.Duration(time.Second * 5)
+		if sc.WebServer.ReadTimeout <= 0 {
+			sc.WebServer.ReadTimeout = ctime.Duration(time.Millisecond * 500)
 		}
 	}
 }
@@ -294,18 +301,15 @@ func initwebclient() {
 	if sc.WebClient == nil {
 		sc.WebClient = &WebClientConfig{
 			ClientConfig: &web.ClientConfig{
-				ConnectTimeout:    ctime.Duration(time.Millisecond * 500),
-				GlobalTimeout:     ctime.Duration(time.Millisecond * 500),
-				IdleTimeout:       ctime.Duration(time.Second * 5),
-				MaxResponseHeader: 4096,
+				ConnectTimeout:        ctime.Duration(time.Millisecond * 500),
+				DefaultHandlerTimeout: ctime.Duration(time.Millisecond * 500),
+				IdleTimeout:           ctime.Duration(time.Second * 5),
+				MaxResponseHeader:     4096,
 			},
 		}
 	} else {
 		if sc.WebClient.ConnectTimeout <= 0 {
 			sc.WebClient.ConnectTimeout = ctime.Duration(time.Millisecond * 500)
-		}
-		if sc.WebClient.IdleTimeout <= 0 {
-			sc.WebClient.IdleTimeout = ctime.Duration(time.Second * 5)
 		}
 	}
 }
@@ -563,7 +567,7 @@ func GetRedis(redisname string) *redis.Client {
 	return rediss[redisname]
 }
 
-// GetEmail get a email client by email's instance name
+// GetEmail get a redis client by email's instance name
 // return nil means not exist
 func GetEmail(emailname string) *email.Client {
 	return emails[emailname]

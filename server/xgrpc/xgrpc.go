@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"log/slog"
 	"sync/atomic"
-	"unsafe"
 
 	"github.com/chenjie199234/account/api"
 	"github.com/chenjie199234/account/config"
@@ -15,7 +14,7 @@ import (
 	"github.com/chenjie199234/Corelib/util/ctime"
 )
 
-var s *cgrpc.CGrpcServer
+var s atomic.Pointer[cgrpc.CGrpcServer]
 
 func StartCGrpcServer() {
 	c := config.GetCGrpcServerConfig()
@@ -37,9 +36,7 @@ func StartCGrpcServer() {
 		slog.Error("[xgrpc] new server failed", slog.String("error", e.Error()))
 		return
 	}
-	//avoid race when build/run in -race mode
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&s)), unsafe.Pointer(server))
-	UpdateHandlerTimeout(config.AC.HandlerTimeout)
+	s.Store(server)
 
 	//this place can register global midwares
 	//server.Use(globalmidwares)
@@ -51,6 +48,9 @@ func StartCGrpcServer() {
 	api.RegisterBaseCGrpcServer(server, service.SvcBase, mids.AllMids())
 	api.RegisterMoneyCGrpcServer(server, service.SvcMoney, mids.AllMids())
 
+	//path must be registered before this
+	UpdateHandlerTimeout(config.AC.HandlerTimeout)
+
 	if e = server.StartCGrpcServer(":10000"); e != nil && e != cgrpc.ErrServerClosed {
 		slog.Error("[xgrpc] start server failed", slog.String("error", e.Error()))
 		return
@@ -60,16 +60,14 @@ func StartCGrpcServer() {
 
 // first key:path,second key:method
 func UpdateHandlerTimeout(timeout map[string]map[string]ctime.Duration) {
-	//avoid race when build/run in -race mode
-	tmps := (*cgrpc.CGrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
+	tmps := s.Load()
 	if tmps != nil {
 		tmps.UpdateHandlerTimeout(timeout)
 	}
 }
 
 func StopCGrpcServer(force bool) {
-	//avoid race when build/run in -race mode
-	tmps := (*cgrpc.CGrpcServer)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s))))
+	tmps := s.Load()
 	if tmps != nil {
 		tmps.StopCGrpcServer(force)
 	}
