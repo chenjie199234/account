@@ -39,11 +39,10 @@ var (
 	ErrEmailAlreadyUsed        = cerror.MakeCError(20004, http.StatusBadRequest, "email already used")
 	ErrIDCardAlreadyUsed       = cerror.MakeCError(20005, http.StatusBadRequest, "idcard already used")
 	ErrIDCardAlreadySetted     = cerror.MakeCError(20006, http.StatusBadRequest, "idcard already setted")
-	ErrSignCheckFailed         = cerror.MakeCError(20007, http.StatusBadRequest, "sign check failed")
-	ErrOAuthWrong              = cerror.MakeCError(20008, http.StatusBadRequest, "oauth2 service wrong")
-	ErrOAuthUnknown            = cerror.MakeCError(20009, http.StatusBadRequest, "oauth2 service unknown")
-	ErrOAuthAlreadyUsed        = cerror.MakeCError(20010, http.StatusBadRequest, "oauth2 service already used")
-	ErrUnsupportedEmailService = cerror.MakeCError(20011, http.StatusBadRequest, "unsupported email service")
+	ErrOAuthWrong              = cerror.MakeCError(20007, http.StatusBadRequest, "oauth2 service wrong")
+	ErrOAuthUnknown            = cerror.MakeCError(20008, http.StatusBadRequest, "oauth2 service unknown")
+	ErrOAuthAlreadyUsed        = cerror.MakeCError(20009, http.StatusBadRequest, "oauth2 service already used")
+	ErrUnsupportedEmailService = cerror.MakeCError(20010, http.StatusBadRequest, "unsupported email service")
 )
 
 func ReturnEcode(originerror error, defaulterror *cerror.Error) error {

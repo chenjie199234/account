@@ -20,6 +20,7 @@ import (
 	"github.com/chenjie199234/Corelib/cotel"
 	"github.com/chenjie199234/Corelib/metadata"
 	publicmids "github.com/chenjie199234/Corelib/mids"
+	"github.com/chenjie199234/Corelib/secure"
 	"github.com/chenjie199234/Corelib/util/graceful"
 	"github.com/chenjie199234/Corelib/web"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -476,10 +477,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 		return nil, ecode.ErrBan
 	}
 	if req.GetPasswordType() == "static" {
-		if e := util.SignCheck(req.GetPassword(), user.Password); e != nil {
-			if e == ecode.ErrSignCheckFailed {
-				e = ecode.ErrPasswordWrong
-			}
+		if e := secure.CheckPasswordSign(req.GetPassword(), user.Password); e != nil {
 			slog.ErrorContext(ctx, "[Login] sign check failed",
 				slog.String(req.GetSrcType(), req.GetSrcTypeExtra()), slog.String("error", e.Error()))
 			return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
@@ -502,7 +500,7 @@ func (s *Service) Login(ctx context.Context, req *api.LoginReq) (*api.LoginResp,
 	resp.SetInfo(info)
 	if req.GetPasswordType() == "dynamic" &&
 		(req.GetSrcType() == "email" || req.GetSrcType() == "tel") &&
-		util.SignCheck("", user.Password) == nil {
+		secure.CheckPasswordSign("", user.Password) == nil {
 		resp.SetStep("password")
 	} else {
 		resp.SetStep("success")
@@ -710,7 +708,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 				slog.String(req.GetVerifySrcTypeExtra(), oauthid))
 			return nil, ecode.ErrOAuthWrong
 		}
-		if util.SignCheck("", user.Password) == nil {
+		if secure.CheckPasswordSign("", user.Password) == nil {
 			resp := &api.ResetStaticPasswordResp{}
 			resp.SetStep("success")
 			return resp, nil
@@ -749,7 +747,7 @@ func (s *Service) ResetStaticPassword(ctx context.Context, req *api.ResetStaticP
 		slog.ErrorContext(ctx, "[ResetStaticPassword] dao op failed", slog.String("operator", md["Token-User"]), slog.String("error", e.Error()))
 		return nil, ecode.ReturnEcode(e, ecode.ErrSystem)
 	}
-	if util.SignCheck("", user.Password) == nil {
+	if secure.CheckPasswordSign("", user.Password) == nil {
 		resp := &api.ResetStaticPasswordResp{}
 		resp.SetStep("success")
 		return resp, nil

@@ -2,13 +2,12 @@ package base
 
 import (
 	"context"
-	"crypto/rand"
 	"time"
 
 	"github.com/chenjie199234/account/ecode"
 	"github.com/chenjie199234/account/model"
-	"github.com/chenjie199234/account/util"
 
+	"github.com/chenjie199234/Corelib/secure"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -37,10 +36,8 @@ func (d *Dao) MongoCreateUserByTel(ctx context.Context, tel string) (user *model
 			s.AbortTransaction(sctx)
 		}
 	}()
-	nonce := make([]byte, 16)
-	rand.Read(nonce)
 	user = &model.User{
-		Password: util.SignMake("", nonce),
+		Password: secure.SignPassword(""), //use the empty password
 		IDCard:   "",
 		Tel:      tel,
 		Email:    "",
@@ -79,10 +76,8 @@ func (d *Dao) MongoCreateUserByEmail(ctx context.Context, email string) (user *m
 			s.AbortTransaction(sctx)
 		}
 	}()
-	nonce := make([]byte, 16)
-	rand.Read(nonce)
 	user = &model.User{
-		Password: util.SignMake("", nonce),
+		Password: secure.SignPassword(""), //use the empty password
 		IDCard:   "",
 		Tel:      "",
 		Email:    email,
@@ -121,10 +116,8 @@ func (d *Dao) MongoCreateUserByOAuth(ctx context.Context, oauthservicename, oaut
 			s.AbortTransaction(sctx)
 		}
 	}()
-	nonce := make([]byte, 16)
-	rand.Read(nonce)
 	user = &model.User{
-		Password: util.SignMake("", nonce),
+		Password: secure.SignPassword(""), //use the empty password
 		IDCard:   "",
 		Tel:      "",
 		Email:    "",
@@ -502,26 +495,21 @@ func (d *Dao) MongoUpdateUserPassword(ctx context.Context, userid bson.ObjectID,
 		}
 	}()
 
-	nonce := make([]byte, 16)
-	rand.Read(nonce)
 	user := &model.User{}
 	filter := bson.M{"_id": userid}
-	updater := bson.M{"password": util.SignMake(newpassword, nonce)}
+	updater := bson.M{"password": secure.SignPassword(newpassword)}
 	if e = d.mongo.Database("account").Collection("user").FindOneAndUpdate(sctx, filter, bson.M{"$set": updater}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
 			e = ecode.ErrUserNotExist
 		}
 		return
 	}
-	if e = util.SignCheck(oldpassword, user.Password); e != nil && e == ecode.ErrSignCheckFailed {
-		e = ecode.ErrPasswordWrong
-	}
+	e = secure.CheckPasswordSign(oldpassword, user.Password)
 	return
 }
 func (d *Dao) MongoResetUserPassword(ctx context.Context, userid bson.ObjectID) error {
-	nonce := make([]byte, 16)
-	rand.Read(nonce)
-	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": bson.M{"password": util.SignMake("", nonce)}})
+	updater := bson.M{"password": secure.SignPassword("")} //use the empty password
+	r, e := d.mongo.Database("account").Collection("user").UpdateOne(ctx, bson.M{"_id": userid}, bson.M{"$set": updater})
 	if e != nil {
 		return e
 	}
