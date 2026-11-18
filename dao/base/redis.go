@@ -2,7 +2,7 @@ package base
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"time"
 
 	"github.com/chenjie199234/account/ecode"

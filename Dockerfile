@@ -1,4 +1,4 @@
-FROM golang:1.26.8 as builder
+FROM golang:1.27.4 as builder
 ENV GOSUMDB='off' \
 	GOOS='linux' \
 	GOARCH='amd64' \
@@ -9,7 +9,7 @@ ADD . /code
 WORKDIR /code
 RUN echo "start build" && go mod tidy && go build -ldflags="-X 'main.version=$(date -u '+%Y-%m-%d %H:%M:%S')'" main.go && echo "end build"
 
-FROM alpine:3.24.1
+FROM alpine:3.24.4
 RUN mkdir /root/app
 WORKDIR /root/app
 EXPOSE 6060 7000 8000 9000 10000
